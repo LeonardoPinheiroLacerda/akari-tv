@@ -1,0 +1,14 @@
+/*
+ * Tokens do tema (placeholder). Valores reais vêm do handoff de design;
+ * aqui ficam só os suficientes para validar o pipeline do Tailwind 4.
+ */
+@theme {
+  --color-bg: #0b0b0f;
+  --color-surface: #16161d;
+  --color-text: #f5f5f7;
+  --color-text-muted: #9a9aa5;
+  --color-accent: #7c5cff;
+
+  --font-sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
