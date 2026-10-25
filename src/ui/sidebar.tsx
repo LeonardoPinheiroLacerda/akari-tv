@@ -15,9 +15,11 @@ const ITEMS = [
   icon: LucideIcon
 }>
 
-type SidebarItemKey = (typeof ITEMS)[number]['key']
+export type SidebarItemKey = (typeof ITEMS)[number]['key']
 
 interface SidebarProps {
+  /** Item da tela atual: destacado em laranja mesmo sem foco. */
+  activeKey?: SidebarItemKey
   onSelect?: (key: SidebarItemKey) => void
 }
 
@@ -39,6 +41,7 @@ interface SidebarItemProps {
   label: string
   icon: LucideIcon
   expanded: boolean
+  active: boolean
   onSelect?: (key: SidebarItemKey) => void
 }
 
@@ -52,6 +55,7 @@ const SidebarItem = memo(function SidebarItem({
   label,
   icon: Icon,
   expanded,
+  active,
   onSelect,
 }: SidebarItemProps) {
   const handleEnterPress = useCallback(
@@ -88,16 +92,22 @@ const SidebarItem = memo(function SidebarItem({
               color={
                 focused
                   ? 'var(--color-bg)'
-                  : expanded
-                    ? 'var(--color-text)'
-                    : 'var(--color-text-muted)'
+                  : active
+                    ? 'var(--color-brand)'
+                    : expanded
+                      ? 'var(--color-text)'
+                      : 'var(--color-text-muted)'
               }
             />
           </span>
           <span
             className="relative ml-4 text-[1.75rem] font-medium whitespace-nowrap"
             style={{
-              color: focused ? 'var(--color-bg)' : 'var(--color-text-muted)',
+              color: focused
+                ? 'var(--color-bg)'
+                : active
+                  ? 'var(--color-text)'
+                  : 'var(--color-text-muted)',
               opacity: expanded ? 1 : 0,
               transform: expanded ? 'translateX(0)' : 'translateX(-0.75rem)',
               transition: 'opacity 160ms, transform 160ms',
@@ -119,7 +129,10 @@ const SidebarItem = memo(function SidebarItem({
  * opacity + translateX e uma borda em degradê estático; ícones e rótulos
  * nunca escalam com o painel, pra não distorcer texto.
  */
-export const Sidebar = memo(function Sidebar({ onSelect }: SidebarProps) {
+export const Sidebar = memo(function Sidebar({
+  activeKey,
+  onSelect,
+}: SidebarProps) {
   const { ref, focusKey, hasFocusedChild } = useFocusable({
     focusKey: 'SIDEBAR',
     saveLastFocusedChild: true,
@@ -132,8 +145,12 @@ export const Sidebar = memo(function Sidebar({ onSelect }: SidebarProps) {
         ref={ref}
         aria-label="Menu principal"
         className="fixed inset-y-0 left-0 z-10 flex flex-col py-[3.375rem]"
+        // Largura recolhida, com painel e pílulas transbordando: o norigin
+        // compara a caixa da região da sidebar com a da região da tela, e com
+        // a largura expandida ela invadiria o x do conteúdo — a seta esquerda
+        // não acharia a sidebar "à esquerda" da tela.
         style={{
-          width: `${EXPANDED_REM}rem`,
+          width: `${COLLAPSED_REM}rem`,
           paddingLeft: `${EDGE_REM}rem`,
         }}
       >
@@ -185,6 +202,7 @@ export const Sidebar = memo(function Sidebar({ onSelect }: SidebarProps) {
               label={item.label}
               icon={item.icon}
               expanded={hasFocusedChild}
+              active={item.key === activeKey}
               onSelect={onSelect}
             />
           ))}

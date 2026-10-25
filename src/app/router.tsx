@@ -1,9 +1,15 @@
 import { createMemoryRouter } from 'react-router-dom'
-import { PlaceholderScreen } from './placeholder-screen'
+import { HomeScreen } from '@/features/home/home-screen'
+import { SearchScreen } from '@/features/search/search-screen'
+import { AppLayout } from './app-layout'
 
 export const router = createMemoryRouter([
   {
     path: '/',
-    element: <PlaceholderScreen />,
+    element: <AppLayout />,
+    children: [
+      { index: true, element: <HomeScreen /> },
+      { path: 'search', element: <SearchScreen /> },
+    ],
   },
 ])
