@@ -1,6 +1,7 @@
 import { memo, useCallback } from 'react'
 import type { FocusableComponentLayout } from '@noriginmedia/norigin-spatial-navigation'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
+import { cn } from '@/lib/utils'
 import { Focusable } from '@/ui/focusable'
 
 export const POSTER_WIDTH_REM = 12
@@ -8,6 +9,12 @@ export const POSTER_HEIGHT_REM = 18
 // Pôsteres fora de foco ficam esmaecidos para o hero dominar a tela; sobre o
 // fim do degradê do hero o efeito é escurecer, sem o banner vazar por trás.
 const UNFOCUSED_OPACITY = 0.55
+// A base da capa some para transparente (máscara) em vez de receber um
+// degradê escuro por cima: com duas camadas recortadas pelo canto
+// arredondado, a capa clara vazava pela suavização da borda do degradê e
+// deixava um arco claro nos cantos de baixo. Uma imagem só, um recorte só.
+// O título fica legível sobre o fundo escuro da tela atrás do pôster.
+const COVER_FADE = 'linear-gradient(to top, transparent, black 45%)'
 
 interface AnimePosterProps {
   anime: AnimeResponse
@@ -41,7 +48,9 @@ export const AnimePoster = memo(function AnimePoster({
     <Focusable autoFocus={autoFocus} onFocus={handleFocus}>
       {(focused) => (
         <div
-          className="relative overflow-hidden rounded-xl bg-surface-elevated"
+          // Fundo só sem capa: com capa, a base transparente da máscara deve
+          // mostrar o fundo escuro da tela, não um bloco marrom.
+          className={cn('relative overflow-hidden rounded-xl', !cover && 'bg-surface-elevated')}
           style={{
             width: `${POSTER_WIDTH_REM}rem`,
             height: `${POSTER_HEIGHT_REM}rem`,
@@ -65,10 +74,9 @@ export const AnimePoster = memo(function AnimePoster({
                 loading="lazy"
                 decoding="async"
                 className="size-full object-cover"
+                style={{ maskImage: COVER_FADE }}
               />
-              {/* Título escrito sobre a base da capa: degradê estático dá
-                  leitura sem aumentar a altura da linha. */}
-              <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-bg via-bg/80 to-transparent px-3 pt-10 pb-3">
+              <div className="absolute inset-x-0 bottom-0 px-3 pb-3">
                 <p className="line-clamp-2 text-center text-[1.5rem] leading-tight font-medium">{title}</p>
               </div>
             </>
