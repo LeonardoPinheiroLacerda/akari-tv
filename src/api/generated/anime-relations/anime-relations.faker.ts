@@ -105,6 +105,10 @@ export const getListRelationRootsResponseMock = (): AnimePageOkResponse => ({
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
       ]),
+      studio: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
       score: faker.helpers.arrayElement([
         faker.number.float({ fractionDigits: 2 }),
         null,

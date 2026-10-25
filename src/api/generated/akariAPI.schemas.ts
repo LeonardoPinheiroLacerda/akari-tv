@@ -349,6 +349,11 @@ export interface AnimeBindingSummary {
    */
   format?: string | null
   /**
+   * Estúdio principal responsável pela produção, segundo a AniList
+   * @nullable
+   */
+  studio?: string | null
+  /**
    * `true` se o anime também tem binding TMDB
    * @nullable
    */
@@ -968,6 +973,11 @@ export interface AnilistMediaSummary {
   isAdult?: boolean | null
   /** Nomes de gêneros */
   genres?: string[]
+  /**
+   * Estúdio principal responsável pela produção, segundo a AniList
+   * @nullable
+   */
+  studio?: string | null
 }
 
 /**
@@ -1253,6 +1263,11 @@ export interface AnimeResponse {
    * @nullable
    */
   season?: string | null
+  /**
+   * Estúdio principal responsável pela produção, segundo a AniList
+   * @nullable
+   */
+  studio?: string | null
   /**
    * Nota média em escala 0–10
    * @nullable

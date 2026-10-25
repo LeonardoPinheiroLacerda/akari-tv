@@ -95,6 +95,10 @@ export const getGetAnimeResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  studio: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   score: faker.helpers.arrayElement([
     faker.number.float({ fractionDigits: 2 }),
     null,
@@ -186,6 +190,10 @@ export const getSyncAnimeResponseMock = (
     null,
   ]),
   season: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  studio: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
@@ -283,6 +291,10 @@ export const getBindAnimeToFolderResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  studio: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   score: faker.helpers.arrayElement([
     faker.number.float({ fractionDigits: 2 }),
     null,
@@ -374,6 +386,10 @@ export const getSetAnimeFranchiseRootResponseMock = (
     null,
   ]),
   season: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  studio: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
@@ -471,6 +487,10 @@ export const getMarkAnimeAsReviewedResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  studio: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   score: faker.helpers.arrayElement([
     faker.number.float({ fractionDigits: 2 }),
     null,
@@ -562,6 +582,10 @@ export const getGetAnimeByFolderResponseMock = (
     null,
   ]),
   season: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  studio: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),

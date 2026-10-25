@@ -59,6 +59,10 @@ export const getListFoldersResponseMock = (): MediaFolderPageOkResponse => ({
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             null,
           ]),
+          studio: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
           hasTmdb: faker.helpers.arrayElement([faker.datatype.boolean(), null]),
         },
         null,
@@ -102,6 +106,10 @@ export const getCreateFolderResponseMock = (
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
       ]),
+      studio: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
       hasTmdb: faker.helpers.arrayElement([faker.datatype.boolean(), null]),
     },
     null,
@@ -138,6 +146,10 @@ export const getGetFolderResponseMock = (
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
       ]),
+      studio: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
       hasTmdb: faker.helpers.arrayElement([faker.datatype.boolean(), null]),
     },
     null,
@@ -171,6 +183,10 @@ export const getUpdateFolderResponseMock = (
       ]),
       year: faker.helpers.arrayElement([faker.number.int(), null]),
       format: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      studio: faker.helpers.arrayElement([
         faker.string.alpha({ length: { min: 10, max: 20 } }),
         null,
       ]),

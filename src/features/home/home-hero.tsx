@@ -2,6 +2,7 @@ import { memo, useEffect, useState, type CSSProperties } from 'react'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import {
   CalendarDays,
+  Clapperboard,
   Clock,
   Film,
   Flower2,
@@ -140,6 +141,9 @@ function badgesFor(anime: AnimeResponse): Badge[] {
       iconColor: season?.color,
     })
   }
+  // O backend garante o estúdio em todo anime; o contrato ainda o marca como
+  // nullable e o tipo gerado passa a ser `string` quando isso for atualizado.
+  badges.push({ key: 'studio', icon: Clapperboard, label: anime.studio as string })
   if (anime.format) {
     badges.push({
       key: 'format',

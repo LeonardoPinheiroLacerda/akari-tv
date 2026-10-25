@@ -109,6 +109,10 @@ export const getSearchAnilistMediaResponseMock =
           ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
           undefined,
         ]),
+        studio: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
       })),
     },
     ...{
