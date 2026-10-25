@@ -35,8 +35,10 @@ function parseJson(text: string): unknown {
 export async function apiFetch<T>(
   url: string,
   init: RequestInit = {},
-  signal?: AbortSignal,
+  callerSignal?: AbortSignal,
 ): Promise<T> {
+  // Os hooks gerados pelo Orval passam o signal do Query dentro de `init`.
+  const signal = init.signal ?? callerSignal
   // Cancelamento pelo chamador antes de começar: não dispara a requisição.
   signal?.throwIfAborted()
 
