@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { memo, useEffect, type ReactNode } from 'react'
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 
 interface FocusableProps {
@@ -9,7 +9,13 @@ interface FocusableProps {
   className?: string
 }
 
-export function Focusable({
+/**
+ * Memoizado (seção 7 da especificação): sem isso, qualquer re-render do pai
+ * (ex.: outro estado da tela mudando) recria a closure de `children` e força
+ * este componente a reprocessar, mesmo sem o foco ter mudado — chegou a
+ * aparecer como re-render "fantasma" no diagnóstico em dispositivo real.
+ */
+export const Focusable = memo(function Focusable({
   children,
   onEnterPress,
   focusKey,
@@ -18,21 +24,18 @@ export function Focusable({
 }: FocusableProps) {
   const { ref, focused, focusSelf } = useFocusable({ onEnterPress, focusKey })
 
+  // Só define o foco inicial. A sincronização do foco real do DOM a cada
+  // troca (`.focus()` nativo) fica a cargo da lib (`shouldFocusDOMNode` em
+  // app/providers.tsx), não daqui — ver o comentário lá.
   useEffect(() => {
     if (autoFocus) {
       focusSelf()
     }
   }, [autoFocus, focusSelf])
 
-  useEffect(() => {
-    if (focused) {
-      ref.current?.focus({ preventScroll: true })
-    }
-  }, [focused, ref])
-
   return (
     <div ref={ref} tabIndex={-1} className={className}>
       {children(focused)}
     </div>
   )
-}
+})

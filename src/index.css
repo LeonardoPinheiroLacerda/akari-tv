@@ -41,29 +41,29 @@ body {
   --color-foreground: var(--color-text);
   --color-card: var(--color-surface);
   --color-card-foreground: var(--color-text);
-  --color-popover: var(--color-surface);
+  --color-popover: var(--color-surface-elevated);
   --color-popover-foreground: var(--color-text);
-  --color-primary: var(--color-accent);
+  --color-primary: var(--color-brand);
   --color-primary-foreground: var(--color-bg);
   --color-secondary: var(--color-surface);
   --color-secondary-foreground: var(--color-text);
   --color-muted: var(--color-surface);
   --color-muted-foreground: var(--color-text-muted);
-  --color-accent: var(--color-surface);
+  --color-accent: var(--color-surface-elevated);
   --color-accent-foreground: var(--color-text);
   --color-destructive: #e5484d;
   --color-border: var(--border);
   --color-input: var(--input);
-  --color-ring: var(--color-text);
+  --color-ring: var(--color-brand);
 
   --color-sidebar: var(--color-surface);
   --color-sidebar-foreground: var(--color-text);
-  --color-sidebar-primary: var(--color-accent);
+  --color-sidebar-primary: var(--color-brand);
   --color-sidebar-primary-foreground: var(--color-bg);
-  --color-sidebar-accent: var(--color-bg);
+  --color-sidebar-accent: var(--color-surface-elevated);
   --color-sidebar-accent-foreground: var(--color-text);
   --color-sidebar-border: var(--border);
-  --color-sidebar-ring: var(--color-text);
+  --color-sidebar-ring: var(--color-brand);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -72,8 +72,10 @@ body {
 }
 
 :root {
-  --border: #ffffff1a;
-  --input: #ffffff26;
+  /* tons translúcidos do próprio --color-text (#f7f2f2), para a borda ficar
+     quente e consistente com a paleta do ícone em vez de um cinza neutro */
+  --border: #f7f2f21a;
+  --input: #f7f2f226;
   --radius: 0.5rem;
 }
 

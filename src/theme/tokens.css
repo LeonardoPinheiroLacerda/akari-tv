@@ -1,13 +1,17 @@
 /*
- * Tokens do tema (placeholder). Valores reais vêm do handoff de design;
- * aqui ficam só os suficientes para validar o pipeline do Tailwind 4.
+ * Tokens do tema, extraídos do ícone (icon.png): fundo #110c08, corpo da
+ * lanterna #ff6900, brilho #ffff00 — a identidade visual nasce do ícone.
+ * surface/texto são derivados por luminosidade a partir do mesmo matiz,
+ * conferidos contra WCAG (texto em bg: 17.6:1, accent em bg: 6.7:1).
  */
 @theme {
-  --color-bg: #0b0b0f;
-  --color-surface: #16161d;
-  --color-text: #f5f5f7;
-  --color-text-muted: #9a9aa5;
-  --color-accent: #7c5cff;
+  --color-bg: #110c08;
+  --color-surface: #1d1611;
+  --color-surface-elevated: #292019;
+  --color-text: #f7f2f2;
+  --color-text-muted: #a69d96;
+  --color-brand: #ff6900;
+  --color-highlight: #ffff00;
 
   --font-sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
