@@ -77,7 +77,7 @@ export function PlaceholderScreen() {
     <>
       <Sidebar />
       <main
-        className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background py-[3.375rem] pr-24 text-foreground"
+        className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background py-[3.375rem] pr-8 text-foreground"
         style={{ paddingLeft: `${SIDEBAR_COLLAPSED_REM}rem` }}
       >
         <div className="text-center">
