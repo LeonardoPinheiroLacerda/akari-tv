@@ -29,9 +29,11 @@ export const PlaceholderTile = memo(function PlaceholderTile({
           style={{
             transform: focused ? 'scale(1.05)' : 'scale(1)',
             outlineStyle: 'solid',
-            outlineWidth: 4,
-            outlineOffset: 2,
-            outlineColor: focused ? 'var(--color-text)' : 'transparent',
+            // 4dp de design (seção 3) em rem: número puro aqui seria px de CSS,
+            // o dobro na densidade 2 da TV. Laranja da marca, como a sidebar.
+            outlineWidth: '0.25rem',
+            outlineOffset: '0.125rem',
+            outlineColor: focused ? 'var(--color-brand)' : 'transparent',
             transition: 'transform 120ms, outline-color 120ms',
           }}
         >

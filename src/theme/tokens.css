@@ -13,6 +13,13 @@
   --color-brand: #ff6900;
   --color-highlight: #ffff00;
 
+  /* Estações de estreia (badges do hero): tons claros o bastante para ícone
+     sobre fundo escuro, sem competir com o laranja da marca. */
+  --color-season-winter: #8ecbff;
+  --color-season-spring: #ff9ecb;
+  --color-season-summer: #ffd25a;
+  --color-season-fall: #e8915a;
+
   --font-sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }

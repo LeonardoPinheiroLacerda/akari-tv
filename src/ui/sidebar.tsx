@@ -177,14 +177,14 @@ export const Sidebar = memo(function Sidebar({
             marginLeft: `${ROW_PADDING_REM}rem`,
           }}
         >
-          {/* O fundo do ícone é o --color-bg; `lighten` o funde com a superfície
-              mais clara do painel aberto em vez de aparecer como um quadrado.
+          {/* `logo.png` é o ícone com o fundo transparente (o `icon.png` tem
+              fundo #110c08 e viraria um quadrado sobre o painel ou o banner).
               Aberto, o logo desliza pro centro do painel e cresce — só
               transform, como o resto do painel (seção 7). */}
           <img
-            src="/icon.png"
+            src="/logo.png"
             alt="Akari TV"
-            className="size-16 max-w-none shrink-0 mix-blend-lighten"
+            className="size-16 max-w-none shrink-0"
             style={{
               transform: hasFocusedChild
                 ? `translateX(${LOGO_EXPANDED_SHIFT_REM}rem) scale(1.25)`

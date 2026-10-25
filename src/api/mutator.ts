@@ -3,7 +3,9 @@ import { readStorage } from '@/lib/storage'
 import { ApiError } from './errors'
 
 const TIMEOUT_MS = 15_000
-const DEFAULT_SERVER_URL = 'http://localhost:8080'
+// Sem servidor salvo, usa o do build (`VITE_SERVER_URL`, ex.: o IP do backend
+// na rede local para a TV) e, por último, o backend local do navegador.
+const DEFAULT_SERVER_URL = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:8080'
 
 /** Tipo de erro dos hooks gerados pelo Orval (lido deste arquivo pelo `override.mutator`). */
 // O Orval exige a assinatura genérica `ErrorType<Error>`; todo erro é `ApiError`.

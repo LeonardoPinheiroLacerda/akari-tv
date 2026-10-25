@@ -15,6 +15,11 @@ sutis, porquês descobertos na prática): ver `APRENDIZADOS.md`.
 - `npm run android:sync` — build web + `cap sync android` (depois de mudar código web ou plugins)
 - `npm run android:run` — build web + `cap run android` (instala e roda no dispositivo/emulador)
 
+## Backend
+
+O app chama o backend em `VITE_SERVER_URL` (copie `.env.example` para `.env.local`). Na TV, use o
+IP da máquina do backend na rede local — `localhost` lá é a própria TV.
+
 `android/` é versionado (recomendação oficial do Capacitor — projeto nativo é código-fonte, não
 build output). As customizações de TV (leanback, banner, orientação, cleartext) estão editadas
 direto em `android/app/src/main/AndroidManifest.xml`.

@@ -1,4 +1,11 @@
-// Helpers de paginação (useInfiniteQuery) para o envelope de página (0-based) do contrato.
-// A implementar quando o contrato real (http://localhost:8080/q/openapi) estiver disponível
-// e o Orval gerar os tipos em src/api/generated.
-export {}
+import type { Page } from './generated/akariAPI.schemas'
+
+/**
+ * Opções do envelope de paginação (0-based) do contrato para `useInfiniteQuery`:
+ * a próxima página é `page + 1` enquanto houver páginas.
+ */
+export const pageInfiniteOptions = {
+  initialPageParam: 0,
+  getNextPageParam: (lastPage: Page) =>
+    lastPage.page + 1 < lastPage.totalPages ? lastPage.page + 1 : undefined,
+}
