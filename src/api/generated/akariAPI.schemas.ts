@@ -1356,6 +1356,35 @@ export interface AnimeRelationGraphResponse {
 }
 
 /**
+ * Franquia de um anime já organizada pelo backend em raiz/temporadas/especiais — o
+ * front só exibe as listas na ordem recebida, sem agrupar ou reordenar.
+ */
+export interface AnimeFranchiseResponse {
+  /** Raiz da franquia, mesmo quando o anime consultado é outra temporada */
+  root: AnimeResponse
+  /**
+   * A raiz mais a cadeia de `SEQUEL` a partir dela, na ordem da cadeia, só com
+   * formato de série (`TV`, `TV_SHORT`, `ONA`)
+   * @nullable
+   */
+  seasons?: AnimeResponse[] | null
+  /**
+   * Filmes da franquia (formato `MOVIE`) — mesma origem de `specials` (`SIDE_STORY`,
+   * `SPIN_OFF`, `SUMMARY`, mais os da cadeia de `SEQUEL` sem formato de série), só que
+   * separados por formato. Ordenados por `year`/`season`
+   * @nullable
+   */
+  movies?: AnimeResponse[] | null
+  /**
+   * Demais animes da franquia sem formato de série e sem ser filme (`OVA`, `SPECIAL`,
+   * ...) — `SIDE_STORY`, `SPIN_OFF`, `SUMMARY`, mais os da cadeia de `SEQUEL` nesses
+   * formatos. Ordenados por `year`/`season`
+   * @nullable
+   */
+  specials?: AnimeResponse[] | null
+}
+
+/**
  * Payload de binding TMDB
  */
 export interface TmdbBindingRequest {
@@ -1866,6 +1895,11 @@ export type AnimeDeletedResponse = void
  * Grafo (nodes + edges) alcançado a partir da raiz
  */
 export type AnimeRelationGraphOkResponse = AnimeRelationGraphResponse
+
+/**
+ * Franquia organizada em raiz/temporadas/filmes/especiais
+ */
+export type AnimeFranchiseOkResponse = AnimeFranchiseResponse
 
 /**
  * Estado TMDB atual

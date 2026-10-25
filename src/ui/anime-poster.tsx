@@ -2,9 +2,9 @@ import { memo, useCallback } from 'react'
 import type { FocusableComponentLayout } from '@noriginmedia/norigin-spatial-navigation'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import { cn } from '@/lib/utils'
-import { Focusable } from '@/ui/focusable'
+import { Focusable } from './focusable'
 
-export const POSTER_WIDTH_REM = 12
+const POSTER_WIDTH_REM = 12
 export const POSTER_HEIGHT_REM = 18
 // Pôsteres fora de foco ficam esmaecidos para o hero dominar a tela; sobre o
 // fim do degradê do hero o efeito é escurecer, sem o banner vazar por trás.
@@ -21,10 +21,12 @@ interface AnimePosterProps {
   index: number
   autoFocus: boolean
   onFocused: (anime: AnimeResponse, index: number, node: HTMLElement) => void
+  /** OK no pôster (abrir o anime). Estável, como `onFocused`. */
+  onSelect?: (anime: AnimeResponse) => void
 }
 
 /**
- * Pôster 2:3 da grade. Memoizado e com `onFocused` estável vindo da tela, para
+ * Pôster 2:3 das linhas e grades de anime. Memoizado e com `onFocused` estável vindo da tela, para
  * a troca de foco re-renderizar só os dois pôsteres envolvidos (seção 7).
  */
 export const AnimePoster = memo(function AnimePoster({
@@ -32,11 +34,13 @@ export const AnimePoster = memo(function AnimePoster({
   index,
   autoFocus,
   onFocused,
+  onSelect,
 }: AnimePosterProps) {
   const handleFocus = useCallback(
     (layout: FocusableComponentLayout) => onFocused(anime, index, layout.node),
     [anime, index, onFocused],
   )
+  const handleEnter = useCallback(() => onSelect?.(anime), [anime, onSelect])
   const title = anime.titles?.main ?? ''
   // `medium` (230×320) é a menor capa acima do tamanho exibido (192×288 px no
   // canvas, 202×302 com o scale do foco), como pede a seção 7. A `large`
@@ -45,7 +49,7 @@ export const AnimePoster = memo(function AnimePoster({
   const cover = anime.thumbnails?.medium ?? anime.thumbnails?.large
 
   return (
-    <Focusable autoFocus={autoFocus} onFocus={handleFocus}>
+    <Focusable autoFocus={autoFocus} onFocus={handleFocus} onEnterPress={handleEnter}>
       {(focused) => (
         <div
           // Fundo só sem capa: com capa, a base transparente da máscara deve

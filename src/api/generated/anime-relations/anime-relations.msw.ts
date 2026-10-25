@@ -22,11 +22,13 @@ import { HttpResponse, http } from 'msw'
 import type { RequestHandlerOptions } from 'msw'
 
 import type {
+  AnimeFranchiseOkResponse,
   AnimePageOkResponse,
   AnimeRelationGraphOkResponse,
 } from '../akariAPI.schemas'
 
 import {
+  getGetAnimeFranchiseResponseMock,
   getGetAnimeRelationGraphResponseMock,
   getListRelationRootsResponseMock,
 } from './anime-relations.faker'
@@ -34,6 +36,7 @@ import {
 export {
   getListRelationRootsResponseMock,
   getGetAnimeRelationGraphResponseMock,
+  getGetAnimeFranchiseResponseMock,
 } from './anime-relations.faker'
 
 export const getListRelationRootsMockHandler = (
@@ -84,7 +87,32 @@ export const getGetAnimeRelationGraphMockHandler = (
     options,
   )
 }
+
+export const getGetAnimeFranchiseMockHandler = (
+  overrideResponse?:
+    | AnimeFranchiseOkResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<AnimeFranchiseOkResponse> | AnimeFranchiseOkResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    '*/v1/metadata/animes/:anilistId/franchise',
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === 'function'
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetAnimeFranchiseResponseMock(),
+        { status: 200 },
+      )
+    },
+    options,
+  )
+}
 export const getAnimeRelationsMock = () => [
   getListRelationRootsMockHandler(),
   getGetAnimeRelationGraphMockHandler(),
+  getGetAnimeFranchiseMockHandler(),
 ]

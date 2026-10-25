@@ -105,7 +105,7 @@ const Backdrop = memo(function Backdrop({ src, blurred = false }: Partial<Backdr
   )
 })
 
-interface HomeHeroProps {
+interface AnimeHeroProps {
   store: Store<AnimeResponse | undefined>
 }
 
@@ -168,8 +168,11 @@ function badgesFor(anime: AnimeResponse): Badge[] {
   return badges
 }
 
-/** Hero fixo da Início: mostra o anime em foco na grade (via `store`). */
-export const HomeHero = memo(function HomeHero({ store }: HomeHeroProps) {
+/**
+ * Hero fixo das telas de anime (Início, detalhe): mostra o anime em foco nas
+ * linhas de pôsteres, recebido por `store` para o foco não subir para a tela.
+ */
+export const AnimeHero = memo(function AnimeHero({ store }: AnimeHeroProps) {
   const anime = useSettled(useStore(store), SETTLE_MS)
   const title = anime?.titles?.main ?? ''
   const backdrop = anime?.banner ?? anime?.thumbnails?.small ?? anime?.thumbnails?.medium

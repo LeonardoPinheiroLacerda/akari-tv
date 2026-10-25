@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { setFocus } from '@noriginmedia/norigin-spatial-navigation'
 import { HOME_FOCUS_KEY } from '@/features/home/home-screen'
 import { SEARCH_FOCUS_KEY } from '@/features/search/search-screen'
+import { isPushedScreen } from '@/lib/navigation'
 import { Sidebar, SIDEBAR_COLLAPSED_REM, type SidebarItemKey } from '@/ui/sidebar'
 import { registerBackHandler } from './back'
 
@@ -21,14 +22,16 @@ function sidebarKeyFor(pathname: string): SidebarItemKey | undefined {
 }
 
 /**
- * Casca das telas de topo: sidebar fixa + tela atual no `<Outlet>`. Os itens
- * da sidebar são abas (navegação com `replace`, sem empilhar); Voltar fora do
- * Início volta pro Início, e no Início deixa o app fechar. A pilha de telas
- * da seção 6 entra quando houver telas de detalhe.
+ * Casca das telas: sidebar fixa + tela atual no `<Outlet>`. Os itens da
+ * sidebar são abas (navegação com `replace`, sem empilhar). Voltar numa tela
+ * aberta a partir de outra (detalhe do anime) desfaz o passo; numa aba fora do
+ * Início volta pro Início; no Início deixa o app fechar. A pilha de telas
+ * montadas da seção 6 ainda não existe: a tela anterior remonta ao voltar.
  */
 export function AppLayout() {
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, state } = useLocation()
+  const pushed = isPushedScreen(state)
   const activeKey = sidebarKeyFor(pathname)
 
   const handleSelect = useCallback(
@@ -46,11 +49,15 @@ export function AppLayout() {
 
   useEffect(() => {
     return registerBackHandler(() => {
+      if (pushed) {
+        navigate(-1)
+        return true
+      }
       if (pathname === PATHS.home) return false
       navigate(PATHS.home, { replace: true })
       return true
     })
-  }, [navigate, pathname])
+  }, [navigate, pathname, pushed])
 
   return (
     <>
