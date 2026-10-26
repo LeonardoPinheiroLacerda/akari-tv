@@ -86,12 +86,18 @@ export const getListAnimeEpisodesUrl = (
 }
 
 /**
- * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela, já
- * ordenados por temporada e episódio (pareamento TMDB) — o cliente não precisa
- * descobrir o `folderId` nem reordenar nada. Arquivos sem pareamento aparecem depois
- * dos pareados, ordenados por nome de arquivo, com `tmdbPairing` `null`. Mesmo
- * schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`, com
- * `tmdbPairing` embutido).
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.

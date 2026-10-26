@@ -20,13 +20,24 @@
  */
 import { faker } from '@faker-js/faker'
 
+import { FileAvailabilityStatus } from '../akariAPI.schemas'
 import type {
+  FileAvailabilityOkResponse,
   HeartbeatOkResponse,
   MediaFileOkResponse,
   PlaylistOkResponse,
   SessionCreatedResponse,
   SessionOkResponse,
 } from '../akariAPI.schemas'
+
+export const getGetFileAvailabilityResponseMock = (
+  overrideResponse: Partial<Extract<FileAvailabilityOkResponse, object>> = {},
+): FileAvailabilityOkResponse => ({
+  fileId: faker.number.int(),
+  status: faker.helpers.arrayElement(Object.values(FileAvailabilityStatus)),
+  cacheItemId: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  ...overrideResponse,
+})
 
 export const getStartPlaybackSessionResponseMock = (
   overrideResponse: Partial<Extract<SessionCreatedResponse, object>> = {},

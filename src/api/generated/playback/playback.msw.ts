@@ -22,6 +22,7 @@ import { HttpResponse, http } from 'msw'
 import type { RequestHandlerOptions } from 'msw'
 
 import type {
+  FileAvailabilityOkResponse,
   HeartbeatOkResponse,
   MediaFileOkResponse,
   PlaylistOkResponse,
@@ -30,6 +31,7 @@ import type {
 } from '../akariAPI.schemas'
 
 import {
+  getGetFileAvailabilityResponseMock,
   getGetPlaybackMediaFileResponseMock,
   getGetPlaybackPlaylistResponseMock,
   getHeartbeatPlaybackSessionResponseMock,
@@ -39,6 +41,7 @@ import {
 } from './playback.faker'
 
 export {
+  getGetFileAvailabilityResponseMock,
   getStartPlaybackSessionResponseMock,
   getSeekPlaybackSessionResponseMock,
   getSwitchPlaybackSessionTracksResponseMock,
@@ -46,6 +49,30 @@ export {
   getGetPlaybackMediaFileResponseMock,
   getHeartbeatPlaybackSessionResponseMock,
 } from './playback.faker'
+
+export const getGetFileAvailabilityMockHandler = (
+  overrideResponse?:
+    | FileAvailabilityOkResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<FileAvailabilityOkResponse> | FileAvailabilityOkResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    '*/v1/playback/files/:fileId/availability',
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === 'function'
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetFileAvailabilityResponseMock(),
+        { status: 200 },
+      )
+    },
+    options,
+  )
+}
 
 export const getStartPlaybackSessionMockHandler = (
   overrideResponse?:
@@ -193,6 +220,7 @@ export const getHeartbeatPlaybackSessionMockHandler = (
   )
 }
 export const getPlaybackMock = () => [
+  getGetFileAvailabilityMockHandler(),
   getStartPlaybackSessionMockHandler(),
   getSeekPlaybackSessionMockHandler(),
   getSwitchPlaybackSessionTracksMockHandler(),

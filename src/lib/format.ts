@@ -55,3 +55,22 @@ export function dateLabel(iso: string): string {
     year: 'numeric',
   })
 }
+
+/** Velocidade de transferência em bytes/s como "12,3 MB/s". */
+export function speedLabel(bytesPerSecond: number): string {
+  const units = ['B/s', 'KB/s', 'MB/s', 'GB/s']
+  let value = bytesPerSecond
+  let unit = 0
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024
+    unit += 1
+  }
+  return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} ${units[unit]}`
+}
+
+/** Tempo restante em segundos como "2 min" ou "45 s". */
+export function remainingLabel(seconds: number): string {
+  return seconds >= 60
+    ? `${Math.round(seconds / 60)} min`
+    : `${Math.max(0, Math.round(seconds))} s`
+}

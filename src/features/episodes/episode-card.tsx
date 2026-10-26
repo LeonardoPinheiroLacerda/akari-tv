@@ -23,6 +23,7 @@ interface EpisodeCardProps {
     index: number,
     node: HTMLElement,
   ) => void
+  onSelect?: (episode: VideoFileResponse) => void
 }
 
 /** Card do episódio: thumbnail do TMDB com número e título na base. */
@@ -31,18 +32,27 @@ export const EpisodeCard = memo(function EpisodeCard({
   index,
   autoFocus,
   onFocused,
+  onSelect,
 }: EpisodeCardProps) {
   const handleFocus = useCallback(
     (layout: FocusableComponentLayout) =>
       onFocused(episode, index, layout.node),
     [episode, index, onFocused],
   )
+  const handleEnter = useCallback(
+    () => onSelect?.(episode),
+    [episode, onSelect],
+  )
   const thumbnail = episode.tmdbPairing?.thumbnailPreviewUrl
   const number = episodeNumberLabel(episode)
   const title = episodeTitle(episode)
 
   return (
-    <Focusable autoFocus={autoFocus} onFocus={handleFocus}>
+    <Focusable
+      autoFocus={autoFocus}
+      onFocus={handleFocus}
+      onEnterPress={handleEnter}
+    >
       {(focused) => (
         <div
           className={cn(

@@ -716,15 +716,50 @@ export interface MediaInfoResponse {
 export type SessionId = string
 
 /**
+ * Profile de transcode suportado pelo backend. Fixo no código (não configurável via
+ * `Setting`): `WEB` (navegador, hls.js), `TV` (TV/set-top box — profile recomendado para
+ * uma TV 1080p como o Google TV Streamer), `MOBILE` (dispositivo móvel). Hoje as três
+ * resolvem pra mesma estratégia de transcode internamente (sem diferenciação real de
+ * comportamento ainda), mas o valor correto segue sendo o que descreve o dispositivo do
+ * cliente, já que a seleção de estratégia por profile é o mecanismo de extensão futuro.
+ */
+export type TranscodeProfile =
+  (typeof TranscodeProfile)[keyof typeof TranscodeProfile]
+
+export const TranscodeProfile = {
+  WEB: 'WEB',
+  TV: 'TV',
+  MOBILE: 'MOBILE',
+} as const
+
+/**
+ * O que falta, se algo, antes de iniciar uma sessão de playback pro arquivo
+ */
+export type FileAvailabilityStatus =
+  (typeof FileAvailabilityStatus)[keyof typeof FileAvailabilityStatus]
+
+export const FileAvailabilityStatus = {
+  READY: 'READY',
+  NEEDS_DOWNLOAD: 'NEEDS_DOWNLOAD',
+  DOWNLOADING: 'DOWNLOADING',
+} as const
+
+/**
+ * Disponibilidade de um arquivo pra iniciar uma sessão de playback
+ */
+export interface FileAvailabilityResponse {
+  fileId: FileId
+  status: FileAvailabilityStatus
+  /** Id da linha do cache, pra correlacionar com o SSE de `/v1/cache/events`; `null` pra provider `LOCAL` ou quando ainda não existe linha (`NEEDS_DOWNLOAD` sem download nunca tentado) */
+  cacheItemId?: CacheItemId | null
+}
+
+/**
  * Parâmetros para iniciar uma sessão de transcode
  */
 export interface StartPlaybackSessionRequest {
   fileId: FileId
-  /**
-   * Profile de transcode escolhido pelo cliente. Os valores válidos são os profiles de
-   * transcode suportados pelo backend; um valor desconhecido é rejeitado com `400`.
-   */
-  profile: string
+  profile: TranscodeProfile
   /**
    * Posição (0-based) da faixa no array `audio` do `GET /v1/mediaprobe/files/{fileId}` —
    * **não** o campo `index` da faixa, que é o índice global do stream no arquivo.
@@ -1855,6 +1890,11 @@ export type PlaylistOkResponse = M3u8Playlist
  * Sessão renovada; validade restante
  */
 export type HeartbeatOkResponse = SessionHeartbeat
+
+/**
+ * Disponibilidade do arquivo pra iniciar uma sessão de playback
+ */
+export type FileAvailabilityOkResponse = FileAvailabilityResponse
 
 /**
  * Página (possivelmente vazia) com os resultados da busca

@@ -19,6 +19,7 @@ export const EPISODE_ROW_HEIGHT_REM = CARD_HEIGHT_REM + ROW_PADDING_REM * 2
 interface EpisodeRowProps {
   episodes: VideoFileResponse[]
   onFocused: (episode: VideoFileResponse, index: number) => void
+  onSelect?: (episode: VideoFileResponse) => void
 }
 
 /**
@@ -29,6 +30,7 @@ interface EpisodeRowProps {
 export const EpisodeRow = memo(function EpisodeRow({
   episodes,
   onFocused,
+  onSelect,
 }: EpisodeRowProps) {
   const { ref, focusKey } = useFocusable<unknown, HTMLDivElement>({
     focusKey: 'EPISODES_ROW',
@@ -86,6 +88,7 @@ export const EpisodeRow = memo(function EpisodeRow({
                   index={item.index}
                   autoFocus={item.index === 0}
                   onFocused={handleFocused}
+                  onSelect={onSelect}
                 />
               </div>
             )

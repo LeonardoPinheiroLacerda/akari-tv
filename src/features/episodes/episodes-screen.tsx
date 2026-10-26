@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
 import type {
   AnimeResponse,
@@ -16,10 +16,12 @@ import { useGetAnime } from '@/api/generated/anime/anime'
 import { useListAnimeEpisodesInfinite } from '@/api/generated/anime-episodes/anime-episodes'
 import { pageInfiniteOptions } from '@/api/pagination'
 import { useScreenFocusable } from '@/app/screen'
+import { playbackRoute } from '@/lib/navigation'
 import { createStore } from '@/lib/store'
 import { AnimeHero } from '@/ui/anime-hero'
 import { PLAY_BUTTON_HEIGHT_REM, PlayButton } from '@/ui/play-button'
 import { EpisodeHero } from './episode-hero'
+import { episodeNumberLabel, episodeTitle } from './episode-label'
 import { EPISODE_ROW_HEIGHT_REM, EpisodeRow } from './episode-row'
 
 const EPISODES_FOCUS_KEY = 'EPISODES'
@@ -87,6 +89,32 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
     [heroStore],
   )
 
+  const navigate = useNavigate()
+  const anime = animeQuery.data
+  const play = useCallback(
+    (file: VideoFileResponse, title: string, subtitle?: string) =>
+      navigate(
+        ...playbackRoute(file.id, {
+          title,
+          subtitle,
+          backdrop: anime?.banner ?? undefined,
+        }),
+      ),
+    [navigate, anime],
+  )
+  const handleSelectEpisode = useCallback(
+    (episode: VideoFileResponse) => {
+      const number = episodeNumberLabel(episode)
+      const animeTitle = anime?.titles?.main
+      play(
+        episode,
+        episodeTitle(episode),
+        [animeTitle, number].filter(Boolean).join(' · '),
+      )
+    },
+    [play, anime],
+  )
+
   // Hero do anime recebe o filme por store, como nas outras telas; o valor
   // não muda depois de carregado.
   const [movieStore] = useState(() =>
@@ -120,7 +148,6 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
                 Nenhum arquivo disponível.
               </p>
             )}
-            {/* O player ainda não existe: o OK fica sem ação até ele entrar. */}
             {episodes.length > 0 && (
               <div className="flex gap-4">
                 {episodes.map((file, index) => (
@@ -130,6 +157,15 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
                       episodes.length === 1 ? 'Assistir' : `Parte ${index + 1}`
                     }
                     autoFocus={index === 0}
+                    onPress={() =>
+                      play(
+                        file,
+                        anime?.titles?.main ?? file.name,
+                        episodes.length === 1
+                          ? undefined
+                          : `Parte ${index + 1}`,
+                      )
+                    }
                   />
                 ))}
               </div>
@@ -167,7 +203,11 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
             </p>
           )}
           {episodes.length > 0 && (
-            <EpisodeRow episodes={episodes} onFocused={handleFocused} />
+            <EpisodeRow
+              episodes={episodes}
+              onFocused={handleFocused}
+              onSelect={handleSelectEpisode}
+            />
           )}
         </div>
       </section>

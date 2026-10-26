@@ -36,6 +36,7 @@ import type {
 
 import type {
   BadRequestResponse,
+  FileAvailabilityOkResponse,
   HeartbeatOkResponse,
   InternalServerErrorResponse,
   MediaFileOkResponse,
@@ -70,6 +71,193 @@ const withQueryKey = <T extends object, K>(
     })
   }
   return result
+}
+
+export const getGetFileAvailabilityUrl = (fileId: number) => {
+  return `/v1/playback/files/${fileId}/availability`
+}
+
+/**
+ * Consulta, sem efeito colateral (não enfileira nada no cache), o que falta antes de
+ * iniciar uma sessão de playback pra este arquivo:
+ * - `READY`: já pode chamar `POST /v1/playback/sessions` — provider `LOCAL`, ou remoto
+ *   com o cache `COMPLETED`.
+ * - `NEEDS_DOWNLOAD`: provider remoto sem linha de cache, ou com a linha `FAILED`. O
+ *   cliente enfileira com `POST /v1/cache/items`.
+ * - `DOWNLOADING`: provider remoto com linha `QUEUED` ou `DOWNLOADING`. Não enfileire de
+ *   novo — só acompanhe pelo SSE de `/v1/cache/events` até chegar `COMPLETED`.
+ *
+ * Não traz progresso nem percentual — isso é papel exclusivo do SSE. `cacheItemId` vem
+ * preenchido sempre que já existe uma linha de cache (em qualquer status), pra o cliente
+ * correlacionar os eventos do SSE a este arquivo; `null` para provider `LOCAL` ou quando
+ * ainda não há linha.
+ * @summary Diz se o arquivo já pode tocar ou precisa ser baixado pro cache antes
+ */
+export const getFileAvailability = async (
+  fileId: number,
+  options?: Parameters<typeof apiFetch>[1],
+): Promise<FileAvailabilityOkResponse> => {
+  return apiFetch<FileAvailabilityOkResponse>(
+    getGetFileAvailabilityUrl(fileId),
+    {
+      ...options,
+      method: 'GET',
+    },
+  )
+}
+
+export const getGetFileAvailabilityQueryKey = (fileId: number) => {
+  return [`/v1/playback/files/${fileId}/availability`] as const
+}
+
+export const getGetFileAvailabilityQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFileAvailability>>,
+  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+>(
+  fileId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFileAvailability>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof apiFetch>
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {}
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFileAvailabilityQueryKey(fileId)
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFileAvailability>>
+  > = ({ signal }) => getFileAvailability(fileId, { signal, ...requestOptions })
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: fileId !== null && fileId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFileAvailability>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFileAvailabilityQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFileAvailability>>
+>
+export type GetFileAvailabilityQueryError = ErrorType<
+  NotFoundResponse | InternalServerErrorResponse
+>
+
+export function useGetFileAvailability<
+  TData = Awaited<ReturnType<typeof getFileAvailability>>,
+  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+>(
+  fileId: number,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFileAvailability>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFileAvailability>>,
+          TError,
+          Awaited<ReturnType<typeof getFileAvailability>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof apiFetch>
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+}
+export function useGetFileAvailability<
+  TData = Awaited<ReturnType<typeof getFileAvailability>>,
+  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+>(
+  fileId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFileAvailability>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFileAvailability>>,
+          TError,
+          Awaited<ReturnType<typeof getFileAvailability>>
+        >,
+        'initialData'
+      >
+    request?: SecondParameter<typeof apiFetch>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+}
+export function useGetFileAvailability<
+  TData = Awaited<ReturnType<typeof getFileAvailability>>,
+  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+>(
+  fileId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFileAvailability>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof apiFetch>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+}
+/**
+ * @summary Diz se o arquivo já pode tocar ou precisa ser baixado pro cache antes
+ */
+
+export function useGetFileAvailability<
+  TData = Awaited<ReturnType<typeof getFileAvailability>>,
+  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+>(
+  fileId: number,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFileAvailability>>,
+        TError,
+        TData
+      >
+    >
+    request?: SecondParameter<typeof apiFetch>
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>
+} {
+  const queryOptions = getGetFileAvailabilityQueryOptions(fileId, options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> }
+
+  return withQueryKey(query, queryOptions.queryKey)
 }
 
 export const getStartPlaybackSessionUrl = () => {

@@ -20,7 +20,7 @@ interface ApiErrorBody {
 
 const NO_JSON = Symbol('no-json')
 
-function getServerUrl(): string {
+export function getServerUrl(): string {
   return readStorage(STORAGE_KEYS.serverUrl, DEFAULT_SERVER_URL)
 }
 
