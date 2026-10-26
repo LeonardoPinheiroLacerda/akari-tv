@@ -1,4 +1,5 @@
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
+import { useScreenFocusable } from '@/app/screen'
 import { PlaceholderTile } from '@/ui/placeholder-tile'
 
 const RESULTS = 4
@@ -10,10 +11,7 @@ export const SEARCH_FOCUS_KEY = 'SEARCH'
  * teclado nem API. A busca real entra na fase 5 da especificação.
  */
 export function SearchScreen() {
-  const { ref, focusKey } = useFocusable({
-    focusKey: SEARCH_FOCUS_KEY,
-    saveLastFocusedChild: true,
-  })
+  const { ref, focusKey } = useScreenFocusable({ focusKey: SEARCH_FOCUS_KEY })
 
   return (
     <FocusContext.Provider value={focusKey}>

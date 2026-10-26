@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
+import { useScreenFocusable } from '@/app/screen'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import { useListRelationRootsInfinite } from '@/api/generated/anime-relations/anime-relations'
 import { pageInfiniteOptions } from '@/api/pagination'
@@ -27,10 +28,7 @@ const GRID_PADDING_REM = 1.25
  * o foco, trazendo a linha focada para dentro dela (seção 6).
  */
 export function HomeScreen() {
-  const { ref, focusKey } = useFocusable({
-    focusKey: HOME_FOCUS_KEY,
-    saveLastFocusedChild: true,
-  })
+  const { ref, focusKey } = useScreenFocusable({ focusKey: HOME_FOCUS_KEY })
   const [heroStore] = useState(() => createStore<AnimeResponse | undefined>(undefined))
   const scrollRef = useRef<HTMLDivElement>(null)
 

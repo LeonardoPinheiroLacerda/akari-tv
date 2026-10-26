@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import { useGetAnimeFranchise } from '@/api/generated/anime-relations/anime-relations'
+import { useScreenFocusable } from '@/app/screen'
 import { createStore } from '@/lib/store'
 import { AnimeHero } from '@/ui/anime-hero'
 import { POSTER_ROW_HEIGHT_REM, PosterRow } from '@/ui/poster-row'
@@ -29,10 +30,7 @@ interface AnimeScreenProps {
  * aparece.
  */
 function AnimeScreen({ anilistId }: AnimeScreenProps) {
-  const { ref, focusKey } = useFocusable({
-    focusKey: ANIME_FOCUS_KEY,
-    saveLastFocusedChild: true,
-  })
+  const { ref, focusKey } = useScreenFocusable({ focusKey: ANIME_FOCUS_KEY })
   const [heroStore] = useState(() => createStore<AnimeResponse | undefined>(undefined))
 
   const query = useGetAnimeFranchise(anilistId, {
