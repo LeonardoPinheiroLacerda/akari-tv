@@ -18,7 +18,11 @@ interface EpisodeCardProps {
   episode: VideoFileResponse
   index: number
   autoFocus: boolean
-  onFocused: (episode: VideoFileResponse, index: number, node: HTMLElement) => void
+  onFocused: (
+    episode: VideoFileResponse,
+    index: number,
+    node: HTMLElement,
+  ) => void
 }
 
 /** Card do episódio: thumbnail do TMDB com número e título na base. */
@@ -29,7 +33,8 @@ export const EpisodeCard = memo(function EpisodeCard({
   onFocused,
 }: EpisodeCardProps) {
   const handleFocus = useCallback(
-    (layout: FocusableComponentLayout) => onFocused(episode, index, layout.node),
+    (layout: FocusableComponentLayout) =>
+      onFocused(episode, index, layout.node),
     [episode, index, onFocused],
   )
   const thumbnail = episode.tmdbPairing?.thumbnailPreviewUrl
@@ -40,7 +45,10 @@ export const EpisodeCard = memo(function EpisodeCard({
     <Focusable autoFocus={autoFocus} onFocus={handleFocus}>
       {(focused) => (
         <div
-          className={cn('relative overflow-hidden rounded-xl', !thumbnail && 'bg-surface-elevated')}
+          className={cn(
+            'relative overflow-hidden rounded-xl',
+            !thumbnail && 'bg-surface-elevated',
+          )}
           style={{
             width: `${CARD_WIDTH_REM}rem`,
             height: `${CARD_HEIGHT_REM}rem`,
@@ -65,8 +73,14 @@ export const EpisodeCard = memo(function EpisodeCard({
             />
           )}
           <div className="absolute inset-x-0 bottom-0 px-3 pb-2">
-            {number && <p className="text-[1.75rem] leading-tight font-medium">{number}</p>}
-            <p className="truncate text-[1.75rem] leading-tight text-muted-foreground">{title}</p>
+            {number && (
+              <p className="text-[1.75rem] leading-tight font-medium">
+                {number}
+              </p>
+            )}
+            <p className="text-muted-foreground truncate text-[1.75rem] leading-tight">
+              {title}
+            </p>
           </div>
         </div>
       )}

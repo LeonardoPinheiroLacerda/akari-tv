@@ -1,6 +1,9 @@
 import { memo } from 'react'
 import { CalendarDays, Clock, Star } from 'lucide-react'
-import type { AnimeResponse, VideoFileResponse } from '@/api/generated/akariAPI.schemas'
+import type {
+  AnimeResponse,
+  VideoFileResponse,
+} from '@/api/generated/akariAPI.schemas'
 import { dateLabel, scoreLabel } from '@/lib/format'
 import { useStore, type Store } from '@/lib/store'
 import { AnimeTitle, Backdrop } from '@/ui/anime-hero'
@@ -17,7 +20,10 @@ interface EpisodeHeroProps {
  * ao navegar (nenhuma imagem grande decodificada a cada foco, seção 7); só o
  * texto acompanha o episódio em foco, recebido por `store`.
  */
-export const EpisodeHero = memo(function EpisodeHero({ anime, store }: EpisodeHeroProps) {
+export const EpisodeHero = memo(function EpisodeHero({
+  anime,
+  store,
+}: EpisodeHeroProps) {
   const episode = useStore(store)
   const pairing = episode?.tmdbPairing
   const number = episode && episodeNumberLabel(episode)
@@ -39,7 +45,10 @@ export const EpisodeHero = memo(function EpisodeHero({ anime, store }: EpisodeHe
         {pairing && (
           <div className="flex flex-wrap gap-3">
             {pairing.episodeAirDate && (
-              <InfoBadge icon={CalendarDays} label={dateLabel(pairing.episodeAirDate)} />
+              <InfoBadge
+                icon={CalendarDays}
+                label={dateLabel(pairing.episodeAirDate)}
+              />
             )}
             {pairing.episodeRuntime != null && (
               <InfoBadge icon={Clock} label={`${pairing.episodeRuntime} min`} />

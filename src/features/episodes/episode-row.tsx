@@ -1,5 +1,8 @@
 import { memo, useCallback } from 'react'
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import {
+  FocusContext,
+  useFocusable,
+} from '@noriginmedia/norigin-spatial-navigation'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { VideoFileResponse } from '@/api/generated/akariAPI.schemas'
 import { remToPx } from '@/lib/layout'
@@ -23,7 +26,10 @@ interface EpisodeRowProps {
  * episódios (BLEACH tem 366), mas só os visíveis mais a folga ficam no DOM.
  * A rolagem segue o foco com `scrollToIndex`, mantendo a folga do contorno.
  */
-export const EpisodeRow = memo(function EpisodeRow({ episodes, onFocused }: EpisodeRowProps) {
+export const EpisodeRow = memo(function EpisodeRow({
+  episodes,
+  onFocused,
+}: EpisodeRowProps) {
   const { ref, focusKey } = useFocusable<unknown, HTMLDivElement>({
     focusKey: 'EPISODES_ROW',
     saveLastFocusedChild: true,
@@ -55,10 +61,13 @@ export const EpisodeRow = memo(function EpisodeRow({ episodes, onFocused }: Epis
     <FocusContext.Provider value={focusKey}>
       <div
         ref={ref}
-        className="overflow-x-auto [scrollbar-width:none]"
+        className="[scrollbar-width:none] overflow-x-auto"
         style={{ height: `${EPISODE_ROW_HEIGHT_REM}rem` }}
       >
-        <div className="relative h-full" style={{ width: virtualizer.getTotalSize() }}>
+        <div
+          className="relative h-full"
+          style={{ width: virtualizer.getTotalSize() }}
+        >
           {virtualizer.getVirtualItems().map((item) => {
             const episode = episodes[item.index]
             if (!episode) return null

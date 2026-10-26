@@ -1,7 +1,17 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useParams } from 'react-router-dom'
 import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
-import type { AnimeResponse, VideoFileResponse } from '@/api/generated/akariAPI.schemas'
+import type {
+  AnimeResponse,
+  VideoFileResponse,
+} from '@/api/generated/akariAPI.schemas'
 import { useGetAnime } from '@/api/generated/anime/anime'
 import { useListAnimeEpisodesInfinite } from '@/api/generated/anime-episodes/anime-episodes'
 import { pageInfiniteOptions } from '@/api/pagination'
@@ -39,7 +49,9 @@ interface EpisodesScreenProps {
  */
 function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
   const { ref, focusKey } = useScreenFocusable({ focusKey: EPISODES_FOCUS_KEY })
-  const [heroStore] = useState(() => createStore<VideoFileResponse | undefined>(undefined))
+  const [heroStore] = useState(() =>
+    createStore<VideoFileResponse | undefined>(undefined),
+  )
 
   const enabled = Number.isInteger(anilistId)
   const animeQuery = useGetAnime(anilistId, { query: { enabled } })
@@ -48,7 +60,10 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
     { size: PAGE_SIZE },
     { query: { ...pageInfiniteOptions, enabled } },
   )
-  const episodes = useMemo(() => query.data?.pages.flatMap((page) => page.data) ?? [], [query.data])
+  const episodes = useMemo(
+    () => query.data?.pages.flatMap((page) => page.data) ?? [],
+    [query.data],
+  )
 
   // Último estado da query num ref: o callback de foco fica estável e os cards
   // memoizados não re-renderizam quando uma página nova chega.
@@ -61,7 +76,11 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
     (episode: VideoFileResponse, index: number) => {
       heroStore.set(episode)
       const { query: current, total } = latest.current
-      if (index >= total - PREFETCH_ITEMS && current.hasNextPage && !current.isFetchingNextPage) {
+      if (
+        index >= total - PREFETCH_ITEMS &&
+        current.hasNextPage &&
+        !current.isFetchingNextPage
+      ) {
         void current.fetchNextPage()
       }
     },
@@ -70,7 +89,9 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
 
   // Hero do anime recebe o filme por store, como nas outras telas; o valor
   // não muda depois de carregado.
-  const [movieStore] = useState(() => createStore<AnimeResponse | undefined>(undefined))
+  const [movieStore] = useState(() =>
+    createStore<AnimeResponse | undefined>(undefined),
+  )
   const isMovie = animeQuery.data?.format === 'MOVIE'
   useEffect(() => {
     if (isMovie) movieStore.set(animeQuery.data)
@@ -90,10 +111,14 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
             style={{ height: `${PLAY_BUTTON_HEIGHT_REM + 2}rem` }}
           >
             {query.isPending && (
-              <p className="text-[1.75rem] text-muted-foreground">Carregando…</p>
+              <p className="text-muted-foreground text-[1.75rem]">
+                Carregando…
+              </p>
             )}
             {query.isSuccess && episodes.length === 0 && (
-              <p className="text-[1.75rem] text-muted-foreground">Nenhum arquivo disponível.</p>
+              <p className="text-muted-foreground text-[1.75rem]">
+                Nenhum arquivo disponível.
+              </p>
             )}
             {/* O player ainda não existe: o OK fica sem ação até ele entrar. */}
             {episodes.length > 0 && (
@@ -101,7 +126,9 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
                 {episodes.map((file, index) => (
                   <PlayButton
                     key={file.id}
-                    label={episodes.length === 1 ? 'Assistir' : `Parte ${index + 1}`}
+                    label={
+                      episodes.length === 1 ? 'Assistir' : `Parte ${index + 1}`
+                    }
                     autoFocus={index === 0}
                   />
                 ))}
@@ -122,17 +149,26 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
       >
         <EpisodeHero anime={animeQuery.data} store={heroStore} />
 
-        <div className="mt-6 shrink-0" style={{ height: `${EPISODE_ROW_HEIGHT_REM}rem` }}>
-          {query.isPending && <p className="text-[1.75rem] text-muted-foreground">Carregando…</p>}
+        <div
+          className="mt-6 shrink-0"
+          style={{ height: `${EPISODE_ROW_HEIGHT_REM}rem` }}
+        >
+          {query.isPending && (
+            <p className="text-muted-foreground text-[1.75rem]">Carregando…</p>
+          )}
           {query.isError && (
-            <p className="text-[1.75rem] text-muted-foreground">
+            <p className="text-muted-foreground text-[1.75rem]">
               Não foi possível carregar os episódios ({query.error.message})
             </p>
           )}
           {query.isSuccess && episodes.length === 0 && (
-            <p className="text-[1.75rem] text-muted-foreground">Nenhum episódio disponível.</p>
+            <p className="text-muted-foreground text-[1.75rem]">
+              Nenhum episódio disponível.
+            </p>
           )}
-          {episodes.length > 0 && <EpisodeRow episodes={episodes} onFocused={handleFocused} />}
+          {episodes.length > 0 && (
+            <EpisodeRow episodes={episodes} onFocused={handleFocused} />
+          )}
         </div>
       </section>
     </FocusContext.Provider>

@@ -33,7 +33,10 @@ export function episodesLabel(episodes: number): string {
 }
 
 export function scoreLabel(score: number): string {
-  return score.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  return score.toLocaleString('pt-BR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })
 }
 
 /** Texto puro a partir da sinopse em HTML da API (quebras viram espaço). */
