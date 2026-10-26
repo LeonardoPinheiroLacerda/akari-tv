@@ -1,5 +1,6 @@
 export * from './anilist-search/anilist-search'
 export * from './anime/anime'
+export * from './anime-episodes/anime-episodes'
 export * from './anime-relations/anime-relations'
 export * from './anime-tmdb/anime-tmdb'
 export * from './anime-tmdb-file-pairing/anime-tmdb-file-pairing'

@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type CSSProperties } from 'react'
+import { memo, useState, type CSSProperties } from 'react'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import {
   CalendarDays,
@@ -16,22 +16,8 @@ import {
 } from 'lucide-react'
 import { episodesLabel, formatLabel, htmlToText, scoreLabel, seasonLabel } from '@/lib/format'
 import { useStore, type Store } from '@/lib/store'
+import { SETTLE_MS, useSettled } from '@/lib/settled'
 import { InfoBadge } from '@/ui/info-badge'
-
-// Espera o foco assentar antes de trocar o hero: navegando rápido pela grade,
-// só o item onde o usuário parou decodifica o banner (seção 7: imagens grandes
-// decodificadas uma por vez).
-const SETTLE_MS = 250
-
-function useSettled<T>(value: T, delayMs: number): T {
-  const [settled, setSettled] = useState(value)
-  useEffect(() => {
-    const id = setTimeout(() => setSettled(value), delayMs)
-    return () => clearTimeout(id)
-  }, [value, delayMs])
-  // Primeiro valor (nada exibido ainda) aparece na hora.
-  return settled ?? value
-}
 
 interface FadeInImageProps {
   src: string
@@ -93,7 +79,7 @@ function layerFor(image: BackdropImage) {
  * Degradês estáticos dão leitura ao texto à esquerda e fundem o fundo com a
  * linha de pôsteres embaixo.
  */
-const Backdrop = memo(function Backdrop({ src, blurred = false }: Partial<BackdropImage>) {
+export const Backdrop = memo(function Backdrop({ src, blurred = false }: Partial<BackdropImage>) {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
       {src && (
@@ -168,13 +154,27 @@ function badgesFor(anime: AnimeResponse): Badge[] {
   return badges
 }
 
+/** Logo do anime (com fade ao trocar) ou, sem logo, o título escrito. */
+export function AnimeTitle({ anime }: { anime?: AnimeResponse }) {
+  const title = anime?.titles?.main ?? ''
+  return anime?.logo ? (
+    <FadeInImage
+      key={anime.logo}
+      src={anime.logo}
+      alt={title}
+      className="h-[9rem] w-[32rem] object-contain object-left-bottom"
+    />
+  ) : (
+    <h1 className="text-[3.5rem] leading-tight font-medium">{title}</h1>
+  )
+}
+
 /**
  * Hero fixo das telas de anime (Início, detalhe): mostra o anime em foco nas
  * linhas de pôsteres, recebido por `store` para o foco não subir para a tela.
  */
 export const AnimeHero = memo(function AnimeHero({ store }: AnimeHeroProps) {
   const anime = useSettled(useStore(store), SETTLE_MS)
-  const title = anime?.titles?.main ?? ''
   const backdrop = anime?.banner ?? anime?.thumbnails?.small ?? anime?.thumbnails?.medium
 
   const badges = anime ? badgesFor(anime) : []
@@ -185,16 +185,7 @@ export const AnimeHero = memo(function AnimeHero({ store }: AnimeHeroProps) {
       {/* Ocupa toda a altura que sobra acima da linha de pôsteres; o texto
           fica ancorado embaixo, junto da linha. */}
       <div className="relative flex min-h-0 flex-1 flex-col items-start justify-end gap-4">
-        {anime?.logo ? (
-          <FadeInImage
-            key={anime.logo}
-            src={anime.logo}
-            alt={title}
-            className="h-[9rem] w-[32rem] object-contain object-left-bottom"
-          />
-        ) : (
-          <h1 className="text-[3.5rem] leading-tight font-medium">{title}</h1>
-        )}
+        <AnimeTitle anime={anime} />
         {badges.length > 0 && (
           <div className="flex flex-wrap gap-3">
             {badges.map(({ key, ...badge }) => (

@@ -2252,6 +2252,17 @@ export type SearchTmdbTvParams = {
   forceRefresh?: ForceRefreshParamParameter
 }
 
+export type ListAnimeEpisodesParams = {
+  /**
+   * Número da página (0-based)
+   */
+  page?: PageParamParameter
+  /**
+   * Tamanho máximo de itens por página
+   */
+  size?: SizeParamParameter
+}
+
 export type ListRelationRootsParams = {
   /**
    * Número da página (0-based)

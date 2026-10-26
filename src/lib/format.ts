@@ -41,3 +41,14 @@ export function htmlToText(html: string): string {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim()
 }
+
+/** Data ISO-8601 (`2004-10-05`) como "5 de out. de 2004", sem deslocar o dia por fuso. */
+export function dateLabel(iso: string): string {
+  const [year, month, day] = iso.split('-').map(Number)
+  if (!year || !month || !day) return iso
+  return new Date(year, month - 1, day).toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}

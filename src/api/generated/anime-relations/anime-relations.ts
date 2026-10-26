@@ -662,18 +662,24 @@ export const getGetAnimeFranchiseUrl = (anilistId: number) => {
  * manuais).
  *
  * Classificação a partir das arestas de `anime_relation`:
+ * - **Raiz**: sobe por `PREQUEL`/`PARENT` (ancestral de continuidade) ou por `SUMMARY` em
+ *   sentido invertido (uma aresta `A -[SUMMARY]-> B` indica que `B` é derivado de `A` —
+ *   cobre filme/recap ligado ao título principal só por essa aresta, que senão viraria
+ *   raiz da própria "franquia"), até não sobrar mais nenhuma (ou até uma curadoria manual
+ *   de raiz). `ALTERNATIVE` não conta pra achar a raiz — a AniList tagueia esse tipo de
+ *   forma simétrica com frequência, sem um lado objetivamente ancestral.
  * - **`seasons`**: a raiz mais a cadeia de `SEQUEL` a partir dela, na ordem da cadeia, só
  *   os de formato de série (`TV`, `TV_SHORT`, `ONA`).
  * - **`movies`**\/**`specials`**: os demais animes da franquia ligados por `SIDE_STORY`,
- *   `SPIN_OFF` ou `SUMMARY`, mais os da cadeia de `SEQUEL` que não são de formato de
- *   série — separados por formato: `MOVIE` vai pra `movies`, o resto (`OVA`, `SPECIAL`,
- *   ...) pra `specials`. As duas ordenadas por `year`, depois por `season`
- *   (`WINTER`/`SPRING`/`SUMMER`/`FALL`), com `anilistId` como desempate — a AniList não
- *   tem uma data de estreia mais precisa persistida localmente.
- * - Ficam fora de todas as listas: animes ligados só por `ALTERNATIVE`, `CHARACTER`,
- *   `OTHER`/`ADAPTATION`, e qualquer anime da cadeia de `SEQUEL` com formato fora das
- *   listas acima (ex. `MUSIC`, formato ausente) que não tenha também uma aresta própria
- *   de `SIDE_STORY`/`SPIN_OFF`/`SUMMARY`.
+ *   `SPIN_OFF`, `SUMMARY`, `PARENT` ou `ALTERNATIVE`, mais os da cadeia de `SEQUEL` que
+ *   não são de formato de série — separados por formato: `MOVIE` vai pra `movies`, o
+ *   resto (`OVA`, `SPECIAL`, ...) pra `specials`. As duas ordenadas por `year`, depois
+ *   por `season` (`WINTER`/`SPRING`/`SUMMER`/`FALL`), com `anilistId` como desempate — a
+ *   AniList não tem uma data de estreia mais precisa persistida localmente.
+ * - Ficam fora de todas as listas: animes ligados só por `CHARACTER`, `OTHER`/
+ *   `ADAPTATION`, e qualquer anime da cadeia de `SEQUEL` com formato fora das listas
+ *   acima (ex. `MUSIC`, formato ausente) que não tenha também uma aresta própria de
+ *   `SIDE_STORY`/`SPIN_OFF`/`SUMMARY`/`PARENT`/`ALTERNATIVE`.
  * - Só entram animes já vinculados à coleção (com metadata local salva) — a mesma
  *   limitação do `relations/graph`: uma relação pra um anime ainda não vinculado
  *   simplesmente não existe em `anime_relation`.

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
+import { useScreenFocusable } from '@/app/screen'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import { useGetAnimeFranchise } from '@/api/generated/anime-relations/anime-relations'
-import { useScreenFocusable } from '@/app/screen'
+import { PUSHED_SCREEN } from '@/lib/navigation'
 import { createStore } from '@/lib/store'
 import { AnimeHero } from '@/ui/anime-hero'
 import { POSTER_ROW_HEIGHT_REM, PosterRow } from '@/ui/poster-row'
@@ -71,6 +72,13 @@ function AnimeScreen({ anilistId }: AnimeScreenProps) {
 
   const handleFocused = useCallback((anime: AnimeResponse) => heroStore.set(anime), [heroStore])
 
+  const navigate = useNavigate()
+  const handleSelect = useCallback(
+    (anime: AnimeResponse) =>
+      navigate(`/anime/${anime.anilistId}/episodes`, { state: PUSHED_SCREEN }),
+    [navigate],
+  )
+
   return (
     <FocusContext.Provider value={focusKey}>
       <section
@@ -99,6 +107,7 @@ function AnimeScreen({ anilistId }: AnimeScreenProps) {
                 animes={active.animes}
                 autoFocusFirst={autoFocusPosters}
                 onFocused={handleFocused}
+                onSelect={handleSelect}
               />
             </>
           )}
