@@ -1,10 +1,26 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { useLocation, useNavigate, useNavigationType, useOutlet } from 'react-router-dom'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
+import {
+  useLocation,
+  useNavigate,
+  useNavigationType,
+  useOutlet,
+} from 'react-router-dom'
 import { setFocus } from '@noriginmedia/norigin-spatial-navigation'
 import { HOME_FOCUS_KEY } from '@/features/home/home-screen'
 import { SEARCH_FOCUS_KEY } from '@/features/search/search-screen'
 import { isPushedScreen } from '@/lib/navigation'
-import { Sidebar, SIDEBAR_COLLAPSED_REM, type SidebarItemKey } from '@/ui/sidebar'
+import {
+  Sidebar,
+  SIDEBAR_COLLAPSED_REM,
+  type SidebarItemKey,
+} from '@/ui/sidebar'
 import { registerBackHandler } from './back'
 import { ScreenActiveContext } from './screen'
 
@@ -31,7 +47,8 @@ interface StackEntry {
 /**
  * Próxima pilha para uma navegação: tela aberta a partir de outra empilha;
  * Voltar (`POP`) desempilha até a tela de destino; aba da sidebar (`REPLACE`
- * sem ser tela empilhada) recomeça a pilha, já que abas são raízes.
+ * sem ser tela empilhada) recomeça a pilha, já que abas são raízes; tela
+ * empilhada com `REPLACE` troca o topo.
  */
 function nextStack(
   stack: StackEntry[],
@@ -43,12 +60,18 @@ function nextStack(
     const index = stack.findIndex((item) => item.key === entry.key)
     return index >= 0 ? stack.slice(0, index + 1) : [entry]
   }
+  // Tela empilhada trocada no lugar (ex.: próximo episódio): substitui o topo,
+  // para a anterior desmontar em vez de ficar oculta atrás.
+  if (pushed && navigationType === 'REPLACE')
+    return [...stack.slice(0, -1), entry]
   if (pushed) return [...stack, entry].slice(-MAX_MOUNTED_SCREENS)
   return [entry]
 }
 
 function sidebarKeyFor(pathname: string): SidebarItemKey | undefined {
-  return (Object.keys(PATHS) as SidebarItemKey[]).find((key) => PATHS[key] === pathname)
+  return (Object.keys(PATHS) as SidebarItemKey[]).find(
+    (key) => PATHS[key] === pathname,
+  )
 }
 
 /**
@@ -70,12 +93,19 @@ export function AppLayout() {
   // tela empilhada continua lendo os próprios params enquanto está oculta.
   const outlet = useOutlet()
   const navigationType = useNavigationType()
-  const [stack, setStack] = useState<StackEntry[]>(() => [{ key: location.key, element: outlet }])
+  const [stack, setStack] = useState<StackEntry[]>(() => [
+    { key: location.key, element: outlet },
+  ])
   const [stackLocationKey, setStackLocationKey] = useState(location.key)
   if (location.key !== stackLocationKey) {
     setStackLocationKey(location.key)
     setStack((current) =>
-      nextStack(current, { key: location.key, element: outlet }, navigationType, pushed),
+      nextStack(
+        current,
+        { key: location.key, element: outlet },
+        navigationType,
+        pushed,
+      ),
     )
   }
 
@@ -92,30 +122,40 @@ export function AppLayout() {
     [activeKey, navigate],
   )
 
+  // Registrado uma vez só, na base da pilha do Voltar: handlers de painéis e
+  // telas (ex.: o painel de faixas do player) ficam por cima e respondem antes.
+  // A rota atual é lida por ref para o registro não se repetir a cada navegação,
+  // o que o levaria para o topo da pilha.
+  const route = useRef({ pathname, pushed })
+  useLayoutEffect(() => {
+    route.current = { pathname, pushed }
+  })
   useEffect(() => {
     return registerBackHandler(() => {
-      if (pushed) {
+      if (route.current.pushed) {
         navigate(-1)
         return true
       }
-      if (pathname === PATHS.home) return false
+      if (route.current.pathname === PATHS.home) return false
       navigate(PATHS.home, { replace: true })
       return true
     })
-  }, [navigate, pathname, pushed])
+  }, [navigate])
 
   return (
     <>
       <Sidebar activeKey={activeKey} onSelect={handleSelect} />
       <main
-        className="min-h-screen bg-background py-[3.375rem] pr-8 text-foreground"
+        className="bg-background text-foreground min-h-screen py-[3.375rem] pr-8"
         style={{ paddingLeft: `${SIDEBAR_COLLAPSED_REM}rem` }}
       >
         {stack.map((entry, index) => {
           const active = index === stack.length - 1
           return (
             <ScreenActiveContext.Provider key={entry.key} value={active}>
-              <div style={{ display: active ? undefined : 'none' }}>{entry.element}</div>
+              <div style={{ display: active ? undefined : 'none' }}>
+                {entry.element}
+              </div>
             </ScreenActiveContext.Provider>
           )
         })}
