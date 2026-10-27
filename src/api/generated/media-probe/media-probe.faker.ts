@@ -56,6 +56,10 @@ export const getGetMediaProbeResponseMock = (
       faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),
+    sampleAspectRatio: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
     frameRate: faker.helpers.arrayElement([
       faker.number.float({ fractionDigits: 2 }),
       null,
@@ -135,6 +139,17 @@ export const getGetMediaProbeResponseMock = (
     forced: faker.helpers.arrayElement([faker.datatype.boolean(), null]),
     hearingImpaired: faker.helpers.arrayElement([
       faker.datatype.boolean(),
+      null,
+    ]),
+  })),
+  chapters: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    startSeconds: faker.number.float({ fractionDigits: 2 }),
+    endSeconds: faker.number.float({ fractionDigits: 2 }),
+    title: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
       null,
     ]),
   })),

@@ -128,6 +128,9 @@ export interface ErrorDetail {
  * - `INTEGRATION_NOT_CONFIGURED` (503): uma preferência obrigatória está sem valor —
  *   o admin precisa configurá-la em
  *   `PUT /v1/settings/{key}`.
+ * - `TRANSCODE_FAILED` (500): o transcode de uma sessão de playback morreu antes de gerar
+ *   a playlist (ou depois de já ter gerado) e não vai se recuperar — o cliente deve parar
+ *   de tentar e mostrar erro, diferente do `RESOURCE_NOT_FOUND` de "ainda não gerada".
  * - `INTERNAL_ERROR` (500): erro inesperado no servidor.
  */
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode]
@@ -139,6 +142,7 @@ export const ApiErrorCode = {
   REQUEST_ERROR: 'REQUEST_ERROR',
   INTEGRATION_ERROR: 'INTEGRATION_ERROR',
   INTEGRATION_NOT_CONFIGURED: 'INTEGRATION_NOT_CONFIGURED',
+  TRANSCODE_FAILED: 'TRANSCODE_FAILED',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const
 
@@ -613,6 +617,11 @@ export interface VideoTrack {
    */
   displayAspectRatio?: string | null
   /**
+   * Proporção de aspecto da amostra/pixel (ex.: `1:1` pixel quadrado, `4:3` anamórfico). Diferente de `1:1` indica vídeo anamórfico — `width`x`height` não reflete a proporção de exibição, só `displayAspectRatio` reflete
+   * @nullable
+   */
+  sampleAspectRatio?: string | null
+  /**
    * Quadros por segundo, calculado do `avg_frame_rate` do ffprobe (ex.: `23.976`)
    * @nullable
    */
@@ -680,8 +689,11 @@ export interface AudioTrack {
 export interface SubtitleTrack {
   index?: StreamIndex
   /**
-   * Codec no nome do ffprobe (ex.: `subrip`, `ass`). No playback, `subrip`/`srt` vira
-   * legenda soft (WebVTT) e os demais são queimados no vídeo.
+   * Codec no nome do ffprobe (ex.: `subrip`, `ass`, `hdmv_pgs_subtitle`). No playback,
+   * `subrip`/`srt` vira legenda soft (WebVTT); os demais formatos de texto (ex.: `ass`)
+   * são queimados no vídeo via libass; formatos de imagem (`hdmv_pgs_subtitle`,
+   * `dvd_subtitle`, `dvb_subtitle`) são queimados via overlay do próprio stream de
+   * legenda decodificado.
    * @nullable
    */
   codec?: string | null
@@ -701,6 +713,23 @@ export interface SubtitleTrack {
 }
 
 /**
+ * Capítulo do arquivo, na ordem em que o ffprobe os lista — exatamente como estão
+ * gravados, sem fundir, reordenar ou corrigir sobreposições (arquivos diferentes podem
+ * ter capítulos que se sobrepõem).
+ */
+export interface Chapter {
+  /** Instante de início do capítulo, em segundos */
+  startSeconds: number
+  /** Instante de fim do capítulo, em segundos */
+  endSeconds: number
+  /**
+   * Tag `title` do capítulo (ex.: `Abertura`, `Parte A`); `null` se ausente
+   * @nullable
+   */
+  title?: string | null
+}
+
+/**
  * Metadados técnicos da mídia, com as faixas separadas por tipo na ordem do arquivo
  */
 export interface MediaInfoResponse {
@@ -708,6 +737,8 @@ export interface MediaInfoResponse {
   video: VideoTrack[]
   audio: AudioTrack[]
   subtitles: SubtitleTrack[]
+  /** Capítulos do arquivo, na ordem do arquivo; lista vazia se não houver */
+  chapters: Chapter[]
 }
 
 /**
@@ -1769,6 +1800,11 @@ export type ServiceUnavailableResponse = ApiError
  * Erro inesperado no servidor (`INTERNAL_ERROR`)
  */
 export type InternalServerErrorResponse = ApiError
+
+/**
+ * O transcode da sessão de playback falhou e não vai gerar a playlist (`TRANSCODE_FAILED`), ou erro inesperado no servidor (`INTERNAL_ERROR`)
+ */
+export type TranscodeFailedResponse = ApiError
 
 /**
  * Página (possivelmente vazia) de providers

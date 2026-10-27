@@ -16,7 +16,7 @@ import { useGetAnime } from '@/api/generated/anime/anime'
 import { useListAnimeEpisodesInfinite } from '@/api/generated/anime-episodes/anime-episodes'
 import { pageInfiniteOptions } from '@/api/pagination'
 import { useScreenFocusable } from '@/app/screen'
-import { playbackRoute } from '@/lib/navigation'
+import { playbackRoute, type PlaybackItem } from '@/lib/navigation'
 import { createStore } from '@/lib/store'
 import { AnimeHero } from '@/ui/anime-hero'
 import { PLAY_BUTTON_HEIGHT_REM, PlayButton } from '@/ui/play-button'
@@ -91,28 +91,57 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
 
   const navigate = useNavigate()
   const anime = animeQuery.data
-  const play = useCallback(
-    (file: VideoFileResponse, title: string, subtitle?: string) =>
-      navigate(
-        ...playbackRoute(file.id, {
-          title,
-          subtitle,
-          backdrop: anime?.banner ?? undefined,
-        }),
-      ),
-    [navigate, anime],
+  const backdrop = anime?.banner ?? undefined
+  const episodeItem = useCallback(
+    (episode: VideoFileResponse): PlaybackItem => ({
+      fileId: episode.id,
+      display: {
+        title: episodeTitle(episode),
+        subtitle: [anime?.titles?.main, episodeNumberLabel(episode)]
+          .filter(Boolean)
+          .join(' · '),
+        backdrop,
+      },
+    }),
+    [anime, backdrop],
   )
+  // Os que vêm antes e depois na lista já carregada, na ordem do backend. Se
+  // o episódio escolhido é o último carregado, não há próximo mesmo havendo
+  // mais páginas.
   const handleSelectEpisode = useCallback(
     (episode: VideoFileResponse) => {
-      const number = episodeNumberLabel(episode)
-      const animeTitle = anime?.titles?.main
-      play(
-        episode,
-        episodeTitle(episode),
-        [animeTitle, number].filter(Boolean).join(' · '),
+      const index = episodes.findIndex((item) => item.id === episode.id)
+      navigate(
+        ...playbackRoute(episodeItem(episode), {
+          previous: episodes.slice(0, index).map(episodeItem),
+          queue: episodes.slice(index + 1).map(episodeItem),
+        }),
       )
     },
-    [play, anime],
+    [episodes, episodeItem, navigate],
+  )
+  const partItem = useCallback(
+    (index: number): PlaybackItem => ({
+      fileId: episodes[index]?.id ?? 0,
+      display: {
+        title: anime?.titles?.main ?? episodes[index]?.name ?? '',
+        subtitle: episodes.length === 1 ? undefined : `Parte ${index + 1}`,
+        backdrop,
+      },
+    }),
+    [anime, backdrop, episodes],
+  )
+  const playPart = useCallback(
+    (index: number) => {
+      const items = episodes.map((_, partIndex) => partItem(partIndex))
+      navigate(
+        ...playbackRoute(partItem(index), {
+          previous: items.slice(0, index),
+          queue: items.slice(index + 1),
+        }),
+      )
+    },
+    [episodes, navigate, partItem],
   )
 
   // Hero do anime recebe o filme por store, como nas outras telas; o valor
@@ -157,15 +186,7 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
                       episodes.length === 1 ? 'Assistir' : `Parte ${index + 1}`
                     }
                     autoFocus={index === 0}
-                    onPress={() =>
-                      play(
-                        file,
-                        anime?.titles?.main ?? file.name,
-                        episodes.length === 1
-                          ? undefined
-                          : `Parte ${index + 1}`,
-                      )
-                    }
+                    onPress={() => playPart(index)}
                   />
                 ))}
               </div>

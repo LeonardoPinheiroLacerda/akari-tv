@@ -48,6 +48,7 @@ import type {
   SessionOkResponse,
   StartPlaybackSessionRequestBodyBody,
   SwitchTracksRequestBodyBody,
+  TranscodeFailedResponse,
 } from '../akariAPI.schemas'
 
 import { apiFetch } from '../../mutator'
@@ -270,6 +271,8 @@ export const getStartPlaybackSessionUrl = () => {
  * (UUID) que identifica a sessão, junto do endereço da playlist `m3u8`.
  *
  * Responde `404` se o vídeo é de provider remoto e ainda não terminou de baixar no cache.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` morrer logo depois de subir, antes
+ * de confirmar que o transcode começou — nesse caso a sessão não é criada.
  * @summary Inicia uma sessão de transcode
  */
 export const startPlaybackSession = async (
@@ -315,7 +318,7 @@ export const getStartPlaybackSessionMutationOptions = <
   TError = ErrorType<
     | BadRequestResponse
     | NotFoundResponse
-    | InternalServerErrorResponse
+    | TranscodeFailedResponse
     | ServiceUnavailableResponse
   >,
   TContext = unknown,
@@ -362,7 +365,7 @@ export type StartPlaybackSessionMutationBody =
 export type StartPlaybackSessionMutationError = ErrorType<
   | BadRequestResponse
   | NotFoundResponse
-  | InternalServerErrorResponse
+  | TranscodeFailedResponse
   | ServiceUnavailableResponse
 >
 export type StartPlaybackSessionMutationVariables = {
@@ -376,7 +379,7 @@ export const useStartPlaybackSession = <
   TError = ErrorType<
     | BadRequestResponse
     | NotFoundResponse
-    | InternalServerErrorResponse
+    | TranscodeFailedResponse
     | ServiceUnavailableResponse
   >,
   TContext = unknown,
@@ -409,7 +412,8 @@ export const getSeekPlaybackSessionUrl = (sessionId: string) => {
 /**
  * Reposiciona o transcode de uma sessão já iniciada para o instante informado. A playlist
  * `m3u8` passa a refletir a nova posição. Responde `404` se a sessão não existe ou já
- * expirou.
+ * expirou. Responde `500` com `TRANSCODE_FAILED` se o reinício do `ffmpeg` falhar logo
+ * depois de subir.
  * @summary Reposiciona o transcode de uma sessão
  */
 export const seekPlaybackSession = async (
@@ -456,7 +460,7 @@ export const getSeekPlaybackSessionMutationOptions = <
   TError = ErrorType<
     | BadRequestResponse
     | NotFoundResponse
-    | InternalServerErrorResponse
+    | TranscodeFailedResponse
     | ServiceUnavailableResponse
   >,
   TContext = unknown,
@@ -502,7 +506,7 @@ export type SeekPlaybackSessionMutationBody = SeekRequestBodyBody
 export type SeekPlaybackSessionMutationError = ErrorType<
   | BadRequestResponse
   | NotFoundResponse
-  | InternalServerErrorResponse
+  | TranscodeFailedResponse
   | ServiceUnavailableResponse
 >
 export type SeekPlaybackSessionMutationVariables = {
@@ -517,7 +521,7 @@ export const useSeekPlaybackSession = <
   TError = ErrorType<
     | BadRequestResponse
     | NotFoundResponse
-    | InternalServerErrorResponse
+    | TranscodeFailedResponse
     | ServiceUnavailableResponse
   >,
   TContext = unknown,
@@ -552,7 +556,8 @@ export const getSwitchPlaybackSessionTracksUrl = (sessionId: string) => {
  * reiniciando o transcode a partir do instante informado. Ao contrário do `seek`, esta
  * operação sempre reinicia o processo de transcode — não há posição que evite o
  * reinício, já que trocar `-map`/filtro de legenda exige um novo processo `ffmpeg`.
- * Responde `404` se a sessão não existe ou já expirou.
+ * Responde `404` se a sessão não existe ou já expirou. Responde `500` com
+ * `TRANSCODE_FAILED` se o reinício do `ffmpeg` falhar logo depois de subir.
  * @summary Troca as faixas de áudio/legenda de uma sessão
  */
 export const switchPlaybackSessionTracks = async (
@@ -602,7 +607,7 @@ export const getSwitchPlaybackSessionTracksMutationOptions = <
   TError = ErrorType<
     | BadRequestResponse
     | NotFoundResponse
-    | InternalServerErrorResponse
+    | TranscodeFailedResponse
     | ServiceUnavailableResponse
   >,
   TContext = unknown,
@@ -649,7 +654,7 @@ export type SwitchPlaybackSessionTracksMutationBody =
 export type SwitchPlaybackSessionTracksMutationError = ErrorType<
   | BadRequestResponse
   | NotFoundResponse
-  | InternalServerErrorResponse
+  | TranscodeFailedResponse
   | ServiceUnavailableResponse
 >
 export type SwitchPlaybackSessionTracksMutationVariables = {
@@ -664,7 +669,7 @@ export const useSwitchPlaybackSessionTracks = <
   TError = ErrorType<
     | BadRequestResponse
     | NotFoundResponse
-    | InternalServerErrorResponse
+    | TranscodeFailedResponse
     | ServiceUnavailableResponse
   >,
   TContext = unknown,
@@ -699,7 +704,9 @@ export const getGetPlaybackPlaylistUrl = (sessionId: string) => {
  * transcode produz um master playlist (ABR com várias resoluções, ou legenda soft), é ele que
  * é devolvido — e ele referencia os variant playlists `stream_N.m3u8`. Caso contrário,
  * devolve a media playlist da rendition única. Responde `404` se a sessão não existe,
- * expirou ou ainda não produziu playlist.
+ * expirou ou ainda não produziu playlist — nesse caso o cliente deve continuar tentando.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` já morreu e essa playlist nunca vai
+ * ser gerada — nesse caso o cliente deve parar de tentar e mostrar erro.
  *
  * O header `X-Playback-Heartbeat-Ttl-Seconds` informa, em segundos, o TTL do heartbeat que o
  * cliente deve respeitar — é o mesmo prazo devolvido no corpo do endpoint de heartbeat. O
@@ -727,7 +734,7 @@ export const getGetPlaybackPlaylistQueryKey = (sessionId: string) => {
 export const getGetPlaybackPlaylistQueryOptions = <
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
-    NotFoundResponse | InternalServerErrorResponse | ServiceUnavailableResponse
+    NotFoundResponse | TranscodeFailedResponse | ServiceUnavailableResponse
   >,
 >(
   sessionId: string,
@@ -768,13 +775,13 @@ export type GetPlaybackPlaylistQueryResult = NonNullable<
   Awaited<ReturnType<typeof getPlaybackPlaylist>>
 >
 export type GetPlaybackPlaylistQueryError = ErrorType<
-  NotFoundResponse | InternalServerErrorResponse | ServiceUnavailableResponse
+  NotFoundResponse | TranscodeFailedResponse | ServiceUnavailableResponse
 >
 
 export function useGetPlaybackPlaylist<
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
-    NotFoundResponse | InternalServerErrorResponse | ServiceUnavailableResponse
+    NotFoundResponse | TranscodeFailedResponse | ServiceUnavailableResponse
   >,
 >(
   sessionId: string,
@@ -803,7 +810,7 @@ export function useGetPlaybackPlaylist<
 export function useGetPlaybackPlaylist<
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
-    NotFoundResponse | InternalServerErrorResponse | ServiceUnavailableResponse
+    NotFoundResponse | TranscodeFailedResponse | ServiceUnavailableResponse
   >,
 >(
   sessionId: string,
@@ -832,7 +839,7 @@ export function useGetPlaybackPlaylist<
 export function useGetPlaybackPlaylist<
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
-    NotFoundResponse | InternalServerErrorResponse | ServiceUnavailableResponse
+    NotFoundResponse | TranscodeFailedResponse | ServiceUnavailableResponse
   >,
 >(
   sessionId: string,
@@ -857,7 +864,7 @@ export function useGetPlaybackPlaylist<
 export function useGetPlaybackPlaylist<
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
-    NotFoundResponse | InternalServerErrorResponse | ServiceUnavailableResponse
+    NotFoundResponse | TranscodeFailedResponse | ServiceUnavailableResponse
   >,
 >(
   sessionId: string,

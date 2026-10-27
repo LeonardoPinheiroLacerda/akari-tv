@@ -172,8 +172,11 @@ export function useCacheDownload(fileId: number) {
       }
     }
 
-    void run()
+    // Adiado pelo mesmo motivo do início da sessão (`usePlaybackSession`): a
+    // montagem descartada do StrictMode não chega a consultar nem enfileirar.
+    const startTimer = setTimeout(() => void run(), 0)
     return () => {
+      clearTimeout(startTimer)
       controller.abort()
       closeStream?.()
       clearTimeout(retryTimer)

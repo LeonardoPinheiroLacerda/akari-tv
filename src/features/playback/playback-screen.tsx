@@ -1,10 +1,19 @@
-import { useLocation, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
+import { useGetMediaProbe } from '@/api/generated/media-probe/media-probe'
 import { useScreenFocusable } from '@/app/screen'
 import { remainingLabel, speedLabel } from '@/lib/format'
-import { playbackDisplayFrom } from '@/lib/navigation'
+import {
+  playbackDisplayFrom,
+  playbackListFrom,
+  siblingPlaybackRoute,
+} from '@/lib/navigation'
 import { Backdrop } from '@/ui/anime-hero'
 import { PlayButton } from '@/ui/play-button'
+import { EndScreen } from './end-screen'
+import { Player } from './player'
+import { usePrefetchNext } from './use-prefetch-next'
 import { useCacheDownload, type CacheDownloadState } from './use-cache-download'
 
 const PLAYBACK_FOCUS_KEY = 'PLAYBACK'
@@ -26,7 +35,7 @@ function statusText(state: CacheDownloadState): string {
         ? 'Baixando…'
         : `Baixando ${Math.floor(state.percentage)}%`
     case 'ready':
-      return 'Pronto para reproduzir'
+      return 'Preparando a reprodução…'
     case 'failed':
       return 'Não foi possível baixar o arquivo'
     case 'error':
@@ -44,7 +53,6 @@ function detailText(state: CacheDownloadState): string | undefined {
   }
   if (state.kind === 'queued')
     return 'O download começa assim que a fila liberar.'
-  if (state.kind === 'ready') return 'O player entra na próxima etapa.'
   if (state.kind === 'failed' || state.kind === 'error') return state.message
   return undefined
 }
@@ -54,14 +62,87 @@ interface PlaybackScreenProps {
 }
 
 /**
- * Reprodução (placeholder): por enquanto só prepara o arquivo — se ele está num
- * storage remoto, baixa para o cache e mostra o progresso — e para em "Pronto
- * para reproduzir". O player (sessão HLS) entra na próxima etapa.
+ * Reprodução em tela cheia (sem sidebar). Primeiro prepara o arquivo — se ele
+ * está num storage remoto, baixa para o cache mostrando o progresso — e, com
+ * ele pronto, lê as faixas (mediaprobe) e entrega para o player. A região é
+ * uma fronteira de foco: as setas não alcançam a sidebar escondida.
  */
 function PlaybackScreen({ fileId }: PlaybackScreenProps) {
-  const { ref, focusKey } = useScreenFocusable({ focusKey: PLAYBACK_FOCUS_KEY })
-  const display = playbackDisplayFrom(useLocation().state)
+  const { ref, focusKey, focusSelf } = useScreenFocusable({
+    focusKey: PLAYBACK_FOCUS_KEY,
+    isFocusBoundary: true,
+  })
+  // Tira o foco da tela de baixo (que fica montada e oculta): sem isso o OK
+  // ainda acionaria o card de episódio que abriu esta tela.
+  useEffect(() => {
+    focusSelf()
+  }, [focusSelf])
+  const location = useLocation()
+  const display = playbackDisplayFrom(location.state)
+  const list = playbackListFrom(location.state)
+  const { queue } = list
+  const navigate = useNavigate()
+
+  // Fim do vídeo: o player sai (a sessão para de receber heartbeat e expira)
+  // e entra a tela de fim com o próximo da fila.
+  const [ended, setEnded] = useState(false)
+  const handleEnded = useCallback(() => setEnded(true), [])
+  // Anterior/próximo da lista de origem, trocando a tela no lugar.
+  const goSibling = useCallback(
+    (direction: 1 | -1) => {
+      if (!display) return
+      const route = siblingPlaybackRoute({ fileId, display }, list, direction)
+      if (route) navigate(...route)
+    },
+    [display, fileId, list, navigate],
+  )
+  const handleNext = useCallback(() => goSibling(1), [goSibling])
+  const handlePrevious = useCallback(() => goSibling(-1), [goSibling])
+  const handleBack = useCallback(() => navigate(-1), [navigate])
   const { state, retry } = useCacheDownload(fileId)
+
+  const ready = state.kind === 'ready'
+  const probe = useGetMediaProbe(fileId, { query: { enabled: ready } })
+  // Com o atual pronto para tocar, o próximo da fila começa a baixar.
+  usePrefetchNext(queue[0]?.fileId, ready)
+  // Arquivo saiu do cache entre o "pronto" e o probe: volta a preparar.
+  const probeMissing = probe.error?.status === 404
+  useEffect(() => {
+    if (probeMissing) retry()
+  }, [probeMissing, retry])
+
+  if (ended) {
+    return (
+      <FocusContext.Provider value={focusKey}>
+        <section ref={ref} aria-label="Fim da reprodução">
+          <EndScreen
+            display={display}
+            next={queue[0]}
+            onNext={handleNext}
+            onBack={handleBack}
+          />
+        </section>
+      </FocusContext.Provider>
+    )
+  }
+
+  if (ready && probe.data) {
+    return (
+      <FocusContext.Provider value={focusKey}>
+        <section ref={ref} aria-label={display?.title ?? 'Reprodução'}>
+          <Player
+            fileId={fileId}
+            probe={probe.data}
+            display={display}
+            onStale={retry}
+            onEnded={handleEnded}
+            onPrevious={list.previous.length > 0 ? handlePrevious : undefined}
+            onNext={queue.length > 0 ? handleNext : undefined}
+          />
+        </section>
+      </FocusContext.Provider>
+    )
+  }
 
   const percentage =
     state.kind === 'downloading'
@@ -80,7 +161,7 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
       <section
         ref={ref}
         aria-label={display?.title ?? 'Reprodução'}
-        className="flex h-[calc(100svh-6.75rem)] flex-col justify-end gap-6 pb-12"
+        className="bg-bg fixed inset-0 z-30 flex flex-col justify-end gap-6 px-[6rem] py-[3.375rem]"
       >
         <Backdrop src={display?.backdrop} />
         <div className="relative flex max-w-[56rem] flex-col gap-2">
