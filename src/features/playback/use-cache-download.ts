@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { subscribeCacheEvents, type CacheEvent } from '@/api/cache-events'
+import { subscribeCacheEvents } from '@/api/cache-events'
 import { ApiError } from '@/api/errors'
-import type { CacheItemId } from '@/api/generated/akariAPI.schemas'
+import type { CacheEvent, CacheItemId } from '@/api/generated/akariAPI.schemas'
 import {
   deleteCacheItem,
   queueCacheDownload,

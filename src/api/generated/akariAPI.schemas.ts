@@ -537,6 +537,114 @@ export type CacheItemPage = Page & {
 }
 
 /**
+ * Tipo de um evento do stream SSE `GET /v1/cache/events`. É também o `event:` (nome) da
+ * mensagem SSE, então o cliente pode tanto registrar um listener por nome
+ * (`addEventListener('PROGRESS', ...)`) quanto ler o campo `type` do payload.
+ *
+ * - `SNAPSHOT` — primeiro evento de quem se inscreve com algo ativo na fila: traz em
+ *   `items` as linhas `QUEUED`/`DOWNLOADING` daquele momento. A conexão continua aberta.
+ * - `IDLE` — não há nada ativo na fila. Enviado como primeiro (e único) evento de quem se
+ *   inscreve com a fila vazia, ou a todos os inscritos quando a fila termina de drenar. O
+ *   servidor **fecha a conexão logo depois** — o cliente não deve reconectar sozinho, só
+ *   quando voltar a ter algo a acompanhar (ex.: depois de um `POST` que enfileira).
+ * - `QUEUED` — uma linha entrou na fila (nova, ou reaproveitada de um `FAILED`).
+ * - `STARTED` — uma linha começou a baixar.
+ * - `PROGRESS` — progresso periódico do download em andamento.
+ * - `COMPLETED` — uma linha terminou de baixar; o arquivo já pode tocar.
+ * - `FAILED` — uma linha falhou (erro do rclone, ou arquivo removido do catalog antes do
+ *   início); pode ser reenfileirada.
+ * - `EVICTED` — uma linha foi removida pela eviction LRU pra abrir espaço a outro
+ *   download.
+ * - `CANCELLED` — uma linha `QUEUED`/`DOWNLOADING` foi cancelada e removida.
+ * - `DELETED` — uma linha `COMPLETED` teve o arquivo apagado manualmente e foi removida.
+ */
+export type CacheEventType =
+  (typeof CacheEventType)[keyof typeof CacheEventType]
+
+export const CacheEventType = {
+  SNAPSHOT: 'SNAPSHOT',
+  IDLE: 'IDLE',
+  QUEUED: 'QUEUED',
+  STARTED: 'STARTED',
+  PROGRESS: 'PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  EVICTED: 'EVICTED',
+  CANCELLED: 'CANCELLED',
+  DELETED: 'DELETED',
+} as const
+
+/**
+ * Payload (`data:`, JSON) de cada mensagem do stream SSE `GET /v1/cache/events` — o
+ * endpoint não é descrito em `paths` (Server-Sent Events não é modelável pelo gerador
+ * `jaxrs-spec`), só este payload.
+ *
+ * O stream é aberto com `EventSource` (`GET`, `Accept: text/event-stream`) e acompanha a
+ * fila do cache em tempo real. Cada mensagem tem `event:` igual ao `type` e o `data:` com
+ * este objeto. Os campos preenchidos dependem do `type`; os demais vêm `null`:
+ *
+ * | `type` | Campos preenchidos |
+ * |---|---|
+ * | `SNAPSHOT` | `items` |
+ * | `IDLE` | nenhum |
+ * | `QUEUED` | `id`, `status` = `QUEUED` |
+ * | `STARTED` | `id`, `status` = `DOWNLOADING` |
+ * | `PROGRESS` | `id`, `status` = `DOWNLOADING`, `bytes`, `totalBytes`, `speed`, `eta`, `percentage` |
+ * | `COMPLETED` | `id`, `status` = `COMPLETED` |
+ * | `FAILED` | `id`, `status` = `FAILED`, `errorMessage` |
+ * | `EVICTED` / `CANCELLED` / `DELETED` | `id` (a linha já não existe mais) |
+ *
+ * Pra acompanhar um arquivo específico, correlacione o `id` com o `cacheItemId` de
+ * `GET /v1/playback/files/{fileId}/availability` ou com o `id` devolvido ao enfileirar.
+ */
+export interface CacheEvent {
+  type: CacheEventType
+  /** Linha do cache a que o evento se refere; `null` em `SNAPSHOT` e `IDLE` */
+  id?: CacheItemId | null
+  /**
+   * Status da linha no momento do evento; `null` em `SNAPSHOT`, `IDLE`, `EVICTED`,
+   * `CANCELLED` e `DELETED`
+   */
+  status?: CacheStatus | null
+  /**
+   * Motivo da falha, pronto pra exibir; só preenchido em `FAILED`
+   * @nullable
+   */
+  errorMessage?: string | null
+  /**
+   * Bytes já transferidos; só preenchido em `PROGRESS`
+   * @nullable
+   */
+  bytes?: number | null
+  /**
+   * Total esperado de bytes; só preenchido em `PROGRESS`
+   * @nullable
+   */
+  totalBytes?: number | null
+  /**
+   * Velocidade instantânea, em bytes por segundo; só preenchido em `PROGRESS`
+   * @nullable
+   */
+  speed?: number | null
+  /**
+   * Segundos restantes estimados; só em `PROGRESS`, e mesmo nele pode vir `null`
+   * enquanto o rclone ainda não consegue estimar
+   * @nullable
+   */
+  eta?: number | null
+  /**
+   * Percentual concluído, de `0.0` a `100.0`; só preenchido em `PROGRESS`
+   * @nullable
+   */
+  percentage?: number | null
+  /**
+   * Linhas `QUEUED`/`DOWNLOADING` no momento da inscrição; só preenchido em `SNAPSHOT`
+   * @nullable
+   */
+  items?: CacheItem[] | null
+}
+
+/**
  * Metadados do container (bloco `format` do ffprobe)
  */
 export interface MediaContainer {
@@ -813,8 +921,9 @@ export interface StartPlaybackSessionRequest {
    * `playback.default.subtitle-language`, forçada ou completa conforme
    * `playback.default.subtitle-forced` (forçada = flag `forced` do arquivo ou título com
    * `forced`, `forçada`, `forcada`, `signs` ou `songs`, sem diferenciar maiúsculas); sem
-   * faixa desse tipo, a primeira do idioma; sem faixa no idioma, reproduz sem legenda.
-   * Para reproduzir sem legenda, use `subtitleDisabled`.
+   * faixa desse tipo, a primeira do idioma; sem faixa no idioma, ou com
+   * `playback.default.subtitle-language` vazio, reproduz sem legenda. Para reproduzir sem
+   * legenda, use `subtitleDisabled`.
    * @minimum 0
    * @nullable
    */
@@ -1812,6 +1921,38 @@ export type NotificationPage = Page & {
  */
 export interface UnreadCountResponse {
   count: number
+}
+
+/**
+ * Tipo de um evento do stream SSE `GET /v1/notifications/events`. É também o `event:`
+ * (nome) da mensagem SSE, então o cliente pode tanto registrar um listener por nome
+ * (`addEventListener('NEW', ...)`) quanto ler o campo `type` do payload.
+ *
+ * - `NEW` — uma notificação acabou de ser criada.
+ */
+export type NotificationEventType =
+  (typeof NotificationEventType)[keyof typeof NotificationEventType]
+
+export const NotificationEventType = {
+  NEW: 'NEW',
+} as const
+
+/**
+ * Payload (`data:`, JSON) de cada mensagem do stream SSE `GET /v1/notifications/events` —
+ * o endpoint não é descrito em `paths` (Server-Sent Events não é modelável pelo gerador
+ * `jaxrs-spec`), só este payload.
+ *
+ * O stream é aberto com `EventSource` (`GET`, `Accept: text/event-stream`) e fica aberto
+ * indefinidamente, sem evento inicial: a primeira mensagem só chega quando uma notificação
+ * nova é criada. Cada mensagem tem `event:` igual ao `type` e o `data:` com este objeto. O
+ * stream só avisa de notificações novas — o histórico e a contagem de não-lidas continuam
+ * em `GET /v1/notifications` e `GET /v1/notifications/unread-count`; um cliente que
+ * reconecta depois de uma queda deve recarregar por eles o que pode ter perdido.
+ */
+export interface NotificationEvent {
+  type: NotificationEventType
+  /** A notificação recém-criada, no mesmo formato da listagem — sempre com `read = false` */
+  notification: NotificationResponse
 }
 
 /**

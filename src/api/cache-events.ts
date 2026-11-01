@@ -1,62 +1,17 @@
-import type {
-  CacheItem,
-  CacheItemId,
-  CacheStatus,
-} from './generated/akariAPI.schemas'
+import { CacheEventType, type CacheEvent } from './generated/akariAPI.schemas'
 import { getServerUrl } from './mutator'
 
 /*
- * Stream SSE `GET /v1/cache/events`, que não está no contrato OpenAPI (o
- * gerador do backend não descreve SSE) e por isso não sai do Orval. O formato
- * abaixo espelha o `CacheEvent` do backend: o nome do evento SSE é o `type` e
- * o `data` é o JSON do evento.
+ * Stream SSE `GET /v1/cache/events`. O contrato descreve só o payload
+ * (`CacheEvent`), não o endpoint — SSE não sai do Orval como cliente —, então
+ * a conexão é aberta aqui à mão. O nome do evento SSE é o `type` e o `data` é
+ * o JSON do evento.
  *
  * Inscrição sem nada ativo na fila recebe `IDLE` e o backend fecha a conexão
  * na hora; a fila esvaziando também manda `IDLE` e fecha. Por isso quem usa
  * este stream enfileira antes de se inscrever e, a cada `IDLE`, para de ouvir
  * e confere de novo a disponibilidade do arquivo.
  */
-
-export type CacheEventType =
-  | 'SNAPSHOT'
-  | 'IDLE'
-  | 'QUEUED'
-  | 'STARTED'
-  | 'PROGRESS'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'EVICTED'
-  | 'CANCELLED'
-  | 'DELETED'
-
-export interface CacheEvent {
-  type: CacheEventType
-  id?: CacheItemId | null
-  status?: CacheStatus | null
-  errorMessage?: string | null
-  bytes?: number | null
-  totalBytes?: number | null
-  /** bytes/segundo */
-  speed?: number | null
-  /** segundos restantes */
-  eta?: number | null
-  /** 0 a 100 */
-  percentage?: number | null
-  items?: CacheItem[] | null
-}
-
-const EVENT_TYPES: CacheEventType[] = [
-  'SNAPSHOT',
-  'IDLE',
-  'QUEUED',
-  'STARTED',
-  'PROGRESS',
-  'COMPLETED',
-  'FAILED',
-  'EVICTED',
-  'CANCELLED',
-  'DELETED',
-]
 
 interface CacheEventHandlers {
   onEvent: (event: CacheEvent) => void
@@ -82,7 +37,9 @@ export function subscribeCacheEvents({
       // Evento fora do formato: ignora em vez de derrubar o stream.
     }
   }
-  for (const type of EVENT_TYPES) source.addEventListener(type, listener)
+  for (const type of Object.values(CacheEventType)) {
+    source.addEventListener(type, listener)
+  }
 
   source.onerror = () => {
     source.close()
