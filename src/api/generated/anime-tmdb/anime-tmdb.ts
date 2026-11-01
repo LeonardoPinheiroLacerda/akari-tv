@@ -77,7 +77,7 @@ export const getGetTmdbStateUrl = (anilistId: number) => {
 }
 
 /**
- * @summary Estado atual do binding TMDB (binding + overrides)
+ * @summary Estado atual do binding TMDB (binding + overrides + dados do TMDB)
  */
 export const getTmdbState = async (
   anilistId: number,
@@ -95,7 +95,12 @@ export const getGetTmdbStateQueryKey = (anilistId: number) => {
 
 export const getGetTmdbStateQueryOptions = <
   TData = Awaited<ReturnType<typeof getTmdbState>>,
-  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+  TError = ErrorType<
+    | NotFoundResponse
+    | InternalServerErrorResponse
+    | BadGatewayResponse
+    | ServiceUnavailableResponse
+  >,
 >(
   anilistId: number,
   options?: {
@@ -129,12 +134,20 @@ export type GetTmdbStateQueryResult = NonNullable<
   Awaited<ReturnType<typeof getTmdbState>>
 >
 export type GetTmdbStateQueryError = ErrorType<
-  NotFoundResponse | InternalServerErrorResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse
+  | BadGatewayResponse
+  | ServiceUnavailableResponse
 >
 
 export function useGetTmdbState<
   TData = Awaited<ReturnType<typeof getTmdbState>>,
-  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+  TError = ErrorType<
+    | NotFoundResponse
+    | InternalServerErrorResponse
+    | BadGatewayResponse
+    | ServiceUnavailableResponse
+  >,
 >(
   anilistId: number,
   options: {
@@ -157,7 +170,12 @@ export function useGetTmdbState<
 }
 export function useGetTmdbState<
   TData = Awaited<ReturnType<typeof getTmdbState>>,
-  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+  TError = ErrorType<
+    | NotFoundResponse
+    | InternalServerErrorResponse
+    | BadGatewayResponse
+    | ServiceUnavailableResponse
+  >,
 >(
   anilistId: number,
   options?: {
@@ -180,7 +198,12 @@ export function useGetTmdbState<
 }
 export function useGetTmdbState<
   TData = Awaited<ReturnType<typeof getTmdbState>>,
-  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+  TError = ErrorType<
+    | NotFoundResponse
+    | InternalServerErrorResponse
+    | BadGatewayResponse
+    | ServiceUnavailableResponse
+  >,
 >(
   anilistId: number,
   options?: {
@@ -194,12 +217,17 @@ export function useGetTmdbState<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
- * @summary Estado atual do binding TMDB (binding + overrides)
+ * @summary Estado atual do binding TMDB (binding + overrides + dados do TMDB)
  */
 
 export function useGetTmdbState<
   TData = Awaited<ReturnType<typeof getTmdbState>>,
-  TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
+  TError = ErrorType<
+    | NotFoundResponse
+    | InternalServerErrorResponse
+    | BadGatewayResponse
+    | ServiceUnavailableResponse
+  >,
 >(
   anilistId: number,
   options?: {
@@ -364,7 +392,13 @@ export const getClearTmdbBindingUrl = (anilistId: number) => {
 }
 
 /**
- * @summary Remove binding TMDB (overrides caem por cascata)
+ * Remove o binding TMDB do anime e limpa junto tudo que dependia dele: os overrides
+ * (título, sinopse, pôster, backdrop e logo) e os pairings TMDB de todos os arquivos da
+ * pasta do anime — eles apontam pra temporadas/episódios do título desvinculado e ficariam
+ * errados num novo binding. Um novo `POST .../tmdb/binding` volta a pré-preencher backdrop e
+ * logo; os pairings precisam ser refeitos (manualmente, pela proposta de pairing ou numa
+ * nova ingestão).
+ * @summary Remove binding TMDB, junto com os overrides e os pairings dos episódios
  */
 export const clearTmdbBinding = async (
   anilistId: number,
@@ -430,7 +464,7 @@ export type ClearTmdbBindingMutationError = ErrorType<
 export type ClearTmdbBindingMutationVariables = { anilistId: number }
 
 /**
- * @summary Remove binding TMDB (overrides caem por cascata)
+ * @summary Remove binding TMDB, junto com os overrides e os pairings dos episódios
  */
 export const useClearTmdbBinding = <
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -507,7 +541,11 @@ export const getUpdateTmdbOverridesMutationKey = () =>
 
 export const getUpdateTmdbOverridesMutationOptions = <
   TError = ErrorType<
-    BadRequestResponse | NotFoundResponse | InternalServerErrorResponse
+    | BadRequestResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse
+    | BadGatewayResponse
+    | ServiceUnavailableResponse
   >,
   TContext = unknown,
 >(options?: {
@@ -550,7 +588,11 @@ export type UpdateTmdbOverridesMutationResult = NonNullable<
 >
 export type UpdateTmdbOverridesMutationBody = TmdbOverridesRequestBodyBody
 export type UpdateTmdbOverridesMutationError = ErrorType<
-  BadRequestResponse | NotFoundResponse | InternalServerErrorResponse
+  | BadRequestResponse
+  | NotFoundResponse
+  | InternalServerErrorResponse
+  | BadGatewayResponse
+  | ServiceUnavailableResponse
 >
 export type UpdateTmdbOverridesMutationVariables = {
   anilistId: number
@@ -562,7 +604,11 @@ export type UpdateTmdbOverridesMutationVariables = {
  */
 export const useUpdateTmdbOverrides = <
   TError = ErrorType<
-    BadRequestResponse | NotFoundResponse | InternalServerErrorResponse
+    | BadRequestResponse
+    | NotFoundResponse
+    | InternalServerErrorResponse
+    | BadGatewayResponse
+    | ServiceUnavailableResponse
   >,
   TContext = unknown,
 >(

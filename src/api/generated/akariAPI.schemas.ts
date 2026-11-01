@@ -1606,6 +1606,90 @@ export interface TmdbBindingRequest {
 }
 
 /**
+ * Anime da AniList pra propor o binding TMDB
+ */
+export interface TmdbBindingProposalRequest {
+  anilistId: AnilistId
+}
+
+/**
+ * Ficha resumida da série (`mediaType` `TV`) ou filme (`MOVIE`) vinculado. A ficha é
+ * buscada no TMDB sem `language`, então os textos (título, sinopse, gêneros) vêm no idioma
+ * padrão do TMDB (`en-US`), não em `tmdb.default-language`. Campos que só existem num dos
+ * tipos vêm `null` no outro.
+ */
+export interface TmdbBindingDetails {
+  /**
+   * Nome da série (`name`) ou título do filme (`title`)
+   * @nullable
+   */
+  title?: string | null
+  /**
+   * Nome no idioma original (`original_name` / `original_title`)
+   * @nullable
+   */
+  originalTitle?: string | null
+  originalLanguage?: LanguageCode | null
+  /**
+   * Sinopse
+   * @nullable
+   */
+  overview?: string | null
+  /**
+   * Data de estreia (`first_air_date`) ou de lançamento (`release_date`), em ISO-8601
+   * @nullable
+   */
+  releaseDate?: string | null
+  /**
+   * Status no TMDB (ex.: `Ended`, `Returning Series`, `Released`)
+   * @nullable
+   */
+  status?: string | null
+  /**
+   * Quantidade de temporadas; só `TV`
+   * @nullable
+   */
+  numberOfSeasons?: number | null
+  /**
+   * Quantidade de episódios; só `TV`
+   * @nullable
+   */
+  numberOfEpisodes?: number | null
+  /**
+   * Duração em minutos; só `MOVIE`
+   * @nullable
+   */
+  runtime?: number | null
+  /** Nomes dos gêneros, no idioma da ficha */
+  genres?: string[]
+  voteAverage?: VoteAverage | null
+  /**
+   * Caminho relativo do poster principal (`poster_path` cru do TMDB)
+   * @nullable
+   */
+  posterPath?: string | null
+  /** URL absoluta do poster principal (tamanho `w342`) */
+  posterUrl?: ImageUrl | null
+  /** URL absoluta do backdrop principal (tamanho `original`) */
+  backdropUrl?: ImageUrl | null
+}
+
+/**
+ * Série ou filme do TMDB proposto pro anime, pelo mapeamento do anibridge. `tmdbId` e
+ * `mediaType` são exatamente o payload de `POST /v1/metadata/animes/{anilistId}/tmdb/binding`.
+ */
+export interface TmdbBindingProposalResponse {
+  tmdbId: TmdbId
+  mediaType: TmdbMediaType
+  /**
+   * Ficha do título proposto, como está no TMDB — mesma ficha devolvida no estado do
+   * binding (`TmdbAnimeStateResponse.details`), pra conferir se a proposta aponta pro
+   * título certo antes de vincular.
+   */
+  details: TmdbBindingDetails
+}
+
+/**
  * Overrides TMDB — todos os campos opcionais; `null` significa "não sobrepõe".
  * Também usado como body de PUT (body com todos `null` apaga a linha); os campos
  * `*PreviewUrl` são só de leitura, ignorados num PUT.
@@ -1642,7 +1726,7 @@ export interface TmdbOverrides {
 }
 
 /**
- * Estado TMDB do anime (binding + overrides)
+ * Estado TMDB do anime (binding + overrides + dados do próprio TMDB)
  */
 export interface TmdbAnimeStateResponse {
   tmdbId?: TmdbId | null
@@ -1650,6 +1734,11 @@ export interface TmdbAnimeStateResponse {
   /** @nullable */
   createdAt?: string | null
   overrides?: TmdbOverrides | null
+  /**
+   * Dados da série ou filme vinculado, como estão no TMDB — sem overrides aplicados, pra
+   * conferir se o binding aponta pro título certo. Lidos da ficha do TMDB (cache-first).
+   */
+  details: TmdbBindingDetails
 }
 
 /**
@@ -1821,6 +1910,160 @@ export interface TmdbFilePairingRequest {
    * @nullable
    */
   episodeType?: string | null
+}
+
+/**
+ * Como a proposta de pairing é calculada.
+ *
+ * - `ANIBRIDGE` — número do episódio extraído do nome do arquivo, convertido pelo
+ *   anibridge pra temporada/episódio da série vinculada (o mesmo do pairing automático da
+ *   ingestão).
+ * - `CONTINUITY` — episódio seguinte ao do arquivo pareado anterior, pela estrutura da
+ *   série no TMDB; não consulta o anibridge.
+ */
+export type TmdbFilePairingStrategy =
+  (typeof TmdbFilePairingStrategy)[keyof typeof TmdbFilePairingStrategy]
+
+export const TmdbFilePairingStrategy = {
+  ANIBRIDGE: 'ANIBRIDGE',
+  CONTINUITY: 'CONTINUITY',
+} as const
+
+/**
+ * Anime cujos arquivos devem receber a proposta de pairing
+ */
+export interface TmdbFilePairingProposalRequest {
+  anilistId: AnilistId
+  strategy?: TmdbFilePairingStrategy
+}
+
+/**
+ * Comparação da proposta com o par atual do arquivo.
+ *
+ * - `NEW` — o arquivo não tem par gravado.
+ * - `SAME` — a proposta é igual ao par gravado.
+ * - `REPLACE` — a proposta substituiria um par gravado diferente.
+ */
+export type TmdbFilePairingChange =
+  (typeof TmdbFilePairingChange)[keyof typeof TmdbFilePairingChange]
+
+export const TmdbFilePairingChange = {
+  NEW: 'NEW',
+  SAME: 'SAME',
+  REPLACE: 'REPLACE',
+} as const
+
+/**
+ * Resultado da proposta pra um arquivo. Entre colchetes, a estratégia em que o status
+ * aparece.
+ *
+ * - `PAIRED` [`ANIBRIDGE`, `CONTINUITY`] — há proposta: `seasonNumber`/`episodeNumber`
+ *   resolvidos e confirmados no TMDB. Na `ANIBRIDGE` pode vir com `usedByFileId` (episódio
+ *   já usado por outro arquivo); na `CONTINUITY` esse caso vira `EPISODE_IN_USE`.
+ * - `NO_EPISODE_NUMBER` [`ANIBRIDGE`] — não deu pra extrair um número de episódio do nome
+ *   do arquivo.
+ * - `NOT_MAPPED` [`ANIBRIDGE`] — o número extraído não cai em nenhum mapeamento do
+ *   anibridge pra série vinculada.
+ * - `AMBIGUOUS_ABSOLUTE_NUMBERING` [`ANIBRIDGE`] — o arquivo usa numeração absoluta, mas o
+ *   mapeamento do anibridge não cobre a temporada isolada com segurança pra aplicar o
+ *   offset.
+ * - `NOT_FOUND_IN_TMDB` [`ANIBRIDGE`] — o anibridge resolveu `seasonNumber`/`episodeNumber`,
+ *   mas o episódio não existe no TMDB (temporada inexistente, episódio fora da temporada,
+ *   ou a busca no TMDB falhou) — o anibridge pode estar dessincronizado do TMDB.
+ * - `NO_MAPPING` [`ANIBRIDGE`] — o anibridge não tem mapeamento do anime pra série
+ *   vinculada (vale pra todos os arquivos).
+ * - `CONFLICTING_MAPPING` [`ANIBRIDGE`] — o mapeamento do anibridge pra série vinculada tem
+ *   temporadas conflitantes e não é usado (vale pra todos os arquivos).
+ * - `NO_ANCHOR` [`CONTINUITY`] — não há arquivo pareado antes deste na pasta.
+ * - `END_OF_SERIES` [`CONTINUITY`] — não há episódio seguinte ao da âncora (fim da última
+ *   temporada da série).
+ * - `EPISODE_IN_USE` [`CONTINUITY`] — o episódio seguinte já está gravado em outro arquivo
+ *   ou foi proposto antes pra outro arquivo nesta mesma proposta (`usedByFileId`). Não vem
+ *   pré-selecionado; o arquivo continua sendo a âncora do próximo.
+ */
+export type TmdbFilePairingProposalStatus =
+  (typeof TmdbFilePairingProposalStatus)[keyof typeof TmdbFilePairingProposalStatus]
+
+export const TmdbFilePairingProposalStatus = {
+  PAIRED: 'PAIRED',
+  NO_EPISODE_NUMBER: 'NO_EPISODE_NUMBER',
+  NOT_MAPPED: 'NOT_MAPPED',
+  AMBIGUOUS_ABSOLUTE_NUMBERING: 'AMBIGUOUS_ABSOLUTE_NUMBERING',
+  NOT_FOUND_IN_TMDB: 'NOT_FOUND_IN_TMDB',
+  NO_MAPPING: 'NO_MAPPING',
+  CONFLICTING_MAPPING: 'CONFLICTING_MAPPING',
+  NO_ANCHOR: 'NO_ANCHOR',
+  END_OF_SERIES: 'END_OF_SERIES',
+  EPISODE_IN_USE: 'EPISODE_IN_USE',
+} as const
+
+/**
+ * Proposta de pairing de um arquivo de vídeo
+ */
+export interface TmdbFilePairingProposal {
+  fileId: FileId
+  /** Nome do arquivo, de onde o número do episódio é extraído */
+  fileName: string
+  status: TmdbFilePairingProposalStatus
+  /**
+   * Temporada do TMDB proposta; preenchida em `PAIRED` e `EPISODE_IN_USE`, e em
+   * `NOT_FOUND_IN_TMDB` (aí mostra pra onde o anibridge apontou)
+   * @nullable
+   */
+  seasonNumber?: number | null
+  /**
+   * Episódio do TMDB proposto; preenchido nos mesmos status que `seasonNumber`
+   * @nullable
+   */
+  episodeNumber?: number | null
+  /**
+   * Temporada do par gravado hoje pro arquivo; `null` se ele não tem par
+   * @nullable
+   */
+  currentSeasonNumber?: number | null
+  /**
+   * Episódio do par gravado hoje pro arquivo; `null` se ele não tem par
+   * @nullable
+   */
+  currentEpisodeNumber?: number | null
+  /**
+   * Comparação da proposta com o par atual; `null` quando não há proposta (qualquer
+   * status fora `PAIRED` e `EPISODE_IN_USE`)
+   */
+  change?: TmdbFilePairingChange | null
+  /**
+   * Se a proposta deve vir marcada no portal: `change` = `NEW` e episódio sem uso por
+   * outro arquivo (`usedByFileId` `null`). Vale igual pras duas estratégias e pra
+   * qualquer temporada, inclusive a 0.
+   */
+  selectedByDefault: boolean
+  /**
+   * Arquivo âncora de onde a proposta continua (o pareado anterior na pasta); só na
+   * `CONTINUITY`, em `PAIRED` e `EPISODE_IN_USE` de arquivo sem par próprio
+   */
+  basedOnFileId?: FileId | null
+  /**
+   * Outro arquivo que já usa o episódio proposto — com o par gravado, ou proposto antes
+   * dele nesta mesma proposta (na ordem da lista); `null` se ninguém usa
+   */
+  usedByFileId?: FileId | null
+  /**
+   * Payload pronto pra `PUT /v1/metadata/files/{fileId}/tmdb-pairing`, com a metadata do
+   * episódio proposto no TMDB (thumbnail, nome, sinopse etc.); preenchido em `PAIRED` e
+   * `EPISODE_IN_USE` quando o episódio existe no TMDB
+   */
+  pairing?: TmdbFilePairingRequest | null
+}
+
+/**
+ * Proposta de pairing de todos os arquivos da pasta do anime
+ */
+export interface TmdbFilePairingProposalResponse {
+  anilistId: AnilistId
+  /** Série do TMDB vinculada ao anime, base da proposta */
+  tmdbId: TmdbId
+  /** Todos os arquivos de vídeo da pasta do anime, na ordem natural dos nomes */
+  files: TmdbFilePairingProposal[]
 }
 
 /**
@@ -2157,6 +2400,16 @@ export type AnimeRelationGraphOkResponse = AnimeRelationGraphResponse
 export type AnimeFranchiseOkResponse = AnimeFranchiseResponse
 
 /**
+ * Proposta de pairing por arquivo
+ */
+export type TmdbFilePairingProposalOkResponse = TmdbFilePairingProposalResponse
+
+/**
+ * Proposta de binding TMDB
+ */
+export type TmdbBindingProposalOkResponse = TmdbBindingProposalResponse
+
+/**
  * Estado TMDB atual
  */
 export type TmdbAnimeStateOkResponse = TmdbAnimeStateResponse
@@ -2281,6 +2534,17 @@ export type AnimeFranchiseRootRequestBodyBody = AnimeFranchiseRootRequest
  * Payload de binding anime↔TMDB
  */
 export type TmdbBindingRequestBodyBody = TmdbBindingRequest
+
+/**
+ * Anime cujos arquivos devem receber a proposta de pairing
+ */
+export type TmdbFilePairingProposalRequestBodyBody =
+  TmdbFilePairingProposalRequest
+
+/**
+ * Anime da AniList pra propor o binding TMDB
+ */
+export type TmdbBindingProposalRequestBodyBody = TmdbBindingProposalRequest
 
 /**
  * Payload de overrides
