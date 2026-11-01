@@ -266,13 +266,16 @@ export const getStartPlaybackSessionUrl = () => {
 }
 
 /**
- * Inicia o transcode da mídia (referenciada por `fileId`) com o perfil, faixa
- * de áudio e, opcionalmente, faixa de legenda escolhidos. Gera e devolve o `sessionId`
- * (UUID) que identifica a sessão, junto do endereço da playlist `m3u8`.
+ * Inicia o transcode da mídia (referenciada por `fileId`) com o perfil e as faixas de
+ * áudio e legenda escolhidos. Cada faixa não informada sai das preferências
+ * `playback.default.*`, de forma independente (ver `StartPlaybackSessionRequest`). Gera e
+ * devolve o `sessionId` (UUID) que identifica a sessão, junto do endereço da playlist
+ * `m3u8` e das faixas ativas (`audioTrackIndex`/`subtitleTrackIndex`).
  *
  * Responde `404` se o vídeo é de provider remoto e ainda não terminou de baixar no cache.
- * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` morrer logo depois de subir, antes
- * de confirmar que o transcode começou — nesse caso a sessão não é criada.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` sair com erro logo depois de subir,
+ * antes de confirmar que o transcode começou — nesse caso a sessão não é criada. Terminar
+ * com sucesso logo depois de subir (remux curto) não é falha.
  * @summary Inicia uma sessão de transcode
  */
 export const startPlaybackSession = async (
@@ -411,9 +414,10 @@ export const getSeekPlaybackSessionUrl = (sessionId: string) => {
 
 /**
  * Reposiciona o transcode de uma sessão já iniciada para o instante informado. A playlist
- * `m3u8` passa a refletir a nova posição. Responde `404` se a sessão não existe ou já
- * expirou. Responde `500` com `TRANSCODE_FAILED` se o reinício do `ffmpeg` falhar logo
- * depois de subir.
+ * `m3u8` passa a refletir a nova posição, a partir do `startOffsetSeconds` devolvido (que,
+ * com o vídeo copiado sem recodificar, é um keyframe em ou antes da posição pedida). Responde
+ * `404` se a sessão não existe ou já expirou. Responde `500` com `TRANSCODE_FAILED` se o
+ * reinício do `ffmpeg` falhar logo depois de subir.
  * @summary Reposiciona o transcode de uma sessão
  */
 export const seekPlaybackSession = async (
@@ -704,9 +708,11 @@ export const getGetPlaybackPlaylistUrl = (sessionId: string) => {
  * transcode produz um master playlist (ABR com várias resoluções, ou legenda soft), é ele que
  * é devolvido — e ele referencia os variant playlists `stream_N.m3u8`. Caso contrário,
  * devolve a media playlist da rendition única. Responde `404` se a sessão não existe,
- * expirou ou ainda não produziu playlist — nesse caso o cliente deve continuar tentando.
- * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` já morreu e essa playlist nunca vai
- * ser gerada — nesse caso o cliente deve parar de tentar e mostrar erro.
+ * expirou ou ainda não produziu playlist (incluindo um master playlist que ainda não lista
+ * nenhuma variante) — nesse caso o cliente deve continuar tentando.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` já saiu com erro e essa playlist
+ * nunca vai ser gerada — nesse caso o cliente deve parar de tentar e mostrar erro. Uma
+ * sessão cujo `ffmpeg` já concluiu com sucesso continua servindo a playlist normalmente.
  *
  * O header `X-Playback-Heartbeat-Ttl-Seconds` informa, em segundos, o TTL do heartbeat que o
  * cliente deve respeitar — é o mesmo prazo devolvido no corpo do endpoint de heartbeat. O

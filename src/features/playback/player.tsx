@@ -2,7 +2,6 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -52,16 +51,6 @@ const SEEK_SETTLE_TIMEOUT_MS = 15000
 // Os controles somem sozinhos depois disso sem tecla, se o vídeo estiver tocando.
 const OSD_HIDE_MS = 5000
 
-/** Faixas iniciais: as marcadas como padrão no arquivo, senão a primeira de áudio e nenhuma legenda. */
-function defaultTracks(probe: MediaInfoResponse): TrackSelection {
-  const audio = probe.audio.findIndex((track) => track.defaultTrack)
-  const subtitle = probe.subtitles.findIndex((track) => track.defaultTrack)
-  return {
-    audio: Math.max(0, audio),
-    subtitle: subtitle >= 0 ? subtitle : null,
-  }
-}
-
 interface PlayerProps {
   fileId: number
   probe: MediaInfoResponse
@@ -94,8 +83,9 @@ export function Player({
   onPrevious,
   onNext,
 }: PlayerProps) {
-  const initialTracks = useMemo(() => defaultTracks(probe), [probe])
-  const playback = usePlaybackSession(fileId, initialTracks)
+  // As faixas iniciais saem das preferências do backend (idioma padrão de
+  // áudio e legenda); `tracks` fica `undefined` até a sessão responder.
+  const playback = usePlaybackSession(fileId)
   const { state, source, tracks, seek, switchTracks, reportPosition, retry } =
     playback
 
@@ -292,7 +282,7 @@ export function Player({
     (selection: TrackSelection) => {
       closePanel()
       if (
-        selection.audio === tracks.audio &&
+        selection.audio === tracks?.audio &&
         selection.subtitle === tracks.subtitle
       )
         return
@@ -391,7 +381,8 @@ export function Player({
           stepSeconds={SEEK_STEP_SECONDS}
           onTogglePlay={togglePlay}
           onStep={step}
-          onOpenTracks={() => setPanelOpen(true)}
+          // Antes da sessão responder ainda não se sabe as faixas ativas.
+          onOpenTracks={() => tracks && setPanelOpen(true)}
           onSkipIntro={skipIntro}
           onPrevious={onPrevious}
           onNext={onNext}
@@ -406,7 +397,7 @@ export function Player({
             />
           </div>
         )}
-        {panelOpen && (
+        {panelOpen && tracks && (
           <TrackPanel
             probe={probe}
             selection={tracks}

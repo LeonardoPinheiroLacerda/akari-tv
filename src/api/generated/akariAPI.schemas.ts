@@ -128,8 +128,8 @@ export interface ErrorDetail {
  * - `INTEGRATION_NOT_CONFIGURED` (503): uma preferência obrigatória está sem valor —
  *   o admin precisa configurá-la em
  *   `PUT /v1/settings/{key}`.
- * - `TRANSCODE_FAILED` (500): o transcode de uma sessão de playback morreu antes de gerar
- *   a playlist (ou depois de já ter gerado) e não vai se recuperar — o cliente deve parar
+ * - `TRANSCODE_FAILED` (500): o transcode de uma sessão de playback saiu com erro antes de
+ *   gerar a playlist (ou depois de já ter gerado) e não vai se recuperar — o cliente deve parar
  *   de tentar e mostrar erro, diferente do `RESOURCE_NOT_FOUND` de "ainda não gerada".
  * - `INTERNAL_ERROR` (500): erro inesperado no servidor.
  */
@@ -796,18 +796,34 @@ export interface StartPlaybackSessionRequest {
   /**
    * Posição (0-based) da faixa no array `audio` do `GET /v1/mediaprobe/files/{fileId}` —
    * **não** o campo `index` da faixa, que é o índice global do stream no arquivo.
+   *
+   * Ausente/`null` usa o áudio padrão das preferências: a primeira faixa no idioma
+   * `playback.default.audio-language`; sem faixa nesse idioma, a marcada como padrão no
+   * arquivo, senão a primeira.
    * @minimum 0
+   * @nullable
    */
-  audioTrackIndex: number
+  audioTrackIndex?: number | null
   /**
    * Posição (0-based) da faixa no array `subtitles` do `GET /v1/mediaprobe/files/{fileId}`
    * — **não** o campo `index` da faixa. Legendas SRT viram faixa WebVTT soft
    * (selecionável no player); ASS e demais formatos são queimados no vídeo (hardsub).
-   * Ausente/`null` reproduz sem legenda.
+   *
+   * Ausente/`null` usa a legenda padrão das preferências: a primeira faixa no idioma
+   * `playback.default.subtitle-language`, forçada ou completa conforme
+   * `playback.default.subtitle-forced` (forçada = flag `forced` do arquivo ou título com
+   * `forced`, `forçada`, `forcada`, `signs` ou `songs`, sem diferenciar maiúsculas); sem
+   * faixa desse tipo, a primeira do idioma; sem faixa no idioma, reproduz sem legenda.
+   * Para reproduzir sem legenda, use `subtitleDisabled`.
    * @minimum 0
    * @nullable
    */
   subtitleTrackIndex?: number | null
+  /**
+   * `true` reproduz sem legenda, ignorando `subtitleTrackIndex` e a legenda padrão das
+   * preferências.
+   */
+  subtitleDisabled?: boolean
 }
 
 /**
@@ -832,14 +848,15 @@ export interface SwitchTracksRequest {
   positionSeconds: number
   /**
    * Posição (0-based) da faixa no array `audio` do `GET /v1/mediaprobe/files/{fileId}` —
-   * **não** o campo `index` da faixa. Mesma semântica de `StartPlaybackSessionRequest`.
+   * **não** o campo `index` da faixa. Obrigatório aqui: a troca de faixas não usa as
+   * preferências `playback.default.*`.
    * @minimum 0
    */
   audioTrackIndex: number
   /**
    * Posição (0-based) da faixa no array `subtitles` do `GET /v1/mediaprobe/files/{fileId}`
-   * — **não** o campo `index` da faixa. Ausente/`null` reproduz sem legenda. Mesma
-   * semântica de `StartPlaybackSessionRequest`.
+   * — **não** o campo `index` da faixa. Ausente/`null` reproduz sem legenda — diferente
+   * do `StartPlaybackSessionRequest`, aqui não há legenda padrão.
    * @minimum 0
    * @nullable
    */
@@ -852,6 +869,21 @@ export interface SwitchTracksRequest {
 export interface PlaybackSessionResponse {
   sessionId: SessionId
   /**
+   * Faixa de áudio ativa na sessão — posição (0-based) no array `audio` do
+   * `GET /v1/mediaprobe/files/{fileId}`. É a faixa pedida pelo cliente ou, quando o
+   * request não informou, a padrão das preferências.
+   * @minimum 0
+   */
+  audioTrackIndex: number
+  /**
+   * Faixa de legenda ativa na sessão — posição (0-based) no array `subtitles` do
+   * `GET /v1/mediaprobe/files/{fileId}`; `null` = sem legenda. É a faixa pedida pelo
+   * cliente ou, quando o request não informou, a padrão das preferências.
+   * @minimum 0
+   * @nullable
+   */
+  subtitleTrackIndex?: number | null
+  /**
    * URL (relativa ao host) da playlist `m3u8` da sessão — atalho para o endpoint
    * `GET /v1/playback/sessions/{sessionId}/playlist.m3u8`.
    */
@@ -860,7 +892,11 @@ export interface PlaybackSessionResponse {
    * Posição de mídia, em segundos, que corresponde ao início da playlist (`currentTime 0`). O
    * cliente mapeia a posição local com base nela (`currentTime = alvo - startOffsetSeconds`) e
    * recarrega a source quando ela muda entre chamadas de seek (indicando que o transcode
-   * reiniciou num novo offset). `0` no início da mídia.
+   * reiniciou num novo offset). `0` no início da mídia. Quando o reinício (seek ou troca de
+   * faixas) copia o vídeo sem recodificar, o transcode só consegue começar num keyframe:
+   * o valor é o instante desse keyframe, em ou antes da posição pedida (podendo ficar até
+   * um GOP, alguns segundos, antes), e não a própria posição. Recodificando, é a posição
+   * pedida.
    * @minimum 0
    */
   startOffsetSeconds: number

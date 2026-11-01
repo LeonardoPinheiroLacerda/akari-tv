@@ -43,6 +43,11 @@ export const getStartPlaybackSessionResponseMock = (
   overrideResponse: Partial<Extract<SessionCreatedResponse, object>> = {},
 ): SessionCreatedResponse => ({
   sessionId: faker.string.uuid(),
+  audioTrackIndex: faker.number.int({ min: 0 }),
+  subtitleTrackIndex: faker.helpers.arrayElement([
+    faker.number.int({ min: 0 }),
+    null,
+  ]),
   playlistUrl: faker.string.alpha({ length: { min: 10, max: 20 } }),
   startOffsetSeconds: faker.number.float({ min: 0, fractionDigits: 2 }),
   ...overrideResponse,
@@ -52,6 +57,11 @@ export const getSeekPlaybackSessionResponseMock = (
   overrideResponse: Partial<Extract<SessionOkResponse, object>> = {},
 ): SessionOkResponse => ({
   sessionId: faker.string.uuid(),
+  audioTrackIndex: faker.number.int({ min: 0 }),
+  subtitleTrackIndex: faker.helpers.arrayElement([
+    faker.number.int({ min: 0 }),
+    null,
+  ]),
   playlistUrl: faker.string.alpha({ length: { min: 10, max: 20 } }),
   startOffsetSeconds: faker.number.float({ min: 0, fractionDigits: 2 }),
   ...overrideResponse,
@@ -61,6 +71,11 @@ export const getSwitchPlaybackSessionTracksResponseMock = (
   overrideResponse: Partial<Extract<SessionOkResponse, object>> = {},
 ): SessionOkResponse => ({
   sessionId: faker.string.uuid(),
+  audioTrackIndex: faker.number.int({ min: 0 }),
+  subtitleTrackIndex: faker.helpers.arrayElement([
+    faker.number.int({ min: 0 }),
+    null,
+  ]),
   playlistUrl: faker.string.alpha({ length: { min: 10, max: 20 } }),
   startOffsetSeconds: faker.number.float({ min: 0, fractionDigits: 2 }),
   ...overrideResponse,

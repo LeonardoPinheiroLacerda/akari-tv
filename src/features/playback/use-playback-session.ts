@@ -44,17 +44,25 @@ export type SessionState =
   | { kind: 'stale' }
   | { kind: 'error'; message: string }
 
-/** Inicia a sessão e, para retomar no meio, já a reposiciona (a sessão nova começa do início). */
+/**
+ * Inicia a sessão e, para retomar no meio, já a reposiciona (a sessão nova
+ * começa do início). Sem `selection`, as faixas saem das preferências do
+ * backend (`playback.default.*`); com ela, "sem legenda" precisa ir explícito
+ * (`subtitleDisabled`), senão o backend aplicaria a legenda padrão.
+ */
 async function requestSession(
   fileId: number,
-  selection: TrackSelection,
+  selection: TrackSelection | undefined,
   position: number,
 ): Promise<PlaybackSessionResponse> {
   const response = await startPlaybackSession({
     fileId,
     profile: PROFILE,
-    audioTrackIndex: selection.audio,
-    subtitleTrackIndex: selection.subtitle,
+    ...(selection && {
+      audioTrackIndex: selection.audio,
+      subtitleTrackIndex: selection.subtitle,
+      subtitleDisabled: selection.subtitle === null,
+    }),
   })
   if (position <= 1) return response
   return seekPlaybackSession(response.sessionId, { positionSeconds: position })
@@ -77,9 +85,25 @@ function messageOf(error: unknown): string {
 }
 
 /**
+ * Faixas ativas informadas pelo backend na resposta da sessão. Mantém a
+ * referência anterior quando não mudam (seek), para não reiniciar o heartbeat.
+ */
+function tracksOf(response: PlaybackSessionResponse) {
+  return (previous: TrackSelection | undefined): TrackSelection => {
+    const audio = response.audioTrackIndex
+    const subtitle = response.subtitleTrackIndex ?? null
+    if (previous?.audio === audio && previous.subtitle === subtitle) {
+      return previous
+    }
+    return { audio, subtitle }
+  }
+}
+
+/**
  * Ciclo de vida da sessão de transcode (`/v1/playback/sessions`): inicia com as
- * faixas escolhidas, mantém viva com heartbeat, reposiciona (`seek`) e troca
- * faixas. A posição que o resto do app usa é sempre a da mídia (absoluta); o
+ * faixas padrão das preferências do backend (as ativas vêm na resposta e viram
+ * `tracks`; até lá, `undefined`), mantém viva com heartbeat, reposiciona
+ * (`seek`) e troca faixas. A posição que o resto do app usa é sempre a da mídia (absoluta); o
  * mapeamento para o tempo do `<video>` é `posição - offset` (contrato:
  * `startOffsetSeconds`).
  *
@@ -87,14 +111,10 @@ function messageOf(error: unknown): string {
  * iniciar quer dizer que o arquivo saiu do cache: vira `stale`, e a tela volta
  * a preparar o arquivo.
  */
-export function usePlaybackSession(
-  fileId: number,
-  initialTracks: TrackSelection,
-) {
+export function usePlaybackSession(fileId: number) {
   const [state, setState] = useState<SessionState>({ kind: 'starting' })
   const [source, setSource] = useState<PlaybackSource>()
-  const [tracks, setTracks] = useState(initialTracks)
-  const [startTracks] = useState(initialTracks)
+  const [tracks, setTracks] = useState<TrackSelection>()
 
   const session = useRef<PlaybackSessionResponse | undefined>(undefined)
   const sourceKey = useRef(0)
@@ -103,6 +123,7 @@ export function usePlaybackSession(
   const applySource = useCallback(
     (response: PlaybackSessionResponse, position: number) => {
       session.current = response
+      setTracks(tracksOf(response))
       sourceKey.current += 1
       setSource({
         key: sourceKey.current,
@@ -115,7 +136,7 @@ export function usePlaybackSession(
   )
 
   const start = useCallback(
-    (selection: TrackSelection, position: number) =>
+    (selection: TrackSelection | undefined, position: number) =>
       requestSession(fileId, selection, position).then(
         (response) => {
           if (!alive.current) return
@@ -148,12 +169,12 @@ export function usePlaybackSession(
   // backend. Com o adiamento, a montagem descartada é cancelada antes.
   useEffect(() => {
     alive.current = true
-    const timer = setTimeout(() => void start(startTracks, 0), 0)
+    const timer = setTimeout(() => void start(undefined, 0), 0)
     return () => {
       clearTimeout(timer)
       alive.current = false
     }
-  }, [start, startTracks])
+  }, [start])
 
   // Heartbeat: sem ele o backend encerra a sessão depois do TTL. Ao sair da
   // tela o heartbeat para e a sessão expira sozinha (não há endpoint de fim).
@@ -200,6 +221,7 @@ export function usePlaybackSession(
           return undefined
         }
         session.current = response
+        setTracks(tracksOf(response))
         return { localTime: target - response.startOffsetSeconds }
       } catch (error) {
         if (!alive.current) return undefined
