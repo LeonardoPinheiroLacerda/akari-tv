@@ -2,7 +2,8 @@ import { memo, useCallback } from 'react'
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import { remToPx } from '@/lib/layout'
-import { AnimePoster, POSTER_HEIGHT_REM } from './anime-poster'
+import { AnimePoster, AnimePosterSkeleton, POSTER_HEIGHT_REM } from './anime-poster'
+import { SkeletonGroup } from './skeleton'
 
 // Folga em volta dos pôsteres dentro do overflow: cobre o contorno e o scale
 // do pôster focado, que senão seriam cortados.
@@ -76,3 +77,18 @@ export const PosterRow = memo(function PosterRow({
     </FocusContext.Provider>
   )
 })
+
+/** Linha de pôsteres carregando, na mesma altura e folga da real; segura o foco (seção 6). */
+export function PosterRowSkeleton({ count = 8 }: { count?: number }) {
+  return (
+    <SkeletonGroup
+      holdFocus
+      className="flex gap-6 overflow-hidden"
+      style={{ height: `${POSTER_ROW_HEIGHT_REM}rem`, padding: `${ROW_PADDING_REM}rem` }}
+    >
+      {Array.from({ length: count }, (_, index) => (
+        <AnimePosterSkeleton key={index} />
+      ))}
+    </SkeletonGroup>
+  )
+}

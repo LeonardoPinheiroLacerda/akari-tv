@@ -9,7 +9,8 @@ import { createStore } from '@/lib/store'
 import { remToPx } from '@/lib/layout'
 import { focusMemory, PUSHED_SCREEN } from '@/lib/navigation'
 import { AnimeHero } from '@/ui/anime-hero'
-import { AnimePoster, POSTER_HEIGHT_REM } from '@/ui/anime-poster'
+import { AnimePoster, AnimePosterSkeleton, POSTER_HEIGHT_REM } from '@/ui/anime-poster'
+import { SkeletonGroup } from '@/ui/skeleton'
 
 export const HOME_FOCUS_KEY = 'HOME'
 
@@ -88,7 +89,11 @@ export function HomeScreen() {
   return (
     <FocusContext.Provider value={focusKey}>
       <section ref={ref} aria-label="Início" className="flex h-[calc(100svh-6.75rem)] flex-col">
-        <AnimeHero store={heroStore} />
+        {/* Sem coleção para mostrar (erro ou vazia), o hero não fica pulsando. */}
+        <AnimeHero
+          store={heroStore}
+          placeholder={!query.isError && !(query.isSuccess && animes.length === 0)}
+        />
 
         <div
           ref={scrollRef}
@@ -98,7 +103,18 @@ export function HomeScreen() {
             height: `${POSTER_HEIGHT_REM + GRID_PADDING_REM * 2}rem`,
           }}
         >
-          {query.isPending && <p className="text-[1.75rem] text-muted-foreground">Carregando…</p>}
+          {query.isPending && (
+            <SkeletonGroup
+              holdFocus
+              label="Carregando a coleção"
+              className="grid gap-6"
+              style={{ gridTemplateColumns: `repeat(${COLUMNS}, max-content)` }}
+            >
+              {Array.from({ length: COLUMNS }, (_, index) => (
+                <AnimePosterSkeleton key={index} />
+              ))}
+            </SkeletonGroup>
+          )}
           {query.isError && (
             <p className="text-[1.75rem] text-muted-foreground">
               Não foi possível carregar a coleção ({query.error.message})

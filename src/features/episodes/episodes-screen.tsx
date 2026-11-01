@@ -19,10 +19,16 @@ import { useScreenFocusable } from '@/app/screen'
 import { playbackRoute, type PlaybackItem } from '@/lib/navigation'
 import { createStore } from '@/lib/store'
 import { AnimeHero } from '@/ui/anime-hero'
-import { PLAY_BUTTON_HEIGHT_REM, PlayButton } from '@/ui/play-button'
+import {
+  PLAY_BUTTON_HEIGHT_REM,
+  PlayButton,
+  PlayButtonSkeleton,
+} from '@/ui/play-button'
+import { SkeletonGroup } from '@/ui/skeleton'
 import { EpisodeHero } from './episode-hero'
 import { episodeNumberLabel, episodeTitle } from './episode-label'
 import { EPISODE_ROW_HEIGHT_REM, EpisodeRow } from './episode-row'
+import { EpisodeRowSkeleton } from './episode-row-skeleton'
 
 const EPISODES_FOCUS_KEY = 'EPISODES'
 const PAGE_SIZE = 40
@@ -168,9 +174,9 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
             style={{ height: `${PLAY_BUTTON_HEIGHT_REM + 2}rem` }}
           >
             {query.isPending && (
-              <p className="text-muted-foreground text-[1.75rem]">
-                Carregando…
-              </p>
+              <SkeletonGroup holdFocus label="Carregando o filme">
+                <PlayButtonSkeleton />
+              </SkeletonGroup>
             )}
             {query.isSuccess && episodes.length === 0 && (
               <p className="text-muted-foreground text-[1.75rem]">
@@ -204,15 +210,20 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
         aria-label={`Episódios de ${animeQuery.data?.titles?.main ?? 'anime'}`}
         className="flex h-[calc(100svh-6.75rem)] flex-col"
       >
-        <EpisodeHero anime={animeQuery.data} store={heroStore} />
+        <EpisodeHero
+          anime={animeQuery.data}
+          store={heroStore}
+          animePending={animeQuery.isPending}
+          episodePlaceholder={
+            !query.isError && !(query.isSuccess && episodes.length === 0)
+          }
+        />
 
         <div
           className="mt-6 shrink-0"
           style={{ height: `${EPISODE_ROW_HEIGHT_REM}rem` }}
         >
-          {query.isPending && (
-            <p className="text-muted-foreground text-[1.75rem]">Carregando…</p>
-          )}
+          {query.isPending && <EpisodeRowSkeleton />}
           {query.isError && (
             <p className="text-muted-foreground text-[1.75rem]">
               Não foi possível carregar os episódios ({query.error.message})

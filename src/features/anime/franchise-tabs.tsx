@@ -1,6 +1,7 @@
 import { memo, useCallback } from 'react'
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import { Focusable } from '@/ui/focusable'
+import { Skeleton, SkeletonGroup } from '@/ui/skeleton'
 import { ROW_PADDING_REM } from '@/ui/poster-row'
 
 export const TABS_HEIGHT_REM = 4
@@ -126,3 +127,16 @@ export const FranchiseTabs = memo(function FranchiseTabs({
     </FocusContext.Provider>
   )
 })
+
+/** Abas carregando: pílulas na altura das reais, alinhadas pela base como elas. */
+export function FranchiseTabsSkeleton() {
+  return (
+    <SkeletonGroup
+      className="flex items-end gap-3"
+      style={{ height: `${TABS_HEIGHT_REM}rem`, paddingLeft: `${ROW_PADDING_REM}rem` }}
+    >
+      <Skeleton className="h-12 w-[13rem] rounded-full" />
+      <Skeleton className="h-12 w-[9rem] rounded-full" />
+    </SkeletonGroup>
+  )
+}

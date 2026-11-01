@@ -3,6 +3,7 @@ import type { FocusableComponentLayout } from '@noriginmedia/norigin-spatial-nav
 import type { VideoFileResponse } from '@/api/generated/akariAPI.schemas'
 import { cn } from '@/lib/utils'
 import { Focusable } from '@/ui/focusable'
+import { Skeleton } from '@/ui/skeleton'
 import { episodeNumberLabel, episodeTitle } from './episode-label'
 
 // 16:9 com 288px de largura na TV (densidade 2): a menor imagem que o TMDB
@@ -97,3 +98,12 @@ export const EpisodeCard = memo(function EpisodeCard({
     </Focusable>
   )
 })
+
+/** Card no tamanho real enquanto os episódios carregam (dentro de um `SkeletonGroup`). */
+export function EpisodeCardSkeleton() {
+  return (
+    <Skeleton
+      style={{ width: `${CARD_WIDTH_REM}rem`, height: `${CARD_HEIGHT_REM}rem` }}
+    />
+  )
+}

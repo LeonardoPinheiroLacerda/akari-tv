@@ -20,6 +20,23 @@
   --color-season-summer: #ffd25a;
   --color-season-fall: #e8915a;
 
+  /* Skeleton de carregamento: um degrau acima do surface-elevated, senão o
+     pulso entre ele e o fundo quase não aparece na TV. */
+  --color-skeleton: #3d3128;
+  /* Pulso do skeleton: só opacity (seção 7), mais fundo que o
+     `animate-pulse` padrão (que vai só até 0.5). */
+  --animate-skeleton: skeleton-pulse 1.6s ease-in-out infinite;
+
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+
   --font-sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }

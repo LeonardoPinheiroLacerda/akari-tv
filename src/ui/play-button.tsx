@@ -1,5 +1,6 @@
 import { Play } from 'lucide-react'
 import { Focusable } from './focusable'
+import { Skeleton } from './skeleton'
 
 export const PLAY_BUTTON_HEIGHT_REM = 4.5
 
@@ -49,4 +50,9 @@ export function PlayButton({ label = 'Assistir', autoFocus, onPress }: PlayButto
       )}
     </Focusable>
   )
+}
+
+/** Botão de play carregando, na altura do real (dentro de um `SkeletonGroup`). */
+export function PlayButtonSkeleton() {
+  return <Skeleton className="w-[14rem] rounded-full" style={{ height: `${PLAY_BUTTON_HEIGHT_REM}rem` }} />
 }

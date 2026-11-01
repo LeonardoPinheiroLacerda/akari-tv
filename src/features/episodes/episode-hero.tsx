@@ -6,14 +6,28 @@ import type {
 } from '@/api/generated/akariAPI.schemas'
 import { dateLabel, scoreLabel } from '@/lib/format'
 import { useStore, type Store } from '@/lib/store'
-import { AnimeTitle, Backdrop } from '@/ui/anime-hero'
+import {
+  AnimeTitle,
+  Backdrop,
+  BadgesSkeleton,
+  SynopsisSkeleton,
+  TitleSkeleton,
+} from '@/ui/anime-hero'
 import { ExpandableSynopsis } from '@/ui/expandable-synopsis'
 import { InfoBadge } from '@/ui/info-badge'
+import { Skeleton, SkeletonGroup } from '@/ui/skeleton'
 import { episodeNumberLabel, episodeTitle } from './episode-label'
 
 interface EpisodeHeroProps {
   anime?: AnimeResponse
   store: Store<VideoFileResponse | undefined>
+  /** Skeleton no lugar do anime enquanto ele carrega. */
+  animePending?: boolean
+  /**
+   * Skeleton no lugar do episódio enquanto nenhum está em foco. Quem usa
+   * desliga quando nenhum vai chegar (erro, lista vazia).
+   */
+  episodePlaceholder?: boolean
 }
 
 /**
@@ -24,6 +38,8 @@ interface EpisodeHeroProps {
 export const EpisodeHero = memo(function EpisodeHero({
   anime,
   store,
+  animePending = false,
+  episodePlaceholder = true,
 }: EpisodeHeroProps) {
   const episode = useStore(store)
   const pairing = episode?.tmdbPairing
@@ -36,7 +52,23 @@ export const EpisodeHero = memo(function EpisodeHero({
         blurred={!anime?.banner}
       />
       <div className="relative flex min-h-0 flex-1 flex-col items-start justify-end gap-4">
-        <AnimeTitle anime={anime} />
+        {animePending ? (
+          <SkeletonGroup label="Carregando anime">
+            <TitleSkeleton />
+          </SkeletonGroup>
+        ) : (
+          <AnimeTitle anime={anime} />
+        )}
+        {!episode && episodePlaceholder && (
+          <SkeletonGroup
+            label="Carregando episódio"
+            className="flex flex-col items-start gap-4"
+          >
+            <Skeleton className="h-[2.75rem] w-[36rem] rounded-lg" />
+            <BadgesSkeleton count={3} />
+            <SynopsisSkeleton />
+          </SkeletonGroup>
+        )}
         {episode && (
           <h2 className="max-w-[56rem] text-[2.25rem] leading-tight font-medium">
             {number && <span className="text-brand">{number} · </span>}

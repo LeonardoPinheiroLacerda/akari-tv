@@ -12,6 +12,7 @@ import {
 } from '@/lib/navigation'
 import { Backdrop } from '@/ui/anime-hero'
 import { PlayButton } from '@/ui/play-button'
+import { Skeleton, SkeletonGroup } from '@/ui/skeleton'
 import { EndScreen } from './end-screen'
 import { Player } from './player'
 import { usePrefetchNext } from './use-prefetch-next'
@@ -127,7 +128,8 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
   const handleBack = useCallback(() => navigate(-1), [navigate])
   const { state, retry } = useCacheDownload(fileId)
   // Nome, tamanho e formato do arquivo, para a tela de preparo.
-  const file = useGetVideoFile(fileId).data
+  const fileQuery = useGetVideoFile(fileId)
+  const file = fileQuery.data
 
   const ready = state.kind === 'ready'
   const probe = useGetMediaProbe(fileId, { query: { enabled: ready } })
@@ -248,6 +250,11 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
                 <span className="shrink-0">· {fileMeta.join(' · ')}</span>
               )}
             </p>
+          )}
+          {fileQuery.isPending && (
+            <SkeletonGroup label="Carregando o arquivo" className="mt-3">
+              <Skeleton className="h-[1.5rem] w-[36rem] rounded-md" />
+            </SkeletonGroup>
           )}
         </div>
 

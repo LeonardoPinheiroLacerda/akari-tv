@@ -26,8 +26,13 @@ import { remToPx } from '@/lib/layout'
 import { PUSHED_SCREEN } from '@/lib/navigation'
 import { createStore, useStore, type Store } from '@/lib/store'
 import { InfoBadge } from '@/ui/info-badge'
+import { SkeletonGroup } from '@/ui/skeleton'
 import { Spinner } from '@/ui/spinner'
-import { FOLDER_POSTER_HEIGHT_REM, FolderPoster } from './folder-poster'
+import {
+  FOLDER_POSTER_HEIGHT_REM,
+  FolderPoster,
+  FolderPosterSkeleton,
+} from './folder-poster'
 import {
   KEY_BACKSPACE,
   KEY_CLEAR,
@@ -324,9 +329,19 @@ export function SearchScreen() {
           </div>
 
           {results.isPending && (
-            <div className="flex flex-1 items-center justify-center">
-              <Spinner />
-            </div>
+            // O foco já está no teclado: o skeleton não precisa segurá-lo.
+            <SkeletonGroup
+              label="Carregando pastas"
+              className="grid min-h-0 flex-1 content-start gap-6 overflow-hidden"
+              style={{
+                padding: `${GRID_PADDING_REM}rem`,
+                gridTemplateColumns: `repeat(${COLUMNS}, max-content)`,
+              }}
+            >
+              {Array.from({ length: COLUMNS * 2 }, (_, index) => (
+                <FolderPosterSkeleton key={index} />
+              ))}
+            </SkeletonGroup>
           )}
           {results.isError && (
             <p
@@ -348,12 +363,14 @@ export function SearchScreen() {
             </div>
           )}
 
-          <ResultsGrid
-            folders={folders}
-            onFocused={handleFocused}
-            onSelect={handleSelect}
-            scrollRef={scrollRef}
-          />
+          {!results.isPending && (
+            <ResultsGrid
+              folders={folders}
+              onFocused={handleFocused}
+              onSelect={handleSelect}
+              scrollRef={scrollRef}
+            />
+          )}
         </div>
       </section>
     </FocusContext.Provider>

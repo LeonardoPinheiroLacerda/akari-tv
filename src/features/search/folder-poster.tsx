@@ -3,6 +3,7 @@ import type { FocusableComponentLayout } from '@noriginmedia/norigin-spatial-nav
 import type { MediaFolderResponse } from '@/api/generated/akariAPI.schemas'
 import { cn } from '@/lib/utils'
 import { Focusable } from '@/ui/focusable'
+import { Skeleton } from '@/ui/skeleton'
 
 export const FOLDER_POSTER_WIDTH_REM = 12
 export const FOLDER_POSTER_HEIGHT_REM = 18
@@ -97,3 +98,15 @@ export const FolderPoster = memo(function FolderPoster({
     </Focusable>
   )
 })
+
+/** Pôster no tamanho real enquanto a busca carrega (dentro de um `SkeletonGroup`). */
+export function FolderPosterSkeleton() {
+  return (
+    <Skeleton
+      style={{
+        width: `${FOLDER_POSTER_WIDTH_REM}rem`,
+        height: `${FOLDER_POSTER_HEIGHT_REM}rem`,
+      }}
+    />
+  )
+}

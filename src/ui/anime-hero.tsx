@@ -19,6 +19,7 @@ import { useStore, type Store } from '@/lib/store'
 import { SETTLE_MS, useSettled } from '@/lib/settled'
 import { ExpandableSynopsis } from '@/ui/expandable-synopsis'
 import { InfoBadge } from '@/ui/info-badge'
+import { Skeleton, SkeletonGroup } from '@/ui/skeleton'
 
 interface FadeInImageProps {
   src: string
@@ -96,6 +97,42 @@ interface AnimeHeroProps {
   store: Store<AnimeResponse | undefined>
   /** Sinopse cortada vira item focável que abre o texto inteiro (franquia, filme). */
   expandableSynopsis?: boolean
+  /**
+   * Sem anime no store, mostra o skeleton do hero. Quem usa desliga quando
+   * nenhum anime vai chegar (erro, coleção vazia), para não pulsar à toa.
+   */
+  placeholder?: boolean
+}
+
+// Larguras variadas para o skeleton não parecer uma grade de blocos iguais.
+const BADGE_SKELETON_WIDTHS_REM = [7, 9, 11, 7.5, 8.5]
+const SYNOPSIS_SKELETON_WIDTHS_REM = [56, 53, 38]
+
+/** Título (logo ou texto) carregando, no lugar do `AnimeTitle`. */
+export function TitleSkeleton() {
+  return <Skeleton className="h-[4.5rem] w-[30rem]" />
+}
+
+/** Badges de metadados carregando, na altura das pílulas reais. */
+export function BadgesSkeleton({ count }: { count: number }) {
+  return (
+    <div className="flex gap-3">
+      {BADGE_SKELETON_WIDTHS_REM.slice(0, count).map((width, index) => (
+        <Skeleton key={index} className="h-12 rounded-full" style={{ width: `${width}rem` }} />
+      ))}
+    </div>
+  )
+}
+
+/** Sinopse carregando: três linhas no corpo de texto do hero. */
+export function SynopsisSkeleton() {
+  return (
+    <div className="flex flex-col gap-[0.65rem] py-[0.325rem]">
+      {SYNOPSIS_SKELETON_WIDTHS_REM.map((width, index) => (
+        <Skeleton key={index} className="h-[1.75rem] rounded-md" style={{ width: `${width}rem` }} />
+      ))}
+    </div>
+  )
 }
 
 const SEASON_ICONS: Record<string, { icon: LucideIcon; color: string }> = {
@@ -179,6 +216,7 @@ export function AnimeTitle({ anime }: { anime?: AnimeResponse }) {
 export const AnimeHero = memo(function AnimeHero({
   store,
   expandableSynopsis = false,
+  placeholder = true,
 }: AnimeHeroProps) {
   const anime = useSettled(useStore(store), SETTLE_MS)
   const backdrop = anime?.banner ?? anime?.thumbnails?.small ?? anime?.thumbnails?.medium
@@ -191,7 +229,15 @@ export const AnimeHero = memo(function AnimeHero({
       {/* Ocupa toda a altura que sobra acima da linha de pôsteres; o texto
           fica ancorado embaixo, junto da linha. */}
       <div className="relative flex min-h-0 flex-1 flex-col items-start justify-end gap-4">
-        <AnimeTitle anime={anime} />
+        {!anime && placeholder && (
+          <SkeletonGroup label="Carregando anime" className="flex flex-col items-start gap-4">
+            <TitleSkeleton />
+            <BadgesSkeleton count={5} />
+            <Skeleton className="h-[1.75rem] w-[24rem] rounded-md" />
+            <SynopsisSkeleton />
+          </SkeletonGroup>
+        )}
+        {anime && <AnimeTitle anime={anime} />}
         {badges.length > 0 && (
           <div className="flex flex-wrap gap-3">
             {badges.map(({ key, ...badge }) => (

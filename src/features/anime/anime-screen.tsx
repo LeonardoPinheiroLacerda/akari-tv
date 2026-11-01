@@ -7,8 +7,8 @@ import { useGetAnimeFranchise } from '@/api/generated/anime-relations/anime-rela
 import { PUSHED_SCREEN } from '@/lib/navigation'
 import { createStore } from '@/lib/store'
 import { AnimeHero } from '@/ui/anime-hero'
-import { POSTER_ROW_HEIGHT_REM, PosterRow } from '@/ui/poster-row'
-import { FranchiseTabs, TABS_HEIGHT_REM } from './franchise-tabs'
+import { POSTER_ROW_HEIGHT_REM, PosterRow, PosterRowSkeleton } from '@/ui/poster-row'
+import { FranchiseTabs, FranchiseTabsSkeleton, TABS_HEIGHT_REM } from './franchise-tabs'
 
 const ANIME_FOCUS_KEY = 'ANIME'
 
@@ -86,13 +86,18 @@ function AnimeScreen({ anilistId }: AnimeScreenProps) {
         aria-label={query.data?.root.titles?.main ?? 'Anime'}
         className="flex h-[calc(100svh-6.75rem)] flex-col"
       >
-        <AnimeHero store={heroStore} expandableSynopsis />
+        <AnimeHero store={heroStore} expandableSynopsis placeholder={!query.isError} />
 
         <div
           className="mt-2 shrink-0"
           style={{ height: `${TABS_HEIGHT_REM + POSTER_ROW_HEIGHT_REM}rem` }}
         >
-          {query.isPending && <p className="text-[1.75rem] text-muted-foreground">Carregando…</p>}
+          {query.isPending && (
+            <>
+              <FranchiseTabsSkeleton />
+              <PosterRowSkeleton />
+            </>
+          )}
           {query.isError && (
             <p className="text-[1.75rem] text-muted-foreground">
               Não foi possível carregar a franquia ({query.error.message})

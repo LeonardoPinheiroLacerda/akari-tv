@@ -3,6 +3,7 @@ import type { FocusableComponentLayout } from '@noriginmedia/norigin-spatial-nav
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import { cn } from '@/lib/utils'
 import { Focusable } from './focusable'
+import { Skeleton } from './skeleton'
 
 const POSTER_WIDTH_REM = 12
 export const POSTER_HEIGHT_REM = 18
@@ -94,3 +95,8 @@ export const AnimePoster = memo(function AnimePoster({
     </Focusable>
   )
 })
+
+/** Pôster no tamanho real enquanto a coleção carrega (dentro de um `SkeletonGroup`). */
+export function AnimePosterSkeleton() {
+  return <Skeleton style={{ width: `${POSTER_WIDTH_REM}rem`, height: `${POSTER_HEIGHT_REM}rem` }} />
+}

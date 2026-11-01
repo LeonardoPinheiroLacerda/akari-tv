@@ -9,7 +9,7 @@ import { remToPx } from '@/lib/layout'
 import { ROW_PADDING_REM } from '@/ui/poster-row'
 import { CARD_HEIGHT_REM, CARD_WIDTH_REM, EpisodeCard } from './episode-card'
 
-const GAP_REM = 1.5
+export const EPISODE_GAP_REM = 1.5
 // Cards montados além dos visíveis, de cada lado: o próximo card já existe
 // quando a seta chega nele, e o total fica abaixo dos 20 da seção 7.
 const OVERSCAN = 6
@@ -43,7 +43,7 @@ export const EpisodeRow = memo(function EpisodeRow({
     horizontal: true,
     getScrollElement: () => ref.current,
     estimateSize: () => remToPx(CARD_WIDTH_REM),
-    gap: remToPx(GAP_REM),
+    gap: remToPx(EPISODE_GAP_REM),
     overscan: OVERSCAN,
     paddingStart: padding,
     paddingEnd: padding,
