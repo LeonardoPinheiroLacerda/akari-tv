@@ -90,3 +90,19 @@ body {
     @apply font-sans;
   }
 }
+
+/*
+ * Player nativo do app Android (features/playback/native-engine.ts): o vídeo
+ * é desenhado por baixo da WebView. Enquanto ele existe, a página fica
+ * transparente e a casca do app (sidebar) some — por cima do vídeo só fica a
+ * camada do player. Fora de camada: precisa vencer os utilitários de fundo.
+ */
+html.native-video,
+html.native-video body,
+html.native-video main {
+  background: transparent;
+}
+
+html.native-video [data-app-chrome] {
+  visibility: hidden;
+}

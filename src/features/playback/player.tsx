@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import Hls, { type LoadPolicy, type RetryConfig } from 'hls.js'
 import {
   FocusContext,
   setFocus,
@@ -15,6 +14,7 @@ import {
 import type { MediaInfoResponse } from '@/api/generated/akariAPI.schemas'
 import { registerBackHandler } from '@/app/back'
 import type { PlaybackDisplay } from '@/lib/navigation'
+import { cn } from '@/lib/utils'
 import { PlayButton } from '@/ui/play-button'
 import { Spinner } from '@/ui/spinner'
 import {
@@ -23,11 +23,11 @@ import {
   PlayerControls,
   TRACKS_FOCUS_KEY,
 } from './player-controls'
+import { transparentPlayer, usePlaybackEngine } from './playback-engine'
 import { TrackPanel } from './track-panel'
 import {
   TRANSCODE_FAILED_MESSAGE,
   usePlaybackSession,
-  type PlaybackSource,
   type TrackSelection,
 } from './use-playback-session'
 
@@ -51,11 +51,6 @@ const SEEK_SETTLE_TOLERANCE_SECONDS = 1.5
 const SEEK_SETTLE_TIMEOUT_MS = 15000
 // Os controles somem sozinhos depois disso sem tecla, se o vídeo estiver tocando.
 const OSD_HIDE_MS = 5000
-// Poster transparente de 1px: sem `poster`, a WebView do Android desenha o
-// próprio placeholder (ícone de play cinza, em baixa resolução) enquanto o
-// vídeo não tem quadro — no lugar dele entra o spinner do app.
-const TRANSPARENT_POSTER =
-  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
 
 /** Faixas iniciais: as marcadas como padrão no arquivo, senão a primeira de áudio e nenhuma legenda. */
 function defaultTracks(probe: MediaInfoResponse): TrackSelection {
@@ -65,84 +60,6 @@ function defaultTracks(probe: MediaInfoResponse): TrackSelection {
     audio: Math.max(0, audio),
     subtitle: subtitle >= 0 ? subtitle : null,
   }
-}
-
-/**
- * Anexa a fonte HLS ao `<video>` (`hls.js`; a WebView não toca HLS nativo).
- * Cada `source.key` é um transcode novo: destrói o anterior e começa em
- * `localStart`. A playlist é `EVENT` (cresce enquanto o backend transcodifica),
- * então o hls.js a trata como ao vivo — por isso a posição inicial explícita,
- * senão ele começaria na borda.
- */
-// O backend responde 404 enquanto o transcode ainda não gerou a playlist (≈2s
-// numa sessão nova; mais com legenda queimada) ou o segmento pedido. O hls.js
-// nunca repete em 4xx (`retryForHttpStatus`) e, no manifesto, só tenta mais uma
-// vez — o 404 passageiro virava erro fatal. Aqui o 404 conta como "ainda não":
-// repete a cada 1s até ~30s antes de desistir.
-// O 500 é o contrário: `TRANSCODE_FAILED` (o ffmpeg morreu, a sessão não se
-// recupera) — nunca repete, vira erro na hora. O hls.js não expõe o corpo da
-// resposta no erro, então o `code` não dá para ler; o 500 nos endpoints de
-// sessão é tratado como esse caso. 502/504 seguem a política padrão.
-const TRANSCODE_FAILED_STATUS = 500
-const NOT_READY_RETRY: RetryConfig = {
-  maxNumRetry: 30,
-  retryDelayMs: 1000,
-  maxRetryDelayMs: 1000,
-  backoff: 'linear',
-  shouldRetry: (config, retryCount, _isTimeout, response, retry) => {
-    if (response?.code === TRANSCODE_FAILED_STATUS) return false
-    return (
-      retry ||
-      (response?.code === 404 && retryCount < (config?.maxNumRetry ?? 0))
-    )
-  },
-}
-
-function notReadyPolicy(maxLoadTimeMs: number): LoadPolicy {
-  return {
-    default: {
-      maxTimeToFirstByteMs: 10000,
-      maxLoadTimeMs,
-      timeoutRetry: { maxNumRetry: 2, retryDelayMs: 0, maxRetryDelayMs: 0 },
-      errorRetry: NOT_READY_RETRY,
-    },
-  }
-}
-
-function useHlsSource(
-  video: HTMLVideoElement | null,
-  source: PlaybackSource | undefined,
-  onFatal: (transcodeFailed: boolean) => void,
-) {
-  useEffect(() => {
-    if (!video || !source) return
-    const hls = new Hls({
-      startPosition: source.localStart,
-      maxBufferLength: 30,
-      backBufferLength: 30,
-      lowLatencyMode: false,
-      manifestLoadPolicy: notReadyPolicy(20000),
-      playlistLoadPolicy: notReadyPolicy(20000),
-      fragLoadPolicy: notReadyPolicy(120000),
-    })
-    let recovered = false
-    hls.on(Hls.Events.ERROR, (_event, data) => {
-      if (!data.fatal) return
-      if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !recovered) {
-        recovered = true
-        hls.recoverMediaError()
-        return
-      }
-      onFatal(data.response?.code === TRANSCODE_FAILED_STATUS)
-    })
-    hls.on(
-      Hls.Events.MANIFEST_PARSED,
-      () => void video.play().catch(() => undefined),
-    )
-    hls.loadSource(source.url)
-    hls.attachMedia(video)
-    return () => hls.destroy()
-  }, [video, source, onFatal])
 }
 
 interface PlayerProps {
@@ -177,24 +94,13 @@ export function Player({
   onPrevious,
   onNext,
 }: PlayerProps) {
-  const [video, setVideo] = useState<HTMLVideoElement | null>(null)
   const initialTracks = useMemo(() => defaultTracks(probe), [probe])
   const playback = usePlaybackSession(fileId, initialTracks)
   const { state, source, tracks, seek, switchTracks, reportPosition, retry } =
     playback
 
-  // Mensagem do erro do hls.js (playlist ou segmento); `undefined` sem erro.
+  // Mensagem do erro do motor (playlist ou segmento); `undefined` sem erro.
   const [failed, setFailed] = useState<string>()
-  const handleFatal = useCallback(
-    (transcodeFailed: boolean) =>
-      setFailed(
-        transcodeFailed
-          ? TRANSCODE_FAILED_MESSAGE
-          : 'A reprodução foi interrompida.',
-      ),
-    [],
-  )
-  useHlsSource(video, source, handleFatal)
 
   const duration = probe.container.durationSeconds ?? undefined
   // Avisa o fim uma vez só (o `ended` e a posição podem chegar juntos).
@@ -205,7 +111,7 @@ export function Player({
     onEnded()
   }, [onEnded])
 
-  // Posição da mídia = offset da fonte + tempo do <video>.
+  // Posição da mídia = offset da fonte + tempo do motor.
   const [position, setPosition] = useState(0)
   const [paused, setPaused] = useState(false)
   const [buffering, setBuffering] = useState(true)
@@ -226,53 +132,41 @@ export function Player({
     setPendingSeek(undefined)
   }, [])
 
-  useEffect(() => {
-    if (!video) return
-    const onTime = () => {
-      const absolute = offset + video.currentTime
+  const {
+    view: engineView,
+    togglePlay: toggleEngine,
+    seek: seekEngine,
+  } = usePlaybackEngine(source, {
+    onTime: (local) => {
+      const absolute = offset + local
       const target = seekTarget.current
+      // Fim: o evento `ended` do motor e, por garantia, a posição chegando à
+      // duração do probe — a playlist é `EVENT` e o fim depende de o backend
+      // ter fechado a lista, o que nem sempre chega antes do último quadro.
+      if (
+        target === undefined &&
+        duration &&
+        absolute >= duration - END_TOLERANCE_SECONDS
+      ) {
+        endedOnce()
+      }
       if (target !== undefined) {
         if (Math.abs(absolute - target) > SEEK_SETTLE_TOLERANCE_SECONDS) return
         settleSeek()
       }
       setPosition(absolute)
       reportPosition(absolute)
-    }
-    const onPause = () => setPaused(true)
-    const onPlay = () => setPaused(false)
-    const onWaiting = () => setBuffering(true)
-    const onPlaying = () => setBuffering(false)
-    // Fim: o evento `ended` do <video> e, por garantia, a posição chegando à
-    // duração do probe — a playlist é `EVENT` e o fim depende de o backend
-    // ter fechado a lista, o que nem sempre chega antes do último quadro.
-    const onEnd = () => endedOnce()
-    const onEndByTime = () => {
-      const absolute = offset + video.currentTime
-      if (
-        seekTarget.current === undefined &&
-        duration &&
-        absolute >= duration - END_TOLERANCE_SECONDS
-      ) {
-        endedOnce()
-      }
-    }
-    video.addEventListener('ended', onEnd)
-    video.addEventListener('timeupdate', onEndByTime)
-    video.addEventListener('timeupdate', onTime)
-    video.addEventListener('pause', onPause)
-    video.addEventListener('play', onPlay)
-    video.addEventListener('waiting', onWaiting)
-    video.addEventListener('playing', onPlaying)
-    return () => {
-      video.removeEventListener('timeupdate', onTime)
-      video.removeEventListener('pause', onPause)
-      video.removeEventListener('play', onPlay)
-      video.removeEventListener('waiting', onWaiting)
-      video.removeEventListener('playing', onPlaying)
-      video.removeEventListener('ended', onEnd)
-      video.removeEventListener('timeupdate', onEndByTime)
-    }
-  }, [video, offset, reportPosition, settleSeek, duration, endedOnce])
+    },
+    onPausedChange: setPaused,
+    onBufferingChange: setBuffering,
+    onEnded: endedOnce,
+    onFatal: (transcodeFailed) =>
+      setFailed(
+        transcodeFailed
+          ? TRANSCODE_FAILED_MESSAGE
+          : 'A reprodução foi interrompida.',
+      ),
+  })
 
   // Controles: `controlsActive` = foco nos botões. Visíveis também durante
   // carregamento, pausa ou seek em andamento. Qualquer tecla adia o sumiço.
@@ -327,13 +221,13 @@ export function Player({
         settleTimer.current = setTimeout(settleSeek, SEEK_SETTLE_TIMEOUT_MS)
         void seek(target).then((result) => {
           // Só aplica se nenhum toque novo mudou o alvo enquanto isso.
-          if (result && video && seekTarget.current === target) {
-            video.currentTime = result.localTime
+          if (result && seekTarget.current === target) {
+            seekEngine(result.localTime)
           }
         })
       }, SEEK_COMMIT_MS)
     },
-    [clamp, position, seek, settleSeek, showOsd, video],
+    [clamp, position, seek, seekEngine, settleSeek, showOsd],
   )
   useEffect(
     () => () => {
@@ -345,10 +239,8 @@ export function Player({
 
   const togglePlay = useCallback(() => {
     showOsd()
-    if (!video) return
-    if (video.paused) void video.play().catch(() => undefined)
-    else video.pause()
-  }, [showOsd, video])
+    toggleEngine()
+  }, [showOsd, toggleEngine])
 
   const step = useCallback(
     (direction: 1 | -1) => stepSeek(direction * SEEK_STEP_SECONDS),
@@ -471,13 +363,11 @@ export function Player({
 
   return (
     <FocusContext.Provider value={focusKey}>
-      <div ref={ref} className="fixed inset-0 z-30 bg-black">
-        <video
-          ref={setVideo}
-          className="absolute inset-0 size-full"
-          poster={TRANSPARENT_POSTER}
-          playsInline
-        />
+      <div
+        ref={ref}
+        className={cn('fixed inset-0 z-30', !transparentPlayer && 'bg-black')}
+      >
+        {engineView}
         {loading && !error && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <Spinner />

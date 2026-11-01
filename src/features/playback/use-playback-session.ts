@@ -8,10 +8,12 @@ import {
   switchPlaybackSessionTracks,
 } from '@/api/generated/playback/playback'
 import { getServerUrl } from '@/api/mutator'
+import { nativePlayback } from './native-player'
 
-// Profile de transcode do dispositivo: o alvo é o Google TV Streamer, que tem
-// estratégia própria no backend (H.264/HEVC/AV1 até 4K/60fps, áudio AAC).
-const PROFILE = 'GOOGLE_TV_STREAMER'
+// Profile de transcode do dispositivo. No app, o alvo é o Google TV Streamer,
+// que tem estratégia própria no backend (H.264/HEVC/AV1 até 4K/60fps, áudio
+// AAC); no navegador, `WEB` — HEVC só toca em alguns navegadores e máquinas.
+const PROFILE = nativePlayback ? 'GOOGLE_TV_STREAMER' : 'WEB'
 // Heartbeat a cada terço do TTL; o TTL real vem da resposta do próprio heartbeat.
 const DEFAULT_TTL_SECONDS = 30
 const MIN_HEARTBEAT_MS = 5000

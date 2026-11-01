@@ -144,6 +144,7 @@ export const Sidebar = memo(function Sidebar({
       <nav
         ref={ref}
         aria-label="Menu principal"
+        data-app-chrome
         className="fixed inset-y-0 left-0 z-10 flex flex-col py-[3.375rem]"
         // Largura recolhida, com painel e pílulas transbordando: o norigin
         // compara a caixa da região da sidebar com a da região da tela, e com
