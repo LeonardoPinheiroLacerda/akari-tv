@@ -1,6 +1,6 @@
 ---
 name: docs-style
-description: Convenção de escrita para ../ESPECIFICACAO.md e README.md do akari-web — documentam só o estado atual da decisão/arquitetura, nunca a jornada de como chegamos lá. APRENDIZADOS.md é a exceção deliberada: existe justamente para registrar a jornada (sintoma, hipóteses descartadas, causa real, investigação) — nunca resuma ele pro padrão "só estado atual" dos outros dois. Trigger sempre que for editar/criar ESPECIFICACAO.md, README.md ou APRENDIZADOS.md, seja numa entrevista de curadoria (skill docs-interview), seja de passagem ao implementar uma feature ou corrigir um bug.
+description: Convenção de escrita para ../ESPECIFICACAO.md e README.md do akari-tv — documentam só o estado atual da decisão/arquitetura, nunca a jornada de como chegamos lá. APRENDIZADOS.md é a exceção deliberada: existe justamente para registrar a jornada (sintoma, hipóteses descartadas, causa real, investigação) — nunca resuma ele pro padrão "só estado atual" dos outros dois. Trigger sempre que for editar/criar ESPECIFICACAO.md, README.md ou APRENDIZADOS.md, seja numa entrevista de curadoria (skill docs-interview), seja de passagem ao implementar uma feature ou corrigir um bug.
 ---
 
 # docs-style

@@ -1,4 +1,4 @@
-# akari-web
+# akari-tv
 
 Stack e decisões: ver `../ESPECIFICACAO.md`. Lições da implementação (bugs
 sutis, porquês descobertos na prática): ver `APRENDIZADOS.md`.

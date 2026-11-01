@@ -1,12 +1,12 @@
 ---
 name: docs-interview
-description: Faz curadoria da especificação do akari-web (../ESPECIFICACAO.md) e do README.md, resolvendo marcas de hedge ("a confirmar", "placeholder", "pendência") e pontos em aberto via entrevista com o usuário. Trigger em "revisar a especificação", "curadoria da documentação", "tirar dúvidas da especificação", "deixar a documentação mais confiável", ou sempre que o usuário pedir pra passar pela especificação perguntando sobre pontos em aberto. Só pergunta ao usuário o que é decisão de produto/intenção — tudo que é verificável lendo o código (grep, arquivos, git log) é resolvido sozinho, sem pergunta. Não cobre APRENDIZADOS.md: esse arquivo é histórico fechado, sem pontos em aberto a entrevistar (ver skill docs-style).
+description: Faz curadoria da especificação do akari-tv (../ESPECIFICACAO.md) e do README.md, resolvendo marcas de hedge ("a confirmar", "placeholder", "pendência") e pontos em aberto via entrevista com o usuário. Trigger em "revisar a especificação", "curadoria da documentação", "tirar dúvidas da especificação", "deixar a documentação mais confiável", ou sempre que o usuário pedir pra passar pela especificação perguntando sobre pontos em aberto. Só pergunta ao usuário o que é decisão de produto/intenção — tudo que é verificável lendo o código (grep, arquivos, git log) é resolvido sozinho, sem pergunta. Não cobre APRENDIZADOS.md: esse arquivo é histórico fechado, sem pontos em aberto a entrevistar (ver skill docs-style).
 ---
 
 # docs-interview
 
 Resolve pontos em aberto em `../ESPECIFICACAO.md` (relativo à raiz do repo — o arquivo mora um
-nível acima do projeto `akari-web`, junto do `icon.png`) e em `README.md`, fazendo perguntas
+nível acima da pasta do projeto (`akari-web/`), junto do `icon.png`) e em `README.md`, fazendo perguntas
 objetivas ao usuário — só sobre o que *só ele* pode responder — e verificando tudo o mais sozinho,
 lendo o código. Diferente do akari (backend), aqui não há uma árvore de `domain/<x>/README.md`: a
 arquitetura inteira do frontend está num único documento com seções numeradas. O objetivo final é
