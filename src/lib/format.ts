@@ -84,38 +84,27 @@ export function timeLabel(seconds: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`
 }
 
-const LANGUAGE_LABELS: Record<string, string> = {
-  por: 'Português',
-  pt: 'Português',
-  jpn: 'Japonês',
-  ja: 'Japonês',
-  eng: 'Inglês',
-  en: 'Inglês',
-  spa: 'Espanhol',
-  es: 'Espanhol',
-  fre: 'Francês',
-  fra: 'Francês',
-  fr: 'Francês',
-  ger: 'Alemão',
-  deu: 'Alemão',
-  de: 'Alemão',
-  ita: 'Italiano',
-  it: 'Italiano',
-  kor: 'Coreano',
-  ko: 'Coreano',
-  chi: 'Chinês',
-  zho: 'Chinês',
-  zh: 'Chinês',
-  rus: 'Russo',
-  ru: 'Russo',
-  ara: 'Árabe',
-  ar: 'Árabe',
-}
+// Nomes de idioma do próprio navegador: aceita os códigos ISO 639 que o
+// ffprobe devolve, inclusive os bibliográficos (`fre`, `ger`, `chi`, `may`).
+const LANGUAGE_NAMES = new Intl.DisplayNames(['pt-BR'], { type: 'language' })
+// "Indeterminado" no ISO 639 (o `Intl` responde "root" para ele).
+const UNDETERMINED_LANGUAGES = new Set(['und', 'mis', 'zxx'])
 
 /** Nome do idioma de uma faixa a partir do código ISO 639 (`por` → "Português"). */
 export function languageLabel(code?: string | null): string {
-  if (!code) return 'Idioma desconhecido'
-  return LANGUAGE_LABELS[code.toLowerCase()] ?? code.toUpperCase()
+  const normalized = code?.trim().toLowerCase()
+  if (!normalized || UNDETERMINED_LANGUAGES.has(normalized))
+    return 'Idioma desconhecido'
+  let name: string | undefined
+  try {
+    name = LANGUAGE_NAMES.of(normalized)
+  } catch {
+    // Código fora do formato BCP 47: cai no próprio código.
+  }
+  // Código desconhecido volta como ele mesmo.
+  if (!name || name.toLowerCase() === normalized)
+    return normalized.toUpperCase()
+  return name.charAt(0).toLocaleUpperCase('pt-BR') + name.slice(1)
 }
 
 const CODEC_LABELS: Record<string, string> = {

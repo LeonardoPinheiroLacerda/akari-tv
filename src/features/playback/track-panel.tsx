@@ -47,15 +47,83 @@ function subtitleBadges(track: SubtitleTrack): string[] {
   return codec ? [codec] : []
 }
 
+// Títulos comuns de faixa, no padrão dos rips de streaming: `<variante>`,
+// `<tipo>` ou `<variante> (<tipo>)`. A variante do idioma (região, escrita)
+// vai junto do nome; o tipo, no detalhe. O que não estiver aqui aparece como
+// veio do arquivo.
+const TITLE_VARIANTS: Record<string, string> = {
+  'latin american': 'América Latina',
+  european: 'Europa',
+  castilian: 'Espanha',
+  brazilian: 'Brasil',
+  canadian: 'Canadá',
+  traditional: 'Tradicional',
+  simplified: 'Simplificado',
+  // Idioma escrito em alfabeto latino (ex.: hindi romanizado).
+  latin: 'Romanizado',
+  cantonese: 'Cantonês',
+  mandarin: 'Mandarim',
+}
+
+const FORCED_KIND = 'Forçada'
+const HEARING_IMPAIRED_KIND = 'Para surdos (SDH)'
+
+const TITLE_KINDS: Record<string, string> = {
+  forced: FORCED_KIND,
+  sdh: HEARING_IMPAIRED_KIND,
+  cc: 'Para surdos (CC)',
+  // Legenda que transcreve o áudio dublado, não o original.
+  dubtitle: 'Transcrição da dublagem',
+  commentary: 'Comentários',
+  'audio description': 'Audiodescrição',
+  descriptive: 'Audiodescrição',
+}
+
+interface TitleParts {
+  variant?: string
+  /** Tipos reconhecidos e trechos desconhecidos, na ordem do título. */
+  details: string[]
+}
+
+/** "Latin American (Forced)" → variante "América Latina", detalhe "Forçada". */
+function parseTitle(title?: string | null): TitleParts {
+  const parts: TitleParts = { details: [] }
+  if (!title) return parts
+  const match = title.match(/^(.*?)\s*\(([^)]*)\)\s*$/)
+  const pieces = match ? [match[1] ?? '', match[2] ?? ''] : [title]
+  for (const piece of pieces) {
+    const text = piece.trim()
+    const key = text.toLowerCase()
+    if (!text) continue
+    const variant = TITLE_VARIANTS[key]
+    if (variant && !parts.variant) parts.variant = variant
+    else parts.details.push(TITLE_KINDS[key] ?? text)
+  }
+  return parts
+}
+
+/** Idioma, com a variante do título quando houver: "Espanhol (América Latina)". */
+function trackLabel(track: AudioTrack | SubtitleTrack): string {
+  const language = languageLabel(track.language)
+  const { variant } = parseTitle(track.title)
+  return variant ? `${language} (${variant})` : language
+}
+
+function joinDetails(details: (string | false | null | undefined)[]) {
+  const unique = [...new Set(details.filter(Boolean))]
+  return unique.length > 0 ? unique.join(' · ') : undefined
+}
+
 function audioDetail(track: AudioTrack): string | undefined {
-  return track.title ?? undefined
+  return joinDetails(parseTitle(track.title).details)
 }
 
 function subtitleDetail(track: SubtitleTrack): string | undefined {
-  return (
-    [track.forced && 'Forçada', track.title].filter(Boolean).join(' · ') ||
-    undefined
-  )
+  return joinDetails([
+    track.forced && FORCED_KIND,
+    track.hearingImpaired && HEARING_IMPAIRED_KIND,
+    ...parseTitle(track.title).details,
+  ])
 }
 
 /** Badge discreto de metadado técnico (codec, canais). */
@@ -253,7 +321,7 @@ export const TrackPanel = memo(function TrackPanel({
                 <TrackOption
                   key={trackKey('audio', index)}
                   focusKey={trackKey('audio', index)}
-                  label={languageLabel(track.language)}
+                  label={trackLabel(track)}
                   badges={audioBadges(track)}
                   detail={audioDetail(track)}
                   selected={selection.audio === index}
@@ -278,7 +346,7 @@ export const TrackPanel = memo(function TrackPanel({
                 <TrackOption
                   key={trackKey('subtitle', index)}
                   focusKey={trackKey('subtitle', index)}
-                  label={languageLabel(track.language)}
+                  label={trackLabel(track)}
                   badges={subtitleBadges(track)}
                   detail={subtitleDetail(track)}
                   selected={selection.subtitle === index}
