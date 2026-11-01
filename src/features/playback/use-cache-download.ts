@@ -13,8 +13,23 @@ const RETRY_DELAY_MS = 3000
 
 export type CacheDownloadState =
   | { kind: 'checking' }
-  | { kind: 'queued' }
-  | { kind: 'downloading'; percentage?: number; speed?: number; eta?: number }
+  | {
+      kind: 'queued'
+      /** Downloads na frente deste na fila (serial); ausente até o `SNAPSHOT`. */
+      ahead?: number
+      /** Nome do arquivo que está baixando agora, na frente deste. */
+      current?: string
+    }
+  | {
+      kind: 'downloading'
+      percentage?: number
+      bytes?: number
+      totalBytes?: number
+      /** bytes/segundo */
+      speed?: number
+      /** segundos restantes */
+      eta?: number
+    }
   | { kind: 'ready' }
   | { kind: 'failed'; message?: string }
   | { kind: 'error'; message: string }
@@ -28,12 +43,23 @@ function reducer(
     return {
       kind: 'downloading',
       percentage: action.percentage ?? state.percentage,
+      bytes: action.bytes ?? state.bytes,
+      totalBytes: action.totalBytes ?? state.totalBytes,
       speed: action.speed ?? state.speed,
       eta: action.eta ?? state.eta,
     }
   }
   return action
 }
+
+// Eventos em que uma linha sai da fila ativa.
+const LEAVES_QUEUE = new Set<CacheEvent['type']>([
+  'COMPLETED',
+  'FAILED',
+  'EVICTED',
+  'CANCELLED',
+  'DELETED',
+])
 
 /**
  * Cancela, ao sair da tela, o download que ela mesma enfileirou. Confere a
@@ -97,28 +123,62 @@ export function useCacheDownload(fileId: number) {
     let retryTimer: ReturnType<typeof setTimeout> | undefined
 
     function follow(itemId: CacheItemId) {
+      // Fila na frente deste arquivo, montada pelo `SNAPSHOT` (ordem de
+      // `queuedAt`) e reduzida pelos eventos das outras linhas. É só
+      // informação de tela: o estado do arquivo continua vindo dos eventos
+      // dele e do availability.
+      const ahead = new Map<CacheItemId, string | undefined>()
+      let downloadingId: CacheItemId | undefined
+      let waiting = true
+      const dispatchQueued = () =>
+        dispatch({
+          kind: 'queued',
+          ahead: ahead.size,
+          current: downloadingId && ahead.get(downloadingId),
+        })
+
       closeStream = subscribeCacheEvents({
         onEvent: (event: CacheEvent) => {
           if (event.type === 'SNAPSHOT') {
-            const item = event.items?.find((entry) => entry.id === itemId)
-            if (!item) return recheck()
-            return dispatch(
-              item.status === 'DOWNLOADING'
-                ? { kind: 'downloading' }
-                : { kind: 'queued' },
+            const items = [...(event.items ?? [])].sort((a, b) =>
+              a.queuedAt.localeCompare(b.queuedAt),
             )
+            const item = items.find((entry) => entry.id === itemId)
+            if (!item) return recheck()
+            ahead.clear()
+            for (const entry of items.slice(0, items.indexOf(item))) {
+              ahead.set(entry.id, entry.videoFile?.name)
+              if (entry.status === 'DOWNLOADING') downloadingId = entry.id
+            }
+            if (item.status === 'DOWNLOADING') {
+              waiting = false
+              return dispatch({ kind: 'downloading' })
+            }
+            return dispatchQueued()
           }
           if (event.type === 'IDLE') return recheck()
-          if (event.id !== itemId) return
+          if (event.id !== itemId) {
+            if (!event.id || !ahead.has(event.id)) return
+            if (event.type === 'STARTED') downloadingId = event.id
+            else if (LEAVES_QUEUE.has(event.type)) ahead.delete(event.id)
+            else return
+            if (waiting) dispatchQueued()
+            return
+          }
           switch (event.type) {
             case 'QUEUED':
-              return dispatch({ kind: 'queued' })
+              waiting = true
+              return dispatchQueued()
             case 'STARTED':
+              waiting = false
               return dispatch({ kind: 'downloading' })
             case 'PROGRESS':
+              waiting = false
               return dispatch({
                 kind: 'downloading',
                 percentage: event.percentage ?? undefined,
+                bytes: event.bytes ?? undefined,
+                totalBytes: event.totalBytes ?? undefined,
                 speed: event.speed ?? undefined,
                 eta: event.eta ?? undefined,
               })

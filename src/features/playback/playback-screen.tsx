@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
 import { useGetMediaProbe } from '@/api/generated/media-probe/media-probe'
+import { useGetVideoFile } from '@/api/generated/video-file/video-file'
 import { useScreenFocusable } from '@/app/screen'
-import { remainingLabel, speedLabel } from '@/lib/format'
+import { remainingLabel, sizeLabel, speedLabel } from '@/lib/format'
 import {
   playbackDisplayFrom,
   playbackListFrom,
@@ -43,16 +44,41 @@ function statusText(state: CacheDownloadState): string {
   }
 }
 
+/** Bytes baixados e total, à esquerda sob a barra ("1,2 GB de 2,8 GB"). */
+function amountText(
+  state: CacheDownloadState,
+  fileSize: number | undefined,
+): string | undefined {
+  if (state.kind !== 'downloading') return undefined
+  const total = state.totalBytes ?? fileSize
+  if (state.bytes == null) return total != null ? sizeLabel(total) : undefined
+  return total != null
+    ? `${sizeLabel(state.bytes)} de ${sizeLabel(total)}`
+    : sizeLabel(state.bytes)
+}
+
+/** Velocidade e tempo restante, à direita sob a barra. */
+function rateText(state: CacheDownloadState): string | undefined {
+  if (state.kind !== 'downloading') return undefined
+  const parts = [
+    state.speed != null && speedLabel(state.speed),
+    state.eta != null && `${remainingLabel(state.eta)} restantes`,
+  ].filter(Boolean)
+  return parts.length > 0 ? parts.join(' · ') : undefined
+}
+
+function queueText(ahead: number): string {
+  if (ahead === 0) return 'Próximo da fila'
+  return ahead === 1 ? '1 download na frente' : `${ahead} downloads na frente`
+}
+
 function detailText(state: CacheDownloadState): string | undefined {
-  if (state.kind === 'downloading') {
-    const parts = [
-      state.speed != null && speedLabel(state.speed),
-      state.eta != null && `${remainingLabel(state.eta)} restantes`,
-    ].filter(Boolean)
-    return parts.length > 0 ? parts.join(' · ') : undefined
+  if (state.kind === 'queued') {
+    if (state.ahead == null)
+      return 'O download começa assim que a fila liberar.'
+    const queue = queueText(state.ahead)
+    return state.current ? `${queue} · baixando agora: ${state.current}` : queue
   }
-  if (state.kind === 'queued')
-    return 'O download começa assim que a fila liberar.'
   if (state.kind === 'failed' || state.kind === 'error') return state.message
   return undefined
 }
@@ -100,6 +126,8 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
   const handlePrevious = useCallback(() => goSibling(-1), [goSibling])
   const handleBack = useCallback(() => navigate(-1), [navigate])
   const { state, retry } = useCacheDownload(fileId)
+  // Nome, tamanho e formato do arquivo, para a tela de preparo.
+  const file = useGetVideoFile(fileId).data
 
   const ready = state.kind === 'ready'
   const probe = useGetMediaProbe(fileId, { query: { enabled: ready } })
@@ -155,6 +183,13 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
     state.kind === 'downloading' ||
     state.kind === 'ready'
   const detail = detailText(state)
+  const fileSize = file?.sizeBytes ?? undefined
+  const amount = amountText(state, fileSize)
+  const rate = rateText(state)
+  const fileMeta = [
+    fileSize != null && sizeLabel(fileSize),
+    file?.format?.toUpperCase(),
+  ].filter(Boolean)
 
   return (
     <FocusContext.Provider value={focusKey}>
@@ -177,14 +212,14 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
           )}
         </div>
 
-        <div className="relative flex max-w-[56rem] flex-col gap-3">
+        <div className="relative flex w-[48rem] max-w-full flex-col gap-3">
           <p role="status" className="text-[2rem] font-medium">
             {statusText(state)}
           </p>
           {showBar && (
             // Barra pelo scaleX de uma camada de largura fixa: só transform
             // anima (seção 7), nunca a largura.
-            <div className="bg-surface-elevated h-3 w-[40rem] overflow-hidden rounded-full">
+            <div className="bg-surface-elevated h-3 w-full overflow-hidden rounded-full">
               <div
                 className="bg-brand h-full w-full origin-left rounded-full"
                 style={{
@@ -194,8 +229,25 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
               />
             </div>
           )}
+          {(amount || rate) && (
+            <div className="text-muted-foreground flex justify-between gap-6 text-[1.75rem] tabular-nums">
+              <span>{amount}</span>
+              <span>{rate}</span>
+            </div>
+          )}
           {detail && (
-            <p className="text-muted-foreground text-[1.75rem]">{detail}</p>
+            <p className="text-muted-foreground truncate text-[1.75rem]">
+              {detail}
+            </p>
+          )}
+          {file && (
+            // O nome corta com reticências; tamanho e formato ficam sempre visíveis.
+            <p className="text-muted-foreground mt-3 flex gap-3 font-mono text-[1.5rem]">
+              <span className="truncate">{file.name}</span>
+              {fileMeta.length > 0 && (
+                <span className="shrink-0">· {fileMeta.join(' · ')}</span>
+              )}
+            </p>
           )}
         </div>
 
