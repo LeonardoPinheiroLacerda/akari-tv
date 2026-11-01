@@ -17,6 +17,7 @@ import {
 import { episodesLabel, formatLabel, htmlToText, scoreLabel, seasonLabel } from '@/lib/format'
 import { useStore, type Store } from '@/lib/store'
 import { SETTLE_MS, useSettled } from '@/lib/settled'
+import { ExpandableSynopsis } from '@/ui/expandable-synopsis'
 import { InfoBadge } from '@/ui/info-badge'
 
 interface FadeInImageProps {
@@ -93,6 +94,8 @@ export const Backdrop = memo(function Backdrop({ src, blurred = false }: Partial
 
 interface AnimeHeroProps {
   store: Store<AnimeResponse | undefined>
+  /** Sinopse cortada vira item focável que abre o texto inteiro (franquia, filme). */
+  expandableSynopsis?: boolean
 }
 
 const SEASON_ICONS: Record<string, { icon: LucideIcon; color: string }> = {
@@ -173,7 +176,10 @@ export function AnimeTitle({ anime }: { anime?: AnimeResponse }) {
  * Hero fixo das telas de anime (Início, detalhe): mostra o anime em foco nas
  * linhas de pôsteres, recebido por `store` para o foco não subir para a tela.
  */
-export const AnimeHero = memo(function AnimeHero({ store }: AnimeHeroProps) {
+export const AnimeHero = memo(function AnimeHero({
+  store,
+  expandableSynopsis = false,
+}: AnimeHeroProps) {
   const anime = useSettled(useStore(store), SETTLE_MS)
   const backdrop = anime?.banner ?? anime?.thumbnails?.small ?? anime?.thumbnails?.medium
 
@@ -196,11 +202,17 @@ export const AnimeHero = memo(function AnimeHero({ store }: AnimeHeroProps) {
         {anime?.genres && anime.genres.length > 0 && (
           <p className="text-[1.75rem] text-muted-foreground">{anime.genres.join(' · ')}</p>
         )}
-        {anime?.synopsis && (
-          <p className="line-clamp-3 max-w-[56rem] text-[1.75rem] leading-snug">
-            {htmlToText(anime.synopsis)}
-          </p>
-        )}
+        {anime?.synopsis &&
+          (expandableSynopsis ? (
+            <ExpandableSynopsis
+              text={htmlToText(anime.synopsis)}
+              title={anime.titles?.main ?? undefined}
+            />
+          ) : (
+            <p className="line-clamp-3 max-w-[56rem] text-[1.75rem] leading-snug">
+              {htmlToText(anime.synopsis)}
+            </p>
+          ))}
       </div>
     </>
   )

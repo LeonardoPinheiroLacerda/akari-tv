@@ -162,7 +162,7 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
           aria-label={animeQuery.data?.titles?.main ?? 'Filme'}
           className="flex h-[calc(100svh-6.75rem)] flex-col"
         >
-          <AnimeHero store={movieStore} />
+          <AnimeHero store={movieStore} expandableSynopsis />
           <div
             className="mt-8 flex shrink-0 items-center"
             style={{ height: `${PLAY_BUTTON_HEIGHT_REM + 2}rem` }}

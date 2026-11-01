@@ -7,6 +7,7 @@ import type {
 import { dateLabel, scoreLabel } from '@/lib/format'
 import { useStore, type Store } from '@/lib/store'
 import { AnimeTitle, Backdrop } from '@/ui/anime-hero'
+import { ExpandableSynopsis } from '@/ui/expandable-synopsis'
 import { InfoBadge } from '@/ui/info-badge'
 import { episodeNumberLabel, episodeTitle } from './episode-label'
 
@@ -63,10 +64,11 @@ export const EpisodeHero = memo(function EpisodeHero({
             )}
           </div>
         )}
-        {pairing?.episodeOverview && (
-          <p className="line-clamp-3 max-w-[56rem] text-[1.75rem] leading-snug">
-            {pairing.episodeOverview}
-          </p>
+        {episode && pairing?.episodeOverview && (
+          <ExpandableSynopsis
+            text={pairing.episodeOverview}
+            title={[number, episodeTitle(episode)].filter(Boolean).join(' · ')}
+          />
         )}
       </div>
     </>

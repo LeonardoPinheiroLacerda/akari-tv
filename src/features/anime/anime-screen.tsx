@@ -86,7 +86,7 @@ function AnimeScreen({ anilistId }: AnimeScreenProps) {
         aria-label={query.data?.root.titles?.main ?? 'Anime'}
         className="flex h-[calc(100svh-6.75rem)] flex-col"
       >
-        <AnimeHero store={heroStore} />
+        <AnimeHero store={heroStore} expandableSynopsis />
 
         <div
           className="mt-2 shrink-0"
