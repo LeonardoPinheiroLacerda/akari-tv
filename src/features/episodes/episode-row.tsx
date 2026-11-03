@@ -3,7 +3,11 @@ import {
   FocusContext,
   useFocusable,
 } from '@noriginmedia/norigin-spatial-navigation'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import {
+  observeElementRect,
+  useVirtualizer,
+  type Virtualizer,
+} from '@tanstack/react-virtual'
 import type { VideoFileResponse } from '@/api/generated/akariAPI.schemas'
 import { remToPx } from '@/lib/layout'
 import { scrollTarget, smoothScrollTo } from '@/lib/scroll'
@@ -16,6 +20,22 @@ export const EPISODE_GAP_REM = 1.5
 const OVERSCAN = 6
 
 export const EPISODE_ROW_HEIGHT_REM = CARD_HEIGHT_REM + ROW_PADDING_REM * 2
+
+/**
+ * Mede a linha ignorando tamanho zero. Com o player aberto por cima, esta
+ * tela fica montada com `display: none` e a linha mede 0: o virtualizer
+ * desmontava todos os cards, e ao voltar a navegação espacial não achava o
+ * card de onde o usuário saiu — o foco ficava na linha, sem nenhum card
+ * destacado. Guardando a última medida, os cards continuam montados.
+ */
+function observeVisibleRect(
+  instance: Virtualizer<HTMLDivElement, Element>,
+  callback: (rect: { width: number; height: number }) => void,
+) {
+  return observeElementRect(instance, (rect) => {
+    if (rect.width > 0 && rect.height > 0) callback(rect)
+  })
+}
 
 interface EpisodeRowProps {
   episodes: VideoFileResponse[]
@@ -56,6 +76,7 @@ export const EpisodeRow = memo(function EpisodeRow({
     paddingEnd: padding,
     scrollPaddingStart: padding,
     scrollPaddingEnd: padding,
+    observeElementRect: observeVisibleRect,
   })
 
   const handleFocused = useCallback(
