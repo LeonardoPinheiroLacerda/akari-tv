@@ -13,6 +13,7 @@ import {
 import { Backdrop } from '@/ui/anime-hero'
 import { PlayButton } from '@/ui/play-button'
 import { Skeleton, SkeletonGroup } from '@/ui/skeleton'
+import { Spinner } from '@/ui/spinner'
 import { EndScreen } from './end-screen'
 import { Player } from './player'
 import { usePrefetchNext } from './use-prefetch-next'
@@ -90,8 +91,9 @@ interface PlaybackScreenProps {
 
 /**
  * Reprodução em tela cheia (sem sidebar). Primeiro prepara o arquivo — se ele
- * está num storage remoto, baixa para o cache mostrando o progresso — e, com
- * ele pronto, lê as faixas (mediaprobe) e entrega para o player. A região é
+ * está num storage remoto, baixa para o cache mostrando o progresso; se já
+ * está em disco, vai direto, só com o spinner do player — e, com ele pronto,
+ * lê as faixas (mediaprobe) e entrega para o player. A região é
  * uma fronteira de foco: as setas não alcançam a sidebar escondida.
  */
 function PlaybackScreen({ fileId }: PlaybackScreenProps) {
@@ -141,6 +143,21 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
     if (probeMissing) retry()
   }, [probeMissing, retry])
 
+  // A tela de preparo só aparece quando o arquivo precisa mesmo baixar (ou
+  // algo falhou). Enquanto o availability não responde, e com o arquivo já
+  // em disco até o probe chegar, fica a mesma vista do player iniciando —
+  // sem piscar a tela de download para um episódio que já está no cache.
+  // Depois de aparecer ela fica: uma reconferência no meio do download
+  // (queda do stream, linha removida) não volta para o spinner.
+  const needsPreparing =
+    state.kind === 'queued' ||
+    state.kind === 'downloading' ||
+    state.kind === 'failed' ||
+    state.kind === 'error' ||
+    probe.isError
+  const [preparingShown, setPreparingShown] = useState(false)
+  if (needsPreparing && !preparingShown) setPreparingShown(true)
+
   if (ended) {
     return (
       <FocusContext.Provider value={focusKey}>
@@ -169,6 +186,20 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
             onPrevious={list.previous.length > 0 ? handlePrevious : undefined}
             onNext={queue.length > 0 ? handleNext : undefined}
           />
+        </section>
+      </FocusContext.Provider>
+    )
+  }
+
+  if (!preparingShown) {
+    return (
+      <FocusContext.Provider value={focusKey}>
+        <section
+          ref={ref}
+          aria-label={display?.title ?? 'Reprodução'}
+          className="fixed inset-0 z-30 flex items-center justify-center bg-black"
+        >
+          <Spinner label="Preparando a reprodução" />
         </section>
       </FocusContext.Provider>
     )
