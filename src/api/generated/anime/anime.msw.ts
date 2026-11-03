@@ -32,7 +32,6 @@ import {
   getGetAnimeByFolderResponseMock,
   getGetAnimeResponseMock,
   getMarkAnimeAsReviewedResponseMock,
-  getSetAnimeFranchiseRootResponseMock,
   getSyncAnimeResponseMock,
 } from './anime.faker'
 
@@ -40,7 +39,6 @@ export {
   getGetAnimeResponseMock,
   getSyncAnimeResponseMock,
   getBindAnimeToFolderResponseMock,
-  getSetAnimeFranchiseRootResponseMock,
   getMarkAnimeAsReviewedResponseMock,
   getGetAnimeByFolderResponseMock,
 } from './anime.faker'
@@ -138,30 +136,6 @@ export const getBindAnimeToFolderMockHandler = (
   )
 }
 
-export const getSetAnimeFranchiseRootMockHandler = (
-  overrideResponse?:
-    | AnimeOkResponse
-    | ((
-        info: Parameters<Parameters<typeof http.put>[1]>[0],
-      ) => Promise<AnimeOkResponse> | AnimeOkResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.put(
-    '*/v1/metadata/animes/:anilistId/franchise-root',
-    async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getSetAnimeFranchiseRootResponseMock(),
-        { status: 200 },
-      )
-    },
-    options,
-  )
-}
-
 export const getMarkAnimeAsReviewedMockHandler = (
   overrideResponse?:
     | AnimeOkResponse
@@ -214,7 +188,6 @@ export const getAnimeMock = () => [
   getDeleteAnimeMockHandler(),
   getSyncAnimeMockHandler(),
   getBindAnimeToFolderMockHandler(),
-  getSetAnimeFranchiseRootMockHandler(),
   getMarkAnimeAsReviewedMockHandler(),
   getGetAnimeByFolderMockHandler(),
 ]

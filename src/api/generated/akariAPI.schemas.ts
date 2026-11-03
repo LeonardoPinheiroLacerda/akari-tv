@@ -121,6 +121,8 @@ export interface ErrorDetail {
  *   negócio.
  * - `RESOURCE_NOT_FOUND` (404): o recurso não existe (ou a rota não existe / um
  *   parâmetro de path não pôde ser convertido).
+ * - `CONFLICT` (409): o recurso que se quer criar já existe ou o estado atual impede a
+ *   operação.
  * - `REQUEST_ERROR` (405, 406, 415, ...): requisição incompatível com o endpoint —
  *   método, `Content-Type` ou `Accept` não suportados.
  * - `INTEGRATION_ERROR` (502): um sistema externo (AniList, TMDB, rclone, ffprobe)
@@ -139,6 +141,7 @@ export const ApiErrorCode = {
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   BUSINESS_RULE_VIOLATION: 'BUSINESS_RULE_VIOLATION',
   RESOURCE_NOT_FOUND: 'RESOURCE_NOT_FOUND',
+  CONFLICT: 'CONFLICT',
   REQUEST_ERROR: 'REQUEST_ERROR',
   INTEGRATION_ERROR: 'INTEGRATION_ERROR',
   INTEGRATION_NOT_CONFIGURED: 'INTEGRATION_NOT_CONFIGURED',
@@ -1360,28 +1363,6 @@ export interface AnimeBindingRequest {
 }
 
 /**
- * Curadoria da flag de raiz de franquia. `MANUAL_ROOT` força este anime como raiz, mesmo
- * com relação ancestral; `MANUAL_NOT_ROOT` força NÃO ser raiz (desabilita a raiz natural,
- * mesmo sem ancestral); `AUTO` deixa automático — é raiz quando não sai dele nenhuma
- * relação `PREQUEL` nem `PARENT`.
- */
-export type FranchiseRootCuration =
-  (typeof FranchiseRootCuration)[keyof typeof FranchiseRootCuration]
-
-export const FranchiseRootCuration = {
-  AUTO: 'AUTO',
-  MANUAL_ROOT: 'MANUAL_ROOT',
-  MANUAL_NOT_ROOT: 'MANUAL_NOT_ROOT',
-} as const
-
-/**
- * Payload da curadoria manual da raiz de franquia
- */
-export interface AnimeFranchiseRootRequest {
-  franchiseRootCuration: FranchiseRootCuration
-}
-
-/**
  * Estado de revisão da ingestão automática de um anime.
  * - `PENDING_REVIEW`: ingestão completa (AniList + TMDB + todos os arquivos pareados),
  *   aguardando confirmação manual.
@@ -1426,6 +1407,22 @@ export interface AnimeThumbnailsResponse {
   /** @nullable */
   large?: string | null
 }
+
+/**
+ * Atribuição de franquia de um anime — como ele foi posicionado. `AUTO` = pela regra
+ * automática (pai automático); `MANUAL_MEMBER` = posto à mão na franquia de uma raiz;
+ * `MANUAL_ROOT` = raiz de uma franquia criada à mão; `HIDDEN` = oculto, fora de qualquer
+ * franquia — os clientes não o listam.
+ */
+export type FranchiseAssignment =
+  (typeof FranchiseAssignment)[keyof typeof FranchiseAssignment]
+
+export const FranchiseAssignment = {
+  AUTO: 'AUTO',
+  MANUAL_MEMBER: 'MANUAL_MEMBER',
+  MANUAL_ROOT: 'MANUAL_ROOT',
+  HIDDEN: 'HIDDEN',
+} as const
 
 /**
  * Vista pública de um anime. `banner`/`logo` só são preenchidos quando há binding TMDB —
@@ -1493,7 +1490,12 @@ export interface AnimeResponse {
   isAdult?: boolean | null
   /** @nullable */
   genres?: string[] | null
-  franchiseRootCuration: FranchiseRootCuration
+  franchiseAssignment: FranchiseAssignment
+  /**
+   * Raiz da franquia à qual o anime pertence (`franchiseOf`); `null` se está fora de
+   * qualquer franquia (oculto, direto ou por herança)
+   */
+  franchiseRootId?: AnilistId | null
   /** `null` até o auto-bind terminar de processar a pasta pela primeira vez */
   reviewStatus?: AnimeReviewStatus | null
 }
@@ -1506,7 +1508,7 @@ export type AnimePage = Page & {
 }
 
 /**
- * Tipo de raiz de franquia resolvido no backend. `MANUAL` = curadoria explícita (`franchiseRootCuration = MANUAL_ROOT`); `NATURAL` = curadoria automática (`franchiseRootCuration = AUTO`) e nenhuma relação ancestral (`PREQUEL` ou `PARENT`) sai do anime; `NOT_ROOT` = não é raiz (curadoria `MANUAL_NOT_ROOT`, ou `AUTO` com relação ancestral).
+ * Tipo de raiz de franquia resolvido no backend (regras em `GET /v1/metadata/franchises`). `MANUAL` = raiz de uma franquia manual; `NATURAL` = raiz que não foi criada à mão (anime `AUTO` sem pai automático, ou onde a subida detectou um ciclo); `NOT_ROOT` = não é raiz (pertence à franquia de outro anime, ou está fora de qualquer franquia).
  */
 export type AnimeRootKind = (typeof AnimeRootKind)[keyof typeof AnimeRootKind]
 
@@ -1537,7 +1539,7 @@ export interface AnimeRelationNode {
    */
   posterUrl?: string | null
   folderId?: FolderId | null
-  /** Classificação de raiz já decidida no backend a partir da curadoria + estrutura do grafo. A curadoria crua (`franchiseRootCuration`) vive no detalhe do anime, não no nó do grafo. */
+  /** Classificação de raiz já decidida no backend pela organização em franquias. A atribuição crua (`franchiseAssignment`) vive no detalhe do anime, não no nó do grafo. */
   rootKind: AnimeRootKind
 }
 
@@ -1576,25 +1578,134 @@ export interface AnimeFranchiseResponse {
   /** Raiz da franquia, mesmo quando o anime consultado é outra temporada */
   root: AnimeResponse
   /**
-   * A raiz mais a cadeia de `SEQUEL` a partir dela, na ordem da cadeia, só com
-   * formato de série (`TV`, `TV_SHORT`, `ONA`)
+   * A raiz mais a cadeia de `SEQUEL` a partir dela entre os membros, na ordem da cadeia,
+   * só com formato de série (`TV`, `TV_SHORT`, `ONA`)
    * @nullable
    */
   seasons?: AnimeResponse[] | null
   /**
-   * Filmes da franquia (formato `MOVIE`) — mesma origem de `specials` (`SIDE_STORY`,
-   * `SPIN_OFF`, `SUMMARY`, mais os da cadeia de `SEQUEL` sem formato de série), só que
-   * separados por formato. Ordenados por `year`/`season`
+   * Membros fora de `seasons` com formato `MOVIE`. Ordenados por `year`/`season`
    * @nullable
    */
   movies?: AnimeResponse[] | null
   /**
-   * Demais animes da franquia sem formato de série e sem ser filme (`OVA`, `SPECIAL`,
-   * ...) — `SIDE_STORY`, `SPIN_OFF`, `SUMMARY`, mais os da cadeia de `SEQUEL` nesses
-   * formatos. Ordenados por `year`/`season`
+   * Membros fora de `seasons` de qualquer outro formato (`OVA`, `SPECIAL`, `TV` fora da
+   * cadeia, ...). Ordenados por `year`/`season`
    * @nullable
    */
   specials?: AnimeResponse[] | null
+}
+
+/**
+ * Tipo de raiz. `MANUAL` = franquia criada à mão (`POST /v1/metadata/franchises`);
+ * `NATURAL` = as demais raízes.
+ */
+export type FranchiseKind = (typeof FranchiseKind)[keyof typeof FranchiseKind]
+
+export const FranchiseKind = {
+  NATURAL: 'NATURAL',
+  MANUAL: 'MANUAL',
+} as const
+
+/**
+ * Nova atribuição de franquia do anime
+ */
+export interface AnimeFranchiseAssignmentRequest {
+  assignment: FranchiseAssignment
+  /** Raiz de destino. Obrigatório com `MANUAL_MEMBER` e proibido nos outros valores */
+  rootId?: AnilistId | null
+}
+
+/**
+ * Anime que vira raiz da nova franquia manual
+ */
+export interface CreateFranchiseRequest {
+  rootAnilistId: AnilistId
+}
+
+/**
+ * Resumo de uma franquia pra listagem
+ */
+export interface FranchiseSummary {
+  root: AnimeBindingSummary
+  kind: FranchiseKind
+  /** Quantidade de membros, contando a raiz */
+  memberCount: number
+}
+
+/**
+ * Envelope paginado de franquias
+ */
+export type FranchiseSummaryPage = Page & {
+  data: FranchiseSummary[]
+}
+
+/**
+ * Envelope paginado de resumos de anime
+ */
+export type AnimeBindingSummaryPage = Page & {
+  data: AnimeBindingSummary[]
+}
+
+/**
+ * Membro da franquia
+ */
+export interface FranchiseMember {
+  anime: AnimeResponse
+  /** Atribuição do membro (`AUTO`, `MANUAL_MEMBER` ou `MANUAL_ROOT`; membro nunca é `HIDDEN`) */
+  assignment: FranchiseAssignment
+  /** Pai automático do membro, mesmo que ele esteja em outra franquia */
+  autoParentId?: AnilistId | null
+}
+
+/**
+ * Anime da coleção com aresta pra algum membro, mas em outra franquia ou oculto. Um item
+ * por anime, com a aresta de menor id (as demais estão em `edges`), ordenados por
+ * `anilistId`
+ */
+export interface FranchiseRelatedAnime {
+  anime: AnimeBindingSummary
+  /** Raiz da franquia em que o anime está hoje; `null` se está oculto */
+  currentRoot?: AnimeBindingSummary | null
+  /** Tipo da aresta como gravada (ex.: `SEQUEL`, `SIDE_STORY`) */
+  relationType: string
+  /** Membro na outra ponta da aresta */
+  memberId: AnilistId
+}
+
+/**
+ * Franquia detalhada pra organização no portal
+ */
+export interface FranchiseDetail {
+  root: AnimeResponse
+  kind: FranchiseKind
+  /**
+   * Membros da franquia, incluindo a raiz, ordenados por `anilistId`
+   * @nullable
+   */
+  members?: FranchiseMember[] | null
+  /** @nullable */
+  related?: FranchiseRelatedAnime[] | null
+  /**
+   * Arestas entre membros e entre membros e `related`, pro desenho
+   * @nullable
+   */
+  edges?: AnimeRelationEdge[] | null
+  /**
+   * Prévia de `seasons` em `GET /v1/metadata/animes/{anilistId}/franchise`
+   * @nullable
+   */
+  seasons?: AnilistId[] | null
+  /**
+   * Prévia de `movies`
+   * @nullable
+   */
+  movies?: AnilistId[] | null
+  /**
+   * Prévia de `specials`
+   * @nullable
+   */
+  specials?: AnilistId[] | null
 }
 
 /**
@@ -2209,6 +2320,11 @@ export type BadRequestResponse = ApiError
 export type NotFoundResponse = ApiError
 
 /**
+ * O recurso já existe ou está num estado incompatível (`CONFLICT`)
+ */
+export type ConflictResponse = ApiError
+
+/**
  * Falha num sistema externo — AniList, TMDB, rclone ou ffprobe (`INTEGRATION_ERROR`)
  */
 export type BadGatewayResponse = ApiError
@@ -2400,6 +2516,26 @@ export type AnimeRelationGraphOkResponse = AnimeRelationGraphResponse
 export type AnimeFranchiseOkResponse = AnimeFranchiseResponse
 
 /**
+ * Detalhe da franquia
+ */
+export type FranchiseDetailOkResponse = FranchiseDetail
+
+/**
+ * Franquia manual criada
+ */
+export type FranchiseDetailCreatedResponse = FranchiseDetail
+
+/**
+ * Página (possivelmente vazia) de franquias
+ */
+export type FranchiseSummaryPageOkResponse = FranchiseSummaryPage
+
+/**
+ * Página (possivelmente vazia) de animes
+ */
+export type AnimeBindingSummaryPageOkResponse = AnimeBindingSummaryPage
+
+/**
  * Proposta de pairing por arquivo
  */
 export type TmdbFilePairingProposalOkResponse = TmdbFilePairingProposalResponse
@@ -2526,9 +2662,15 @@ export type SwitchTracksRequestBodyBody = SwitchTracksRequest
 export type AnimeBindingRequestBodyBody = AnimeBindingRequest
 
 /**
- * Payload de curadoria da flag
+ * Nova atribuição de franquia do anime
  */
-export type AnimeFranchiseRootRequestBodyBody = AnimeFranchiseRootRequest
+export type AnimeFranchiseAssignmentRequestBodyBody =
+  AnimeFranchiseAssignmentRequest
+
+/**
+ * Anime que vira raiz da nova franquia manual
+ */
+export type CreateFranchiseRequestBodyBody = CreateFranchiseRequest
 
 /**
  * Payload de binding anime↔TMDB
@@ -2596,6 +2738,13 @@ export type FolderIdRequiredParamParameter = FolderId
 export type PendingOnlyFilterParamParameter = PendingOnlyFilter
 
 export type LanguageParamParameter = Language
+
+/**
+ * Texto buscado no título da raiz e dos membros
+ */
+export type FranchiseSearchParamParameter = string
+
+export type FranchiseKindFilterParamParameter = FranchiseKind
 
 export type DepthParamParameter = GraphDepth
 
@@ -2798,6 +2947,37 @@ export type GetAnimeRelationGraphParams = {
    * Profundidade máxima da BFS de relações
    */
   depth?: DepthParamParameter
+}
+
+export type ListFranchisesParams = {
+  /**
+   * Texto buscado no título da raiz e dos membros
+   */
+  q?: FranchiseSearchParamParameter
+  /**
+   * Tipo de raiz. `MANUAL` = franquia criada à mão (`POST /v1/metadata/franchises`);
+   * `NATURAL` = as demais raízes.
+   */
+  kind?: FranchiseKindFilterParamParameter
+  /**
+   * Número da página (0-based)
+   */
+  page?: PageParamParameter
+  /**
+   * Tamanho máximo de itens por página
+   */
+  size?: SizeParamParameter
+}
+
+export type ListHiddenAnimesParams = {
+  /**
+   * Número da página (0-based)
+   */
+  page?: PageParamParameter
+  /**
+   * Tamanho máximo de itens por página
+   */
+  size?: SizeParamParameter
 }
 
 export type GetTmdbOverridesSchemaParams = {

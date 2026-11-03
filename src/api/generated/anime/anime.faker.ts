@@ -20,7 +20,7 @@
  */
 import { faker } from '@faker-js/faker'
 
-import { AnimeReviewStatus, FranchiseRootCuration } from '../akariAPI.schemas'
+import { AnimeReviewStatus, FranchiseAssignment } from '../akariAPI.schemas'
 import type { AnimeCreatedResponse, AnimeOkResponse } from '../akariAPI.schemas'
 
 export const getGetAnimeResponseMock = (
@@ -111,9 +111,10 @@ export const getGetAnimeResponseMock = (
     ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
     null,
   ]),
-  franchiseRootCuration: faker.helpers.arrayElement(
-    Object.values(FranchiseRootCuration),
+  franchiseAssignment: faker.helpers.arrayElement(
+    Object.values(FranchiseAssignment),
   ),
+  franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
   reviewStatus: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
     null,
@@ -209,9 +210,10 @@ export const getSyncAnimeResponseMock = (
     ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
     null,
   ]),
-  franchiseRootCuration: faker.helpers.arrayElement(
-    Object.values(FranchiseRootCuration),
+  franchiseAssignment: faker.helpers.arrayElement(
+    Object.values(FranchiseAssignment),
   ),
+  franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
   reviewStatus: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
     null,
@@ -307,107 +309,10 @@ export const getBindAnimeToFolderResponseMock = (
     ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
     null,
   ]),
-  franchiseRootCuration: faker.helpers.arrayElement(
-    Object.values(FranchiseRootCuration),
+  franchiseAssignment: faker.helpers.arrayElement(
+    Object.values(FranchiseAssignment),
   ),
-  reviewStatus: faker.helpers.arrayElement([
-    faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
-    null,
-  ]),
-  ...overrideResponse,
-})
-
-export const getSetAnimeFranchiseRootResponseMock = (
-  overrideResponse: Partial<Extract<AnimeOkResponse, object>> = {},
-): AnimeOkResponse => ({
-  anilistId: faker.number.int(),
-  malId: faker.helpers.arrayElement([faker.number.int(), null]),
-  titles: faker.helpers.arrayElement([
-    {
-      main: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      english: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      japanese: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      synonyms: faker.helpers.arrayElement([
-        Array.from(
-          { length: faker.number.int({ min: 1, max: 10 }) },
-          (_, i) => i + 1,
-        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
-        null,
-      ]),
-    },
-    null,
-  ]),
-  synopsis: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  thumbnails: faker.helpers.arrayElement([
-    {
-      small: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      medium: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-      large: faker.helpers.arrayElement([
-        faker.string.alpha({ length: { min: 10, max: 20 } }),
-        null,
-      ]),
-    },
-    null,
-  ]),
-  banner: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  logo: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  episodes: faker.helpers.arrayElement([faker.number.int(), null]),
-  duration: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  year: faker.helpers.arrayElement([faker.number.int(), null]),
-  format: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  season: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  studio: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  score: faker.helpers.arrayElement([
-    faker.number.float({ fractionDigits: 2 }),
-    null,
-  ]),
-  isAdult: faker.helpers.arrayElement([faker.datatype.boolean(), null]),
-  genres: faker.helpers.arrayElement([
-    Array.from(
-      { length: faker.number.int({ min: 1, max: 10 }) },
-      (_, i) => i + 1,
-    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
-    null,
-  ]),
-  franchiseRootCuration: faker.helpers.arrayElement(
-    Object.values(FranchiseRootCuration),
-  ),
+  franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
   reviewStatus: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
     null,
@@ -503,9 +408,10 @@ export const getMarkAnimeAsReviewedResponseMock = (
     ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
     null,
   ]),
-  franchiseRootCuration: faker.helpers.arrayElement(
-    Object.values(FranchiseRootCuration),
+  franchiseAssignment: faker.helpers.arrayElement(
+    Object.values(FranchiseAssignment),
   ),
+  franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
   reviewStatus: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
     null,
@@ -601,9 +507,10 @@ export const getGetAnimeByFolderResponseMock = (
     ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
     null,
   ]),
-  franchiseRootCuration: faker.helpers.arrayElement(
-    Object.values(FranchiseRootCuration),
+  franchiseAssignment: faker.helpers.arrayElement(
+    Object.values(FranchiseAssignment),
   ),
+  franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
   reviewStatus: faker.helpers.arrayElement([
     faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
     null,

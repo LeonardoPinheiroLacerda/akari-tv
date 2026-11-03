@@ -86,8 +86,8 @@ export const getListRelationRootsUrl = (params?: ListRelationRootsParams) => {
 }
 
 /**
- * Animes com `franchiseRootCuration = MANUAL_ROOT`, mais os com `franchiseRootCuration =
- * AUTO` dos quais não sai nenhuma relação `PREQUEL` nem `PARENT`. Ordenados por `anilistId`.
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
  * @summary Animes-raiz da coleção (paginado)
  */
 export const listRelationRoots = async (
@@ -655,37 +655,23 @@ export const getGetAnimeFranchiseUrl = (anilistId: number) => {
 }
 
 /**
- * `root` é sempre a raiz da franquia, mesmo que o `anilistId` informado seja de outra
- * temporada — se a raiz também for uma temporada, ela aparece em `seasons` além de
- * `root`. `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo
- * (mesmos campos de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides
- * manuais).
+ * Franquia à qual o anime pertence (`franchiseOf`, regras em `GET
+ * /v1/metadata/franchises`), mesmo que o `anilistId` informado não seja a raiz. `404` se
+ * o anime não está na coleção ou está fora de qualquer franquia (oculto, direto ou por
+ * herança).
  *
- * Classificação a partir das arestas de `anime_relation`:
- * - **Raiz**: sobe por `PREQUEL`/`PARENT` (ancestral de continuidade) ou por `SUMMARY` em
- *   sentido invertido (uma aresta `A -[SUMMARY]-> B` indica que `B` é derivado de `A` —
- *   cobre filme/recap ligado ao título principal só por essa aresta, que senão viraria
- *   raiz da própria "franquia"), até não sobrar mais nenhuma (ou até uma curadoria manual
- *   de raiz). `ALTERNATIVE` não conta pra achar a raiz — a AniList tagueia esse tipo de
- *   forma simétrica com frequência, sem um lado objetivamente ancestral.
- * - **`seasons`**: a raiz mais a cadeia de `SEQUEL` a partir dela, na ordem da cadeia, só
- *   os de formato de série (`TV`, `TV_SHORT`, `ONA`).
- * - **`movies`**\/**`specials`**: os demais animes da franquia ligados por `SIDE_STORY`,
- *   `SPIN_OFF`, `SUMMARY`, `PARENT` ou `ALTERNATIVE`, mais os da cadeia de `SEQUEL` que
- *   não são de formato de série — separados por formato: `MOVIE` vai pra `movies`, o
- *   resto (`OVA`, `SPECIAL`, ...) pra `specials`. As duas ordenadas por `year`, depois
- *   por `season` (`WINTER`/`SPRING`/`SUMMER`/`FALL`), com `anilistId` como desempate — a
- *   AniList não tem uma data de estreia mais precisa persistida localmente.
- * - Ficam fora de todas as listas: animes ligados só por `CHARACTER`, `OTHER`/
- *   `ADAPTATION`, e qualquer anime da cadeia de `SEQUEL` com formato fora das listas
- *   acima (ex. `MUSIC`, formato ausente) que não tenha também uma aresta própria de
- *   `SIDE_STORY`/`SPIN_OFF`/`SUMMARY`/`PARENT`/`ALTERNATIVE`.
- * - Só entram animes já vinculados à coleção (com metadata local salva) — a mesma
- *   limitação do `relations/graph`: uma relação pra um anime ainda não vinculado
- *   simplesmente não existe em `anime_relation`.
+ * Os **membros** são todos os animes cuja franquia é esta raiz, incluindo a própria raiz:
+ * - **`seasons`**: a raiz mais a cadeia de `SEQUEL` a partir dela, só entre os membros, na
+ *   ordem da cadeia, filtrada pelos formatos de série (`TV`, `TV_SHORT`, `ONA`). A cadeia
+ *   continua através de um membro de outro formato; ele só não entra em `seasons`.
+ * - **`movies`**\/**`specials`**: os demais membros, separados por formato — `MOVIE` em
+ *   `movies`, o resto em `specials` —, ordenados por `year`, depois `season`
+ *   (`WINTER`/`SPRING`/`SUMMER`/`FALL`), com `anilistId` como desempate. Um membro sem
+ *   relação com os outros entra mesmo assim, pelo formato.
  *
- * Sem duplicatas: cada anime aparece em só uma das listas (`seasons`, `movies` ou
- * `specials`).
+ * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
+ * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
+ * duplicatas: cada membro aparece em só uma das listas.
  * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
  */
 export const getAnimeFranchise = async (

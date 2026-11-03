@@ -23,7 +23,7 @@ import { faker } from '@faker-js/faker'
 import {
   AnimeReviewStatus,
   AnimeRootKind,
-  FranchiseRootCuration,
+  FranchiseAssignment,
 } from '../akariAPI.schemas'
 import type {
   AnimeFranchiseOkResponse,
@@ -122,9 +122,10 @@ export const getListRelationRootsResponseMock = (): AnimePageOkResponse => ({
         ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
         null,
       ]),
-      franchiseRootCuration: faker.helpers.arrayElement(
-        Object.values(FranchiseRootCuration),
+      franchiseAssignment: faker.helpers.arrayElement(
+        Object.values(FranchiseAssignment),
       ),
+      franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
       reviewStatus: faker.helpers.arrayElement([
         faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
         null,
@@ -270,9 +271,10 @@ export const getGetAnimeFranchiseResponseMock = (
         ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
         null,
       ]),
-      franchiseRootCuration: faker.helpers.arrayElement(
-        Object.values(FranchiseRootCuration),
+      franchiseAssignment: faker.helpers.arrayElement(
+        Object.values(FranchiseAssignment),
       ),
+      franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
       reviewStatus: faker.helpers.arrayElement([
         faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
         null,
@@ -369,9 +371,10 @@ export const getGetAnimeFranchiseResponseMock = (
         ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
         null,
       ]),
-      franchiseRootCuration: faker.helpers.arrayElement(
-        Object.values(FranchiseRootCuration),
+      franchiseAssignment: faker.helpers.arrayElement(
+        Object.values(FranchiseAssignment),
       ),
+      franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
       reviewStatus: faker.helpers.arrayElement([
         faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
         null,
@@ -469,9 +472,10 @@ export const getGetAnimeFranchiseResponseMock = (
         ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
         null,
       ]),
-      franchiseRootCuration: faker.helpers.arrayElement(
-        Object.values(FranchiseRootCuration),
+      franchiseAssignment: faker.helpers.arrayElement(
+        Object.values(FranchiseAssignment),
       ),
+      franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
       reviewStatus: faker.helpers.arrayElement([
         faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
         null,
@@ -569,9 +573,10 @@ export const getGetAnimeFranchiseResponseMock = (
         ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
         null,
       ]),
-      franchiseRootCuration: faker.helpers.arrayElement(
-        Object.values(FranchiseRootCuration),
+      franchiseAssignment: faker.helpers.arrayElement(
+        Object.values(FranchiseAssignment),
       ),
+      franchiseRootId: faker.helpers.arrayElement([faker.number.int(), null]),
       reviewStatus: faker.helpers.arrayElement([
         faker.helpers.arrayElement(Object.values(AnimeReviewStatus)),
         null,
