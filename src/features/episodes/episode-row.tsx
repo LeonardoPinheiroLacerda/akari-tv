@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useState } from 'react'
 import {
   FocusContext,
   useFocusable,
@@ -6,6 +6,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { VideoFileResponse } from '@/api/generated/akariAPI.schemas'
 import { remToPx } from '@/lib/layout'
+import { scrollTarget, smoothScrollTo } from '@/lib/scroll'
 import { ROW_PADDING_REM } from '@/ui/poster-row'
 import { CARD_HEIGHT_REM, CARD_WIDTH_REM, EpisodeCard } from './episode-card'
 
@@ -25,7 +26,7 @@ interface EpisodeRowProps {
 /**
  * Linha horizontal de episódios, virtualizada: uma série pode ter centenas de
  * episódios (BLEACH tem 366), mas só os visíveis mais a folga ficam no DOM.
- * A rolagem segue o foco com `scrollToIndex`, mantendo a folga do contorno.
+ * A rolagem segue o foco mantendo a folga do contorno.
  */
 export const EpisodeRow = memo(function EpisodeRow({
   episodes,
@@ -36,6 +37,12 @@ export const EpisodeRow = memo(function EpisodeRow({
     focusKey: 'EPISODES_ROW',
     saveLastFocusedChild: true,
   })
+
+  // Foco inicial no primeiro card só na primeira montagem: o virtualizer
+  // desmonta e remonta o card ao rolar, e um `autoFocus` que valesse sempre
+  // puxaria o foco de volta ao E1 assim que a rolagem chegasse perto dele
+  // (segurando ◀, o foco saltava do E7 para o E1).
+  const [initialFocusDone, setInitialFocusDone] = useState(false)
 
   const padding = remToPx(ROW_PADDING_REM)
   const virtualizer = useVirtualizer({
@@ -53,10 +60,21 @@ export const EpisodeRow = memo(function EpisodeRow({
 
   const handleFocused = useCallback(
     (episode: VideoFileResponse, index: number) => {
-      virtualizer.scrollToIndex(index, { align: 'auto', behavior: 'smooth' })
+      // Decide pelo alvo pendente, não pela posição: com a seta segurada a
+      // rolagem ainda está a caminho do passo anterior (o `align: 'auto'` do
+      // virtualizer olha a posição e recalcularia a partir dela).
+      const track = ref.current
+      const start = virtualizer.getOffsetForIndex(index, 'start')?.[0]
+      const end = virtualizer.getOffsetForIndex(index, 'end')?.[0]
+      if (track && start !== undefined && end !== undefined) {
+        const current = scrollTarget(track).left
+        if (start < current) smoothScrollTo(track, { left: start })
+        else if (end > current) smoothScrollTo(track, { left: end })
+      }
+      setInitialFocusDone(true)
       onFocused(episode, index)
     },
-    [virtualizer, onFocused],
+    [virtualizer, onFocused, ref],
   )
 
   return (
@@ -74,10 +92,11 @@ export const EpisodeRow = memo(function EpisodeRow({
             const episode = episodes[item.index]
             if (!episode) return null
             return (
-              // Posição por `left`, não `transform`: a navegação espacial mede
-              // pelo `offsetLeft`, que ignora transform — com translateX todos
-              // os cards pareceriam estar na mesma posição e a seta não andaria.
-              // É posição estática, não animação (seção 7 continua valendo).
+              // Posição por `left`, não `transform`: é posição estática, não
+              // animação (seção 7), e mantém a caixa do card onde ele aparece.
+              // Antes era obrigatório — a navegação espacial media pelo
+              // `offsetLeft`, que ignora transform —; hoje ela usa
+              // `getBoundingClientRect` (app/providers.tsx).
               <div
                 key={episode.id}
                 className="absolute"
@@ -86,7 +105,7 @@ export const EpisodeRow = memo(function EpisodeRow({
                 <EpisodeCard
                   episode={episode}
                   index={item.index}
-                  autoFocus={item.index === 0}
+                  autoFocus={!initialFocusDone && item.index === 0}
                   onFocused={handleFocused}
                   onSelect={onSelect}
                 />

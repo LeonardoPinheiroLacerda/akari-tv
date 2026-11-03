@@ -6,6 +6,7 @@ import {
 import type { MediaInfoResponse } from '@/api/generated/akariAPI.schemas'
 import { bitrateLabel, codecLabel, sizeLabel, timeLabel } from '@/lib/format'
 import { remToPx } from '@/lib/layout'
+import { smoothScrollBy } from '@/lib/scroll'
 
 export const NERD_DETAILS_FOCUS_KEY = 'PLAYER_NERD_DETAILS'
 // Quanto cada seta rola a lista (dp de design / 16).
@@ -80,10 +81,7 @@ export function NerdDetails({ probe, onClose }: NerdDetailsProps) {
       const element = ref.current
       if (element && (direction === 'down' || direction === 'up')) {
         const step = remToPx(SCROLL_STEP_REM)
-        element.scrollBy({
-          top: direction === 'down' ? step : -step,
-          behavior: 'smooth',
-        })
+        smoothScrollBy(element, { top: direction === 'down' ? step : -step })
       }
       return false
     },

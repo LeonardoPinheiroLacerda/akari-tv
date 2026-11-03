@@ -12,6 +12,7 @@ import {
 } from '@noriginmedia/norigin-spatial-navigation'
 import { registerBackHandler } from '@/app/back'
 import { remToPx } from '@/lib/layout'
+import { smoothScrollBy } from '@/lib/scroll'
 
 // Quanto o painel rola a cada ▲/▼.
 const SCROLL_STEP_REM = 8
@@ -31,23 +32,14 @@ interface SynopsisPanelProps {
 function SynopsisPanel({ title, text, onClose }: SynopsisPanelProps) {
   const [scrollable, setScrollable] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-  // Alvo da rolagem, acumulado entre toques: cada `scrollTo` suave parte da
-  // posição em que a animação anterior estava, então toques rápidos (ou a
-  // seta segurada) se anulavam e o texto parava antes do fim.
-  const scrollTarget = useRef(0)
   const { ref, focusKey, focusSelf } = useFocusable<unknown, HTMLDivElement>({
     isFocusBoundary: true,
     onEnterPress: onClose,
     onArrowPress: (direction) => {
       const area = scrollRef.current
       if (area && (direction === 'up' || direction === 'down')) {
-        const max = area.scrollHeight - area.clientHeight
         const step = (direction === 'up' ? -1 : 1) * remToPx(SCROLL_STEP_REM)
-        scrollTarget.current = Math.min(
-          max,
-          Math.max(0, scrollTarget.current + step),
-        )
-        area.scrollTo({ top: scrollTarget.current, behavior: 'smooth' })
+        smoothScrollBy(area, { top: step })
       }
       return false
     },

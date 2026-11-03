@@ -7,6 +7,7 @@ import { useListRelationRootsInfinite } from '@/api/generated/anime-relations/an
 import { pageInfiniteOptions } from '@/api/pagination'
 import { createStore } from '@/lib/store'
 import { remToPx } from '@/lib/layout'
+import { smoothScrollTo } from '@/lib/scroll'
 import { focusMemory, PUSHED_SCREEN } from '@/lib/navigation'
 import { AnimeHero } from '@/ui/anime-hero'
 import { AnimePoster, AnimePosterSkeleton, POSTER_HEIGHT_REM } from '@/ui/anime-poster'
@@ -63,10 +64,8 @@ export function HomeScreen() {
       heroStore.set(anime)
       focusMemory.set(HOME_FOCUS_KEY, anime.anilistId)
 
-      scrollRef.current?.scrollTo({
-        top: Math.max(0, node.offsetTop - remToPx(GRID_PADDING_REM)),
-        behavior: 'smooth',
-      })
+      const grid = scrollRef.current
+      if (grid) smoothScrollTo(grid, { top: node.offsetTop - remToPx(GRID_PADDING_REM) })
 
       const { query: current, total } = latest.current
       if (

@@ -23,6 +23,7 @@ import { pageInfiniteOptions } from '@/api/pagination'
 import { ScreenActiveContext, useScreenFocusable } from '@/app/screen'
 import { formatLabel } from '@/lib/format'
 import { remToPx } from '@/lib/layout'
+import { jumpScrollTo, smoothScrollTo } from '@/lib/scroll'
 import { PUSHED_SCREEN } from '@/lib/navigation'
 import { createStore, useStore, type Store } from '@/lib/store'
 import { InfoBadge } from '@/ui/info-badge'
@@ -221,7 +222,7 @@ export function SearchScreen() {
 
   // Resultados novos: volta a grade pro topo e limpa o detalhe da busca anterior.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 })
+    if (scrollRef.current) jumpScrollTo(scrollRef.current, { top: 0 })
     focusedStore.set(undefined)
   }, [term, focusedStore])
 
@@ -265,10 +266,12 @@ export function SearchScreen() {
     (franchise: FranchiseSummary, index: number, node: HTMLElement) => {
       focusedStore.set(franchise)
 
-      scrollRef.current?.scrollTo({
-        top: Math.max(0, node.offsetTop - remToPx(GRID_PADDING_REM)),
-        behavior: 'smooth',
-      })
+      const grid = scrollRef.current
+      if (grid) {
+        smoothScrollTo(grid, {
+          top: node.offsetTop - remToPx(GRID_PADDING_REM),
+        })
+      }
 
       const { results: current, total: loaded } = latest.current
       if (

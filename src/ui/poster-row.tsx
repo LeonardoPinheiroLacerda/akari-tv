@@ -2,6 +2,7 @@ import { memo, useCallback } from 'react'
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import { remToPx } from '@/lib/layout'
+import { scrollTarget, smoothScrollTo } from '@/lib/scroll'
 import { AnimePoster, AnimePosterSkeleton, POSTER_HEIGHT_REM } from './anime-poster'
 import { SkeletonGroup } from './skeleton'
 
@@ -45,10 +46,13 @@ export const PosterRow = memo(function PosterRow({
         const padding = remToPx(ROW_PADDING_REM)
         const left = node.offsetLeft - padding
         const right = node.offsetLeft + node.offsetWidth + padding
-        if (left < track.scrollLeft) {
-          track.scrollTo({ left, behavior: 'smooth' })
-        } else if (right > track.scrollLeft + track.clientWidth) {
-          track.scrollTo({ left: right - track.clientWidth, behavior: 'smooth' })
+        // Contra o alvo, não a posição: com a seta segurada a rolagem ainda
+        // está a caminho do passo anterior.
+        const current = scrollTarget(track).left
+        if (left < current) {
+          smoothScrollTo(track, { left })
+        } else if (right > current + track.clientWidth) {
+          smoothScrollTo(track, { left: right - track.clientWidth })
         }
       }
       onFocused(anime)

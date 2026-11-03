@@ -12,6 +12,7 @@ import type {
 } from '@/api/generated/akariAPI.schemas'
 import { codecLabel, languageLabel } from '@/lib/format'
 import { remToPx } from '@/lib/layout'
+import { scrollTarget, smoothScrollTo } from '@/lib/scroll'
 import { Focusable } from '@/ui/focusable'
 import { NerdDetails } from './nerd-details'
 import type { TrackSelection } from './use-playback-session'
@@ -281,10 +282,11 @@ export const TrackPanel = memo(function TrackPanel({
       const margin = remToPx(SCROLL_MARGIN_REM)
       const top = node.offsetTop - margin
       const bottom = node.offsetTop + node.offsetHeight + margin
-      if (top < panel.scrollTop) {
-        panel.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
-      } else if (bottom > panel.scrollTop + panel.clientHeight) {
-        panel.scrollTo({ top: bottom - panel.clientHeight, behavior: 'smooth' })
+      const current = scrollTarget(panel).top
+      if (top < current) {
+        smoothScrollTo(panel, { top })
+      } else if (bottom > current + panel.clientHeight) {
+        smoothScrollTo(panel, { top: bottom - panel.clientHeight })
       }
     },
     [ref],
