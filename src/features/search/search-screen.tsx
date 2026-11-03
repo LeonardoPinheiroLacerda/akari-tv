@@ -16,9 +16,9 @@ import {
   useFocusable,
 } from '@noriginmedia/norigin-spatial-navigation'
 import { keepPreviousData } from '@tanstack/react-query'
-import { CalendarDays, Clapperboard, Search, Tv } from 'lucide-react'
-import type { MediaFolderResponse } from '@/api/generated/akariAPI.schemas'
-import { useListFoldersInfinite } from '@/api/generated/media-folder/media-folder'
+import { CalendarDays, Clapperboard, Layers, Search, Tv } from 'lucide-react'
+import type { FranchiseSummary } from '@/api/generated/akariAPI.schemas'
+import { useListFranchisesInfinite } from '@/api/generated/anime-franchise/anime-franchise'
 import { pageInfiniteOptions } from '@/api/pagination'
 import { ScreenActiveContext, useScreenFocusable } from '@/app/screen'
 import { formatLabel } from '@/lib/format'
@@ -29,10 +29,10 @@ import { InfoBadge } from '@/ui/info-badge'
 import { SkeletonGroup } from '@/ui/skeleton'
 import { Spinner } from '@/ui/spinner'
 import {
-  FOLDER_POSTER_HEIGHT_REM,
-  FolderPoster,
-  FolderPosterSkeleton,
-} from './folder-poster'
+  FRANCHISE_POSTER_HEIGHT_REM,
+  FranchisePoster,
+  FranchisePosterSkeleton,
+} from './franchise-poster'
 import {
   KEY_BACKSPACE,
   KEY_CLEAR,
@@ -102,15 +102,15 @@ function SearchField({ query }: { query: string }) {
   )
 }
 
-/** Detalhe da pasta em foco, sob o teclado. Lê o store: só ele re-renderiza no foco. */
-const FocusedFolder = memo(function FocusedFolder({
+/** Detalhe da franquia em foco, sob o teclado. Lê o store: só ele re-renderiza no foco. */
+const FocusedFranchise = memo(function FocusedFranchise({
   store,
 }: {
-  store: Store<MediaFolderResponse | undefined>
+  store: Store<FranchiseSummary | undefined>
 }) {
-  const folder = useStore(store)
-  if (!folder) return null
-  const binding = folder.animeBinding
+  const franchise = useStore(store)
+  if (!franchise) return null
+  const { root, memberCount } = franchise
 
   return (
     <div
@@ -118,47 +118,40 @@ const FocusedFolder = memo(function FocusedFolder({
       style={{ width: `${KEYBOARD_WIDTH_REM}rem` }}
     >
       <p className="line-clamp-2 text-[2.25rem] leading-tight font-medium">
-        {binding?.title ?? folder.name}
+        {root.title}
       </p>
-      {binding ? (
-        <div className="flex flex-wrap gap-3">
-          {binding.format && (
-            <InfoBadge
-              icon={Tv}
-              label={formatLabel(binding.format)}
-              iconColor="var(--color-brand)"
-            />
-          )}
-          {binding.year && (
-            <InfoBadge icon={CalendarDays} label={String(binding.year)} />
-          )}
-          {binding.studio && (
-            <InfoBadge icon={Clapperboard} label={binding.studio} />
-          )}
-        </div>
-      ) : (
-        <p className="text-muted-foreground text-[1.75rem]">
-          Pasta sem anime vinculado
-        </p>
-      )}
+      <div className="flex flex-wrap gap-3">
+        <InfoBadge
+          icon={Layers}
+          label={memberCount === 1 ? '1 título' : `${memberCount} títulos`}
+          iconColor="var(--color-brand)"
+        />
+        {root.format && (
+          <InfoBadge icon={Tv} label={formatLabel(root.format)} />
+        )}
+        {root.year && (
+          <InfoBadge icon={CalendarDays} label={String(root.year)} />
+        )}
+        {root.studio && <InfoBadge icon={Clapperboard} label={root.studio} />}
+      </div>
     </div>
   )
 })
 
 interface ResultsGridProps {
-  folders: MediaFolderResponse[]
+  franchises: FranchiseSummary[]
   onFocused: (
-    folder: MediaFolderResponse,
+    franchise: FranchiseSummary,
     index: number,
     node: HTMLElement,
   ) => void
-  onSelect: (folder: MediaFolderResponse) => void
+  onSelect: (franchise: FranchiseSummary) => void
   scrollRef: RefObject<HTMLDivElement | null>
 }
 
 /** Grade de resultados: região própria, que guarda o último pôster focado. */
 const ResultsGrid = memo(function ResultsGrid({
-  folders,
+  franchises,
   onFocused,
   onSelect,
   scrollRef,
@@ -180,10 +173,10 @@ const ResultsGrid = memo(function ResultsGrid({
           className="grid gap-6"
           style={{ gridTemplateColumns: `repeat(${COLUMNS}, max-content)` }}
         >
-          {folders.map((folder, index) => (
-            <FolderPoster
-              key={folder.id}
-              folder={folder}
+          {franchises.map((franchise, index) => (
+            <FranchisePoster
+              key={franchise.root.anilistId}
+              franchise={franchise}
               index={index}
               autoFocus={false}
               onFocused={onFocused}
@@ -197,29 +190,30 @@ const ResultsGrid = memo(function ResultsGrid({
 })
 
 /**
- * Buscar: à esquerda o campo, o teclado na tela e o detalhe da pasta em foco;
- * à direita, os resultados em grade com paginação infinita. Busca as pastas
- * do catálogo com arquivos (`GET /v1/catalog/folders?hasFiles=true`), filtradas
- * pelo nome; sem texto, lista todas, na ordem do backend. O teclado físico
- * também digita (navegador). OK numa pasta com anime vinculado abre os
- * episódios dele.
+ * Buscar: à esquerda o campo, o teclado na tela e o detalhe da franquia em
+ * foco; à direita, os resultados em grade com paginação infinita. Busca as
+ * franquias da coleção (`GET /v1/metadata/franchises?q=`) — o texto casa com o
+ * título da raiz ou de qualquer membro, então buscar uma temporada acha a
+ * franquia dela; animes ocultos não aparecem. Sem texto, lista todas, na ordem
+ * do backend. O teclado físico também digita (navegador). OK numa franquia
+ * abre o detalhe dela, como na Início.
  */
 export function SearchScreen() {
   const { ref, focusKey } = useScreenFocusable({ focusKey: SEARCH_FOCUS_KEY })
   const active = useContext(ScreenActiveContext)
   const [focusedStore] = useState(() =>
-    createStore<MediaFolderResponse | undefined>(undefined),
+    createStore<FranchiseSummary | undefined>(undefined),
   )
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const [query, setQuery] = useState('')
-  const name = useDebouncedValue(query.trim(), DEBOUNCE_MS)
+  const term = useDebouncedValue(query.trim(), DEBOUNCE_MS)
 
-  const results = useListFoldersInfinite(
-    { size: PAGE_SIZE, hasFiles: true, ...(name ? { name } : {}) },
+  const results = useListFranchisesInfinite(
+    { size: PAGE_SIZE, ...(term ? { q: term } : {}) },
     { query: { ...pageInfiniteOptions, placeholderData: keepPreviousData } },
   )
-  const folders = useMemo(
+  const franchises = useMemo(
     () => results.data?.pages.flatMap((page) => page.data) ?? [],
     [results.data],
   )
@@ -229,7 +223,7 @@ export function SearchScreen() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 })
     focusedStore.set(undefined)
-  }, [name, focusedStore])
+  }, [term, focusedStore])
 
   const handleKey = useCallback(
     (value: string) => setQuery((current) => applyKey(current, value)),
@@ -262,14 +256,14 @@ export function SearchScreen() {
 
   // Último estado da query num ref: o callback de foco fica estável e os
   // pôsteres memoizados não re-renderizam quando uma página nova chega.
-  const latest = useRef({ results, total: folders.length })
+  const latest = useRef({ results, total: franchises.length })
   useLayoutEffect(() => {
-    latest.current = { results, total: folders.length }
+    latest.current = { results, total: franchises.length }
   })
 
   const handleFocused = useCallback(
-    (folder: MediaFolderResponse, index: number, node: HTMLElement) => {
-      focusedStore.set(folder)
+    (franchise: FranchiseSummary, index: number, node: HTMLElement) => {
+      focusedStore.set(franchise)
 
       scrollRef.current?.scrollTo({
         top: Math.max(0, node.offsetTop - remToPx(GRID_PADDING_REM)),
@@ -290,15 +284,12 @@ export function SearchScreen() {
 
   const navigate = useNavigate()
   const handleSelect = useCallback(
-    (folder: MediaFolderResponse) => {
-      const binding = folder.animeBinding
-      if (!binding) return
-      navigate(`/anime/${binding.anilistId}/episodes`, { state: PUSHED_SCREEN })
-    },
+    (franchise: FranchiseSummary) =>
+      navigate(`/anime/${franchise.root.anilistId}`, { state: PUSHED_SCREEN }),
     [navigate],
   )
 
-  const heading = name ? `Resultados para “${name}”` : 'Todas as pastas'
+  const heading = term ? `Resultados para “${term}”` : 'Todas as franquias'
   const searching = results.isFetching && !results.isFetchingNextPage
 
   return (
@@ -311,7 +302,7 @@ export function SearchScreen() {
         <div className="flex shrink-0 flex-col gap-8">
           <SearchField query={query} />
           <SearchKeyboard autoFocus onPress={handleKey} />
-          <FocusedFolder store={focusedStore} />
+          <FocusedFranchise store={focusedStore} />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -322,7 +313,7 @@ export function SearchScreen() {
             <h1 className="truncate text-[2.25rem] font-medium">{heading}</h1>
             {total !== undefined && (
               <span className="text-muted-foreground shrink-0 text-[1.75rem]">
-                {total === 1 ? '1 pasta' : `${total} pastas`}
+                {total === 1 ? '1 franquia' : `${total} franquias`}
               </span>
             )}
             {searching && <Spinner sizeRem={2.5} label="Buscando" />}
@@ -331,7 +322,7 @@ export function SearchScreen() {
           {results.isPending && (
             // O foco já está no teclado: o skeleton não precisa segurá-lo.
             <SkeletonGroup
-              label="Carregando pastas"
+              label="Carregando franquias"
               className="grid min-h-0 flex-1 content-start gap-6 overflow-hidden"
               style={{
                 padding: `${GRID_PADDING_REM}rem`,
@@ -339,7 +330,7 @@ export function SearchScreen() {
               }}
             >
               {Array.from({ length: COLUMNS * 2 }, (_, index) => (
-                <FolderPosterSkeleton key={index} />
+                <FranchisePosterSkeleton key={index} />
               ))}
             </SkeletonGroup>
           )}
@@ -351,21 +342,23 @@ export function SearchScreen() {
               Não foi possível buscar ({results.error.message})
             </p>
           )}
-          {results.isSuccess && folders.length === 0 && (
+          {results.isSuccess && franchises.length === 0 && (
             <div
               className="text-muted-foreground flex flex-col items-center justify-center gap-4 text-center"
-              style={{ height: `${FOLDER_POSTER_HEIGHT_REM}rem` }}
+              style={{ height: `${FRANCHISE_POSTER_HEIGHT_REM}rem` }}
             >
               <Search aria-hidden className="size-16" strokeWidth={1.5} />
               <p className="text-[1.75rem]">
-                Nenhuma pasta encontrada para “{name}”
+                {term
+                  ? `Nenhuma franquia encontrada para “${term}”`
+                  : 'Nenhuma franquia na coleção'}
               </p>
             </div>
           )}
 
           {!results.isPending && (
             <ResultsGrid
-              folders={folders}
+              franchises={franchises}
               onFocused={handleFocused}
               onSelect={handleSelect}
               scrollRef={scrollRef}

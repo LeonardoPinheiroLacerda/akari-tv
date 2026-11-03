@@ -1,51 +1,53 @@
 import { memo, useCallback } from 'react'
 import type { FocusableComponentLayout } from '@noriginmedia/norigin-spatial-navigation'
-import type { MediaFolderResponse } from '@/api/generated/akariAPI.schemas'
+import type { FranchiseSummary } from '@/api/generated/akariAPI.schemas'
 import { cn } from '@/lib/utils'
 import { Focusable } from '@/ui/focusable'
 import { Skeleton } from '@/ui/skeleton'
 
-export const FOLDER_POSTER_WIDTH_REM = 12
-export const FOLDER_POSTER_HEIGHT_REM = 18
+export const FRANCHISE_POSTER_WIDTH_REM = 12
+export const FRANCHISE_POSTER_HEIGHT_REM = 18
 const UNFOCUSED_OPACITY = 0.7
 // Mesma máscara do pôster de anime (ui/anime-poster.tsx): a base da capa some
 // para transparente, sem degradê por cima.
 const COVER_FADE = 'linear-gradient(to top, transparent, black 45%)'
 
-interface FolderPosterProps {
-  folder: MediaFolderResponse
+interface FranchisePosterProps {
+  franchise: FranchiseSummary
   index: number
   autoFocus: boolean
   onFocused: (
-    folder: MediaFolderResponse,
+    franchise: FranchiseSummary,
     index: number,
     node: HTMLElement,
   ) => void
   /** OK no pôster. Estável, como `onFocused`. */
-  onSelect: (folder: MediaFolderResponse) => void
+  onSelect: (franchise: FranchiseSummary) => void
 }
 
 /**
- * Pôster 2:3 de uma pasta nos resultados da busca, com a capa e o título do
- * anime vinculado. Pasta sem anime vinculado mostra o nome da pasta sobre o
- * fundo elevado. Memoizado, com callbacks estáveis da tela (seção 7).
+ * Pôster 2:3 de uma franquia nos resultados da busca, com a capa e o título
+ * da raiz. Raiz sem capa mostra o título sobre o fundo elevado. Memoizado,
+ * com callbacks estáveis da tela (seção 7).
  */
-export const FolderPoster = memo(function FolderPoster({
-  folder,
+export const FranchisePoster = memo(function FranchisePoster({
+  franchise,
   index,
   autoFocus,
   onFocused,
   onSelect,
-}: FolderPosterProps) {
+}: FranchisePosterProps) {
   const handleFocus = useCallback(
-    (layout: FocusableComponentLayout) => onFocused(folder, index, layout.node),
-    [folder, index, onFocused],
+    (layout: FocusableComponentLayout) =>
+      onFocused(franchise, index, layout.node),
+    [franchise, index, onFocused],
   )
-  const handleEnter = useCallback(() => onSelect(folder), [folder, onSelect])
+  const handleEnter = useCallback(
+    () => onSelect(franchise),
+    [franchise, onSelect],
+  )
 
-  const binding = folder.animeBinding
-  const title = binding?.title ?? folder.name
-  const cover = binding?.thumbnail
+  const { title, thumbnail: cover } = franchise.root
 
   return (
     <Focusable
@@ -60,8 +62,8 @@ export const FolderPoster = memo(function FolderPoster({
             !cover && 'bg-surface-elevated',
           )}
           style={{
-            width: `${FOLDER_POSTER_WIDTH_REM}rem`,
-            height: `${FOLDER_POSTER_HEIGHT_REM}rem`,
+            width: `${FRANCHISE_POSTER_WIDTH_REM}rem`,
+            height: `${FRANCHISE_POSTER_HEIGHT_REM}rem`,
             contain: 'layout paint',
             transform: focused ? 'scale(1.05)' : 'scale(1)',
             opacity: focused ? 1 : UNFOCUSED_OPACITY,
@@ -100,12 +102,12 @@ export const FolderPoster = memo(function FolderPoster({
 })
 
 /** Pôster no tamanho real enquanto a busca carrega (dentro de um `SkeletonGroup`). */
-export function FolderPosterSkeleton() {
+export function FranchisePosterSkeleton() {
   return (
     <Skeleton
       style={{
-        width: `${FOLDER_POSTER_WIDTH_REM}rem`,
-        height: `${FOLDER_POSTER_HEIGHT_REM}rem`,
+        width: `${FRANCHISE_POSTER_WIDTH_REM}rem`,
+        height: `${FRANCHISE_POSTER_HEIGHT_REM}rem`,
       }}
     />
   )
