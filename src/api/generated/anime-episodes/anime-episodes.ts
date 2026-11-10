@@ -200,6 +200,24 @@ export type ListAnimeEpisodesInfiniteQueryError = ErrorType<
   BadRequestResponse | NotFoundResponse | InternalServerErrorResponse
 >
 
+/**
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
+ *
+ * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
+ * existir.
+ * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
+ */
 export function useListAnimeEpisodesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listAnimeEpisodes>>,
@@ -236,6 +254,24 @@ export function useListAnimeEpisodesInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
+ *
+ * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
+ * existir.
+ * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
+ */
 export function useListAnimeEpisodesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listAnimeEpisodes>>,
@@ -272,6 +308,24 @@ export function useListAnimeEpisodesInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
+ *
+ * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
+ * existir.
+ * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
+ */
 export function useListAnimeEpisodesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listAnimeEpisodes>>,
@@ -300,9 +354,23 @@ export function useListAnimeEpisodesInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
+ *
+ * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
+ * existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
-
 export function useListAnimeEpisodesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listAnimeEpisodes>>,
@@ -394,6 +462,24 @@ export type ListAnimeEpisodesQueryError = ErrorType<
   BadRequestResponse | NotFoundResponse | InternalServerErrorResponse
 >
 
+/**
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
+ *
+ * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
+ * existir.
+ * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
+ */
 export function useListAnimeEpisodes<
   TData = Awaited<ReturnType<typeof listAnimeEpisodes>>,
   TError = ErrorType<
@@ -424,6 +510,24 @@ export function useListAnimeEpisodes<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
+ *
+ * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
+ * existir.
+ * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
+ */
 export function useListAnimeEpisodes<
   TData = Awaited<ReturnType<typeof listAnimeEpisodes>>,
   TError = ErrorType<
@@ -454,6 +558,24 @@ export function useListAnimeEpisodes<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
+ *
+ * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
+ * existir.
+ * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
+ */
 export function useListAnimeEpisodes<
   TData = Awaited<ReturnType<typeof listAnimeEpisodes>>,
   TError = ErrorType<
@@ -477,9 +599,23 @@ export function useListAnimeEpisodes<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Resolve a pasta vinculada ao anime e pagina os arquivos de vídeo dela em **ordem
+ * natural de nome** — trechos numéricos comparam como número, não caractere a
+ * caractere (`Bleach.002` antes de `Bleach.010`), com o `id` como desempate pra
+ * paginação ser estável. O pareamento TMDB (`tmdbPairing`), quando houver, só
+ * enriquece o item (título, thumbnail, sinopse, etc.) — não define a posição. Um
+ * arquivo sem pareamento aparece na posição real dele pelo nome, não no fim da
+ * lista. Mesmo schema de item de `GET /v1/catalog/video-files` (`VideoFileResponse`,
+ * com `tmdbPairing` embutido).
+ *
+ * Arquivo ingerido antes dessa ordenação existir, até ser reencontrado numa próxima
+ * varredura da pasta, pode ainda não ter a chave de ordenação calculada — nesse caso
+ * aparece no fim, atrás dos já ordenados.
+ *
+ * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
+ * existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
-
 export function useListAnimeEpisodes<
   TData = Awaited<ReturnType<typeof listAnimeEpisodes>>,
   TError = ErrorType<

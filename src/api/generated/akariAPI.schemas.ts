@@ -275,6 +275,331 @@ export interface AvailableFolderNode {
 }
 
 /**
+ * Id da ingestão
+ */
+export type IngestionId = number
+
+/**
+ * Id da tarefa de ingestão
+ */
+export type IngestionTaskId = number
+
+/**
+ * Status de uma ingestão.
+ *
+ * - `PENDING` — criada, nenhuma tarefa começou ainda.
+ * - `RUNNING` — alguma tarefa já começou e ainda há tarefa por terminar.
+ * - `COMPLETED` — todas as tarefas terminaram, nenhuma com `FAILED`.
+ * - `COMPLETED_WITH_ERRORS` — todas as tarefas terminaram, alguma com `FAILED`.
+ * - `FAILED` / `CANCELLED` — reservados; nenhum fluxo grava hoje.
+ */
+export type IngestionStatus =
+  (typeof IngestionStatus)[keyof typeof IngestionStatus]
+
+export const IngestionStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  COMPLETED_WITH_ERRORS: 'COMPLETED_WITH_ERRORS',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+} as const
+
+/**
+ * Status de uma tarefa (uma pasta) da ingestão.
+ *
+ * - `PENDING` — na fila, ainda não rodou.
+ * - `RUNNING` — rodando os steps.
+ * - `WAITING_CURATION` — algum step não conseguiu decidir sozinho e espera curadoria no
+ *   portal; é um resultado esperado, não uma falha.
+ * - `RESOLVED` — esperava curadoria e foi marcada como resolvida manualmente
+ *   (`PUT /v1/ingestion/tasks/{taskId}/resolve`).
+ * - `COMPLETED` — todos os steps terminaram.
+ * - `FAILED` — algum step falhou.
+ * - `CANCELLED` — reservado; nenhum fluxo grava hoje.
+ */
+export type IngestionTaskStatus =
+  (typeof IngestionTaskStatus)[keyof typeof IngestionTaskStatus]
+
+export const IngestionTaskStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  WAITING_CURATION: 'WAITING_CURATION',
+  RESOLVED: 'RESOLVED',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+} as const
+
+/**
+ * Step de uma tarefa, na ordem em que rodam.
+ *
+ * - `ANILIST_SYNC` — vincula a pasta a um anime da AniList.
+ * - `TMDB_BIND` — vincula o anime à série ou ao filme do TMDB.
+ * - `TMDB_OVERRIDES` — preenche título, sinopse e imagens a partir do TMDB.
+ * - `TMDB_FILEPAIR` — pareia os arquivos da pasta com os episódios do TMDB.
+ */
+export type IngestionStep = (typeof IngestionStep)[keyof typeof IngestionStep]
+
+export const IngestionStep = {
+  ANILIST_SYNC: 'ANILIST_SYNC',
+  TMDB_BIND: 'TMDB_BIND',
+  TMDB_OVERRIDES: 'TMDB_OVERRIDES',
+  TMDB_FILEPAIR: 'TMDB_FILEPAIR',
+} as const
+
+/**
+ * Status de uma execução de step.
+ *
+ * - `RUNNING` — rodando.
+ * - `COMPLETED` — terminou.
+ * - `SKIPPED` — não se aplica à pasta (ex.: pareamento de episódios de um filme).
+ * - `UNRESOLVED` — não conseguiu decidir sozinho; espera curadoria.
+ * - `FAILED` — falhou; o motivo está no evento `ERROR`.
+ * - `PENDING` — reservado; nenhum fluxo grava hoje.
+ */
+export type IngestionStepStatus =
+  (typeof IngestionStepStatus)[keyof typeof IngestionStepStatus]
+
+export const IngestionStepStatus = {
+  PENDING: 'PENDING',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  UNRESOLVED: 'UNRESOLVED',
+  FAILED: 'FAILED',
+  SKIPPED: 'SKIPPED',
+} as const
+
+/**
+ * Tipo de um evento da linha do tempo de uma execução de step.
+ *
+ * - `STARTED` — a execução começou.
+ * - `REQUEST_SENT` — uma consulta foi feita a um serviço externo.
+ * - `RESPONSE_RECEIVED` — a resposta de um serviço externo chegou (só em execuções antigas).
+ * - `RESULTS_FOUND` — resultados encontrados.
+ * - `MATCH_SELECTED` — um resultado foi escolhido.
+ * - `MATCH_NOT_FOUND` — nenhum resultado pôde ser escolhido; espera curadoria.
+ * - `WARNING` — algo merece atenção, sem impedir o step.
+ * - `ERROR` — o step falhou.
+ * - `COMPLETED` — a execução terminou.
+ * - `SKIPPED` — o step não se aplica à pasta.
+ */
+export type IngestionEventType =
+  (typeof IngestionEventType)[keyof typeof IngestionEventType]
+
+export const IngestionEventType = {
+  STARTED: 'STARTED',
+  REQUEST_SENT: 'REQUEST_SENT',
+  RESPONSE_RECEIVED: 'RESPONSE_RECEIVED',
+  RESULTS_FOUND: 'RESULTS_FOUND',
+  MATCH_SELECTED: 'MATCH_SELECTED',
+  MATCH_NOT_FOUND: 'MATCH_NOT_FOUND',
+  WARNING: 'WARNING',
+  ERROR: 'ERROR',
+  COMPLETED: 'COMPLETED',
+  SKIPPED: 'SKIPPED',
+} as const
+
+/**
+ * Quantidade de tarefas da ingestão por status. `total` conta todas as tarefas; uma tarefa
+ * está terminada quando está em `waitingCuration`, `resolved`, `completed` ou `failed`.
+ */
+export interface IngestionTaskCounts {
+  total: number
+  pending: number
+  running: number
+  waitingCuration: number
+  resolved: number
+  completed: number
+  failed: number
+}
+
+/**
+ * Status da execução mais recente de um step da tarefa
+ */
+export interface IngestionTaskStepStatus {
+  step: IngestionStep
+  status: IngestionStepStatus
+}
+
+/**
+ * Resumo de uma tarefa (uma pasta) da ingestão: a pasta, o anime vinculado, o status e o
+ * status mais recente de cada step que já rodou.
+ */
+export interface IngestionTaskSummary {
+  id: IngestionTaskId
+  ingestionId: IngestionId
+  folderId: FolderId
+  /** Nome da pasta no provider */
+  folderName: string
+  /** Anime vinculado à pasta; `null` enquanto não há vínculo com a AniList */
+  anilistId?: AnilistId | null
+  /**
+   * Título do anime vinculado; `null` nas mesmas condições de `anilistId`
+   * @nullable
+   */
+  title?: string | null
+  /**
+   * URL do poster (resolução média) do anime vinculado
+   * @nullable
+   */
+  thumbnail?: string | null
+  status: IngestionTaskStatus
+  /** Step em execução ou o último que rodou; `null` antes do primeiro */
+  currentStep?: IngestionStep | null
+  /** Status da execução mais recente de cada step que já rodou, na ordem dos steps */
+  steps: IngestionTaskStepStatus[]
+  createdAt: string
+  /** @nullable */
+  startedAt?: string | null
+  /** @nullable */
+  completedAt?: string | null
+}
+
+/**
+ * Uma ingestão: status, datas, quantidade de tarefas por status, a tarefa em execução —
+ * as tarefas rodam uma de cada vez — e todas as tarefas.
+ */
+export interface IngestionSummary {
+  id: IngestionId
+  status: IngestionStatus
+  /** Momento em que a ingestão foi disparada */
+  createdAt: string
+  /**
+   * Momento em que a primeira tarefa começou; `null` enquanto `PENDING`
+   * @nullable
+   */
+  startedAt?: string | null
+  /**
+   * Momento em que a última tarefa terminou; `null` até terminar
+   * @nullable
+   */
+  completedAt?: string | null
+  taskCounts: IngestionTaskCounts
+  /** Tarefa em execução; `null` quando nenhuma está rodando */
+  currentTask?: IngestionTaskSummary | null
+  /**
+   * Todas as tarefas da ingestão, na ordem em que foram criadas (a mesma em que rodam).
+   * A linha do tempo de cada uma fica em `GET /v1/ingestion/tasks/{taskId}`.
+   */
+  tasks: IngestionTaskSummary[]
+}
+
+/**
+ * Envelope paginado de ingestões
+ */
+export type IngestionPage = Page & {
+  data: IngestionSummary[]
+}
+
+/**
+ * Dados técnicos do evento (ids, códigos, candidatos); o formato varia com o step e o
+ * tipo do evento
+ * @nullable
+ */
+export type IngestionStepEventResponseDetails = {
+  [key: string]: unknown
+} | null
+
+/**
+ * Evento da linha do tempo de uma execução de step
+ */
+export interface IngestionStepEventResponse {
+  id: number
+  type: IngestionEventType
+  /** Frase pronta pra exibir no portal */
+  message: string
+  /**
+   * Dados técnicos do evento (ids, códigos, candidatos); o formato varia com o step e o
+   * tipo do evento
+   * @nullable
+   */
+  details?: IngestionStepEventResponseDetails
+  createdAt: string
+}
+
+/**
+ * Uma execução (tentativa) de um step, com a linha do tempo dos eventos dela. Um step que
+ * roda de novo na mesma tarefa — retomada depois de uma queda do serviço — ganha uma
+ * execução nova com o `attempt` seguinte.
+ */
+export interface IngestionStepExecutionDetail {
+  id: number
+  step: IngestionStep
+  status: IngestionStepStatus
+  /** Número da tentativa do step nesta tarefa, a partir de 1 */
+  attempt: number
+  createdAt: string
+  /** @nullable */
+  startedAt?: string | null
+  /**
+   * `null` enquanto `RUNNING`
+   * @nullable
+   */
+  completedAt?: string | null
+  /** Eventos da execução, na ordem em que foram gravados */
+  events: IngestionStepEventResponse[]
+}
+
+/**
+ * Tarefa com todas as execuções dos steps e os eventos de cada uma
+ */
+export type IngestionTaskDetail = IngestionTaskSummary & {
+  /** Execuções dos steps, na ordem em que rodaram */
+  executions: IngestionStepExecutionDetail[]
+}
+
+/**
+ * Tipo de um evento do stream SSE `GET /v1/ingestion/events`. É também o `event:` (nome) da
+ * mensagem SSE, então o cliente pode tanto registrar um listener por nome
+ * (`addEventListener('STEP_FINISHED', ...)`) quanto ler o campo `type` do payload.
+ *
+ * - `SNAPSHOT` — primeiro evento de quem se inscreve: a ingestão em andamento, ou a última,
+ *   com todas as tarefas; sem nenhuma ingestão, `ingestion` vem `null`.
+ * - `INGESTION_UPDATED` — o status ou as contagens de uma ingestão mudaram. Traz o mesmo
+ *   `IngestionSummary`, mas com `tasks` vazio — as tarefas chegam pelo `TASK_UPDATED`.
+ * - `TASK_UPDATED` — uma tarefa mudou de status ou de step.
+ * - `STEP_FINISHED` — uma execução de step terminou, com todos os eventos dela.
+ */
+export type IngestionStreamEventType =
+  (typeof IngestionStreamEventType)[keyof typeof IngestionStreamEventType]
+
+export const IngestionStreamEventType = {
+  SNAPSHOT: 'SNAPSHOT',
+  INGESTION_UPDATED: 'INGESTION_UPDATED',
+  TASK_UPDATED: 'TASK_UPDATED',
+  STEP_FINISHED: 'STEP_FINISHED',
+} as const
+
+/**
+ * Payload (`data:`, JSON) de cada mensagem do stream SSE `GET /v1/ingestion/events` — o
+ * endpoint não é descrito em `paths` (Server-Sent Events não é modelável pelo gerador
+ * `jaxrs-spec`), só este payload.
+ *
+ * O stream é aberto com `EventSource` (`GET`, `Accept: text/event-stream`) e fica aberto
+ * indefinidamente: a primeira mensagem é um `SNAPSHOT`, e as seguintes chegam conforme as
+ * ingestões andam. Cada mensagem tem `event:` igual ao `type` e o `data:` com este objeto.
+ * Os campos preenchidos dependem do `type`; os demais vêm `null`:
+ *
+ * | `type` | Campos preenchidos |
+ * |---|---|
+ * | `SNAPSHOT` | `ingestion` (`null` se nunca houve ingestão) |
+ * | `INGESTION_UPDATED` | `ingestion` |
+ * | `TASK_UPDATED` | `task` |
+ * | `STEP_FINISHED` | `task`, `execution` |
+ *
+ * Um cliente que reconecta depois de uma queda recebe um `SNAPSHOT` novo, com a ingestão
+ * em andamento (ou a última) e todas as tarefas dela; outra ingestão ele recarrega por
+ * `GET /v1/ingestion`.
+ */
+export interface IngestionStreamEvent {
+  type: IngestionStreamEventType
+  ingestion?: IngestionSummary | null
+  task?: IngestionTaskSummary | null
+  execution?: IngestionStepExecutionDetail | null
+}
+
+/**
  * Restringe por existência de arquivos
  */
 export type HasFilesFilter = boolean
@@ -1139,6 +1464,23 @@ export interface AnilistFuzzyDate {
 }
 
 /**
+ * Tag da AniList atribuída ao anime
+ */
+export interface AnimeTagResponse {
+  name: string
+  /**
+   * Quanto a tag se aplica ao anime, de 0 a 100
+   * @nullable
+   */
+  rank?: number | null
+  /**
+   * `true` se a tag revela parte da história
+   * @nullable
+   */
+  isSpoiler?: boolean | null
+}
+
+/**
  * Shape reduzido de `Media` para o endpoint de search — omite `relations` para evitar
  * payload grande (as relações de cada item). A chave pública é o `anilistId`, a mesma usada
  * pelo `animemetadata`.
@@ -1170,6 +1512,13 @@ export interface AnilistMediaSummary {
    */
   duration?: number | null
   startDate?: AnilistFuzzyDate | null
+  /** Data de término; `null` enquanto o anime não terminou */
+  endDate?: AnilistFuzzyDate | null
+  /**
+   * Status bruto da AniList (`FINISHED`, `RELEASING`, `NOT_YET_RELEASED`, `CANCELLED`, `HIATUS`)
+   * @nullable
+   */
+  status?: string | null
   /**
    * Ano da estação de estreia; mais confiável que `startDate.year`
    * @nullable
@@ -1178,10 +1527,20 @@ export interface AnilistMediaSummary {
   format?: AnilistFormat | null
   season?: AnilistSeason | null
   /**
-   * Nota média em escala 0–100
+   * Nota média ponderada em escala 0–100
    * @nullable
    */
   averageScore?: number | null
+  /**
+   * Média simples das notas em escala 0–100
+   * @nullable
+   */
+  meanScore?: number | null
+  /**
+   * Quantidade de usuários da AniList com o anime na lista
+   * @nullable
+   */
+  popularity?: number | null
   /**
    * Flag NSFW derivada do `isAdult` da AniList
    * @nullable
@@ -1189,6 +1548,11 @@ export interface AnilistMediaSummary {
   isAdult?: boolean | null
   /** Nomes de gêneros */
   genres?: string[]
+  /**
+   * Tags da AniList, com relevância e marcação de spoiler
+   * @nullable
+   */
+  tags?: AnimeTagResponse[] | null
   /**
    * Estúdio principal responsável pela produção, segundo a AniList
    * @nullable
@@ -1363,12 +1727,15 @@ export interface AnimeBindingRequest {
 }
 
 /**
- * Estado de revisão da ingestão automática de um anime.
- * - `PENDING_REVIEW`: ingestão completa (AniList + TMDB + todos os arquivos pareados),
- *   aguardando confirmação manual.
- * - `PARTIAL`: ingestão incompleta (TMDB não vinculado, temporadas conflitantes, ou nem
- *   todo arquivo pareado) — precisa de atenção.
- * - `REVIEWED`: confirmado manualmente; o auto-bind nunca sobrescreve esse estado.
+ * Estado de revisão de um anime. `PENDING_REVIEW` e `PARTIAL` são gravados ao fim da tarefa
+ * de ingestão da pasta; `REVIEWED`, pela confirmação manual. `null` enquanto a pasta não
+ * terminou uma ingestão.
+ * - `PENDING_REVIEW`: a tarefa terminou com todos os steps e o vínculo está completo —
+ *   filme, ou série com todos os arquivos pareados —, aguardando confirmação manual.
+ * - `PARTIAL`: vínculo incompleto (tarefa parada em curadoria ou com falha, ou série com
+ *   algum arquivo sem par) — precisa de atenção.
+ * - `REVIEWED`: confirmado manualmente; nenhum recálculo automático sobrescreve esse
+ *   estado.
  */
 export type AnimeReviewStatus =
   (typeof AnimeReviewStatus)[keyof typeof AnimeReviewStatus]
@@ -1425,9 +1792,8 @@ export const FranchiseAssignment = {
 } as const
 
 /**
- * Vista pública de um anime. `banner`/`logo` só são preenchidos quando há binding TMDB —
- * o bind já escolhe a imagem mais votada automaticamente, e um override manual pode
- * trocar essa escolha depois. `synopsis` vem em HTML quando a fonte é AniList (pode
+ * Vista pública de um anime. `banner`/`logo` só são preenchidos quando há binding TMDB e
+ * um override de imagem gravado — o bind não escolhe imagem. `synopsis` vem em HTML quando a fonte é AniList (pode
  * conter `<br>`, `<i>`, `<b>`).
  */
 export interface AnimeResponse {
@@ -1490,13 +1856,37 @@ export interface AnimeResponse {
   isAdult?: boolean | null
   /** @nullable */
   genres?: string[] | null
+  /**
+   * Tags da AniList, com relevância e marcação de spoiler
+   * @nullable
+   */
+  tags?: AnimeTagResponse[] | null
+  /** Data de estreia segundo a AniList */
+  startDate?: AnilistFuzzyDate | null
+  /** Data de término segundo a AniList; `null` enquanto o anime não terminou */
+  endDate?: AnilistFuzzyDate | null
+  /**
+   * Status bruto da AniList (`FINISHED`, `RELEASING`, `NOT_YET_RELEASED`, `CANCELLED`, `HIATUS`)
+   * @nullable
+   */
+  status?: string | null
+  /**
+   * Quantidade de usuários da AniList com o anime na lista
+   * @nullable
+   */
+  popularity?: number | null
+  /**
+   * Média simples das notas na AniList, em escala 0–10 (`score` é a média ponderada)
+   * @nullable
+   */
+  meanScore?: number | null
   franchiseAssignment: FranchiseAssignment
   /**
    * Raiz da franquia à qual o anime pertence (`franchiseOf`); `null` se está fora de
    * qualquer franquia (oculto, direto ou por herança)
    */
   franchiseRootId?: AnilistId | null
-  /** `null` até o auto-bind terminar de processar a pasta pela primeira vez */
+  /** `null` até o anime ser confirmado manualmente */
   reviewStatus?: AnimeReviewStatus | null
 }
 
@@ -1860,7 +2250,8 @@ export interface TmdbLocalizedOption {
   /** @nullable */
   value?: string | null
   /**
-   * ISO 639-1; `null` quando o TMDB não informa
+   * ISO 639-1, seguido do país ISO 3166-1 quando o TMDB informa (`pt-BR`, `zh-TW`);
+   * `null` quando o TMDB não informa.
    * @nullable
    */
   language?: string | null
@@ -2027,8 +2418,7 @@ export interface TmdbFilePairingRequest {
  * Como a proposta de pairing é calculada.
  *
  * - `ANIBRIDGE` — número do episódio extraído do nome do arquivo, convertido pelo
- *   anibridge pra temporada/episódio da série vinculada (o mesmo do pairing automático da
- *   ingestão).
+ *   anibridge pra temporada/episódio da série vinculada.
  * - `CONTINUITY` — episódio seguinte ao do arquivo pareado anterior, pela estrutura da
  *   série no TMDB; não consulta o anibridge.
  */
@@ -2091,6 +2481,9 @@ export const TmdbFilePairingChange = {
  * - `EPISODE_IN_USE` [`CONTINUITY`] — o episódio seguinte já está gravado em outro arquivo
  *   ou foi proposto antes pra outro arquivo nesta mesma proposta (`usedByFileId`). Não vem
  *   pré-selecionado; o arquivo continua sendo a âncora do próximo.
+ * - `OUT_OF_AIR_WINDOW` [`ANIBRIDGE`] — o anibridge resolveu `seasonNumber`/`episodeNumber`
+ *   e o episódio existe no TMDB, mas foi ao ar a mais de 365 dias antes da estreia ou depois
+ *   do fim do anime na AniList — provavelmente outra temporada ou outro anime da franquia.
  */
 export type TmdbFilePairingProposalStatus =
   (typeof TmdbFilePairingProposalStatus)[keyof typeof TmdbFilePairingProposalStatus]
@@ -2106,6 +2499,7 @@ export const TmdbFilePairingProposalStatus = {
   NO_ANCHOR: 'NO_ANCHOR',
   END_OF_SERIES: 'END_OF_SERIES',
   EPISODE_IN_USE: 'EPISODE_IN_USE',
+  OUT_OF_AIR_WINDOW: 'OUT_OF_AIR_WINDOW',
 } as const
 
 /**
@@ -2232,8 +2626,7 @@ export const NotificationLevel = {
 } as const
 
 /**
- * Notificação de observabilidade — hoje geradas pela ingestão (conclusão, falha geral e
- * falhas parciais do binding automático de cada título).
+ * Notificação de observabilidade — hoje nenhum domínio gera notificação.
  */
 export interface NotificationResponse {
   /** Id da notificação */
@@ -2243,8 +2636,7 @@ export interface NotificationResponse {
   message: string
   /**
    * Pasta do catalog do título a que a notificação se refere — o portal usa para linkar a
-   * revisão. `null` quando a notificação não é sobre um título (ex.: conclusão da
-   * ingestão).
+   * revisão. `null` quando a notificação não é sobre um título.
    */
   folderId?: FolderId | null
   /**
@@ -2375,9 +2767,24 @@ export type StorageProviderHealthOkResponse = StorageProviderHealth
 export type AvailableFolderNodeOkResponse = AvailableFolderNode
 
 /**
- * Subtree removido (inclusive quando nada casa — idempotente)
+ * Resumo da ingestão
  */
-export type IngestionRemovedResponse = void
+export type IngestionSummaryOkResponse = IngestionSummary
+
+/**
+ * Nenhuma ingestão foi disparada ainda
+ */
+export type NoIngestionResponse = void
+
+/**
+ * Página (possivelmente vazia) de ingestões
+ */
+export type IngestionPageOkResponse = IngestionPage
+
+/**
+ * Tarefa com a linha do tempo dos steps
+ */
+export type IngestionTaskDetailOkResponse = IngestionTaskDetail
 
 /**
  * Página (possivelmente vazia) de pastas
@@ -2749,114 +3156,79 @@ export type FranchiseKindFilterParamParameter = FranchiseKind
 export type DepthParamParameter = GraphDepth
 
 export type ListStorageProvidersParams = {
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
-}
-
-export type RemoveIngestedSubtreeParams = {
-  /**
-   * Caminho relativo à raiz do provider
-   */
-  rootPath?: RootPathParamParameter
 }
 
 export type ListAvailableFoldersParams = {
-  /**
-   * Caminho relativo à raiz do provider
-   */
+  /** Caminho relativo à raiz do provider */
   rootPath?: RootPathParamParameter
 }
 
-export type ListFoldersParams = {
-  /**
-   * Número da página (0-based)
-   */
+export type ListIngestionsParams = {
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
-  /**
-   * Substring case-insensitive aplicada ao nome
-   */
+}
+
+export type ListFoldersParams = {
+  /** Número da página (0-based) */
+  page?: PageParamParameter
+  /** Tamanho máximo de itens por página */
+  size?: SizeParamParameter
+  /** Substring case-insensitive aplicada ao nome */
   name?: NameFilterParamParameter
   /**
    * Tipo do conteúdo abrigado por uma pasta. Gravado na pasta quando ela é criada (pela
    * ingestão ou pelo `POST /v1/catalog/folders`); a ingestão não altera pastas já registradas.
    */
   mediaType?: MediaTypeFilterParamParameter
-  /**
-   * Id do storage provider
-   */
+  /** Id do storage provider */
   storageProviderId?: StorageProviderIdFilterParamParameter
-  /**
-   * Id da pasta no catalog
-   */
+  /** Id da pasta no catalog */
   parentId?: ParentIdFilterParamParameter
-  /**
-   * Restringe por existência de arquivos
-   */
+  /** Restringe por existência de arquivos */
   hasFiles?: HasFilesFilterParamParameter
   /**
-   * Estado de revisão da ingestão automática de um anime.
-   * - `PENDING_REVIEW`: ingestão completa (AniList + TMDB + todos os arquivos pareados),
-   *   aguardando confirmação manual.
-   * - `PARTIAL`: ingestão incompleta (TMDB não vinculado, temporadas conflitantes, ou nem
-   *   todo arquivo pareado) — precisa de atenção.
-   * - `REVIEWED`: confirmado manualmente; o auto-bind nunca sobrescreve esse estado.
+   * Estado de revisão de um anime. `PENDING_REVIEW` e `PARTIAL` são gravados ao fim da tarefa
+   * de ingestão da pasta; `REVIEWED`, pela confirmação manual. `null` enquanto a pasta não
+   * terminou uma ingestão.
+   * - `PENDING_REVIEW`: a tarefa terminou com todos os steps e o vínculo está completo —
+   *   filme, ou série com todos os arquivos pareados —, aguardando confirmação manual.
+   * - `PARTIAL`: vínculo incompleto (tarefa parada em curadoria ou com falha, ou série com
+   *   algum arquivo sem par) — precisa de atenção.
+   * - `REVIEWED`: confirmado manualmente; nenhum recálculo automático sobrescreve esse
+   *   estado.
    */
   reviewStatus?: ReviewStatusFilterParamParameter
-  /**
-   * Restringe por ter ou não anime vinculado à AniList
-   */
+  /** Restringe por ter ou não anime vinculado à AniList */
   hasAnilist?: HasAnilistFilterParamParameter
-  /**
-   * Restringe por ter ou não binding TMDB; independe de `hasAnilist` — combine os dois pra achar só pastas com AniList vinculada mas sem TMDB
-   */
+  /** Restringe por ter ou não binding TMDB; independe de `hasAnilist` — combine os dois pra achar só pastas com AniList vinculada mas sem TMDB */
   hasTmdb?: HasTmdbFilterParamParameter
-  /**
-   * Restringe por ter todo arquivo de vídeo pareado ao TMDB; pastas sem nenhum arquivo não batem nem com `true` nem com `false`
-   */
+  /** Restringe por ter todo arquivo de vídeo pareado ao TMDB; pastas sem nenhum arquivo não batem nem com `true` nem com `false` */
   allEpisodesPaired?: AllEpisodesPairedFilterParamParameter
-  /**
-   * Lista de specs de ordenação `field[:asc|desc]`
-   */
+  /** Lista de specs de ordenação `field[:asc|desc]` */
   sort?: SortParamParameter
 }
 
 export type ListVideoFilesParams = {
-  /**
-   * Id da pasta no catalog
-   */
+  /** Id da pasta no catalog */
   folderId: FolderIdRequiredParamParameter
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
 }
 
 export type ListCachesParams = {
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
-  /**
-   * Restringe às linhas com status diferente de `COMPLETED`
-   */
+  /** Restringe às linhas com status diferente de `COMPLETED` */
   pendingOnly?: PendingOnlyFilterParamParameter
 }
 
@@ -2866,17 +3238,11 @@ export type SearchAnilistMediaParams = {
    * @minLength 1
    */
   q: SearchQueryParamParameter
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
-  /**
-   * Ignora o cache quando `true`
-   */
+  /** Ignora o cache quando `true` */
   forceRefresh?: ForceRefreshParamParameter
 }
 
@@ -2886,17 +3252,11 @@ export type SearchTmdbMovieParams = {
    * @minLength 1
    */
   q: SearchQueryParamParameter
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tag de idioma BCP 47 (idioma ISO 639-1 + região ISO 3166-1)
-   */
+  /** Tag de idioma BCP 47 (idioma ISO 639-1 + região ISO 3166-1) */
   language?: LanguageParamParameter
-  /**
-   * Ignora o cache quando `true`
-   */
+  /** Ignora o cache quando `true` */
   forceRefresh?: ForceRefreshParamParameter
 }
 
@@ -2906,101 +3266,67 @@ export type SearchTmdbTvParams = {
    * @minLength 1
    */
   q: SearchQueryParamParameter
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tag de idioma BCP 47 (idioma ISO 639-1 + região ISO 3166-1)
-   */
+  /** Tag de idioma BCP 47 (idioma ISO 639-1 + região ISO 3166-1) */
   language?: LanguageParamParameter
-  /**
-   * Ignora o cache quando `true`
-   */
+  /** Ignora o cache quando `true` */
   forceRefresh?: ForceRefreshParamParameter
 }
 
 export type ListAnimeEpisodesParams = {
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
 }
 
 export type ListRelationRootsParams = {
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
 }
 
 export type GetAnimeRelationGraphParams = {
-  /**
-   * Profundidade máxima da BFS de relações
-   */
+  /** Profundidade máxima da BFS de relações */
   depth?: DepthParamParameter
 }
 
 export type ListFranchisesParams = {
-  /**
-   * Texto buscado no título da raiz e dos membros
-   */
+  /** Texto buscado no título da raiz e dos membros */
   q?: FranchiseSearchParamParameter
   /**
    * Tipo de raiz. `MANUAL` = franquia criada à mão (`POST /v1/metadata/franchises`);
    * `NATURAL` = as demais raízes.
    */
   kind?: FranchiseKindFilterParamParameter
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
 }
 
 export type ListHiddenAnimesParams = {
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
 }
 
 export type GetTmdbOverridesSchemaParams = {
-  /**
-   * Ignora o cache quando `true`
-   */
+  /** Ignora o cache quando `true` */
   forceRefresh?: ForceRefreshParamParameter
 }
 
 export type ListSettingsParams = {
-  /**
-   * Substring case-insensitive aplicada ao nome
-   */
+  /** Substring case-insensitive aplicada ao nome */
   name?: NameFilterParamParameter
 }
 
 export type ListNotificationsParams = {
-  /**
-   * Número da página (0-based)
-   */
+  /** Número da página (0-based) */
   page?: PageParamParameter
-  /**
-   * Tamanho máximo de itens por página
-   */
+  /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
 }

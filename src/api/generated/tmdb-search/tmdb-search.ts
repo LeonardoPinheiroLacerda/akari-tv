@@ -178,6 +178,12 @@ export type SearchTmdbMovieInfiniteQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/**
+ * Busca no endpoint `/3/search/movie` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de filmes por texto livre
+ */
 export function useSearchTmdbMovieInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchTmdbMovie>>,
@@ -216,6 +222,12 @@ export function useSearchTmdbMovieInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Busca no endpoint `/3/search/movie` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de filmes por texto livre
+ */
 export function useSearchTmdbMovieInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchTmdbMovie>>,
@@ -254,6 +266,12 @@ export function useSearchTmdbMovieInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Busca no endpoint `/3/search/movie` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de filmes por texto livre
+ */
 export function useSearchTmdbMovieInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchTmdbMovie>>,
@@ -284,9 +302,11 @@ export function useSearchTmdbMovieInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Busca no endpoint `/3/search/movie` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
  * @summary Busca paginada de filmes por texto livre
  */
-
 export function useSearchTmdbMovieInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchTmdbMovie>>,
@@ -374,6 +394,12 @@ export type SearchTmdbMovieQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/**
+ * Busca no endpoint `/3/search/movie` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de filmes por texto livre
+ */
 export function useSearchTmdbMovie<
   TData = Awaited<ReturnType<typeof searchTmdbMovie>>,
   TError = ErrorType<
@@ -406,6 +432,12 @@ export function useSearchTmdbMovie<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Busca no endpoint `/3/search/movie` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de filmes por texto livre
+ */
 export function useSearchTmdbMovie<
   TData = Awaited<ReturnType<typeof searchTmdbMovie>>,
   TError = ErrorType<
@@ -438,6 +470,12 @@ export function useSearchTmdbMovie<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Busca no endpoint `/3/search/movie` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de filmes por texto livre
+ */
 export function useSearchTmdbMovie<
   TData = Awaited<ReturnType<typeof searchTmdbMovie>>,
   TError = ErrorType<
@@ -463,9 +501,11 @@ export function useSearchTmdbMovie<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Busca no endpoint `/3/search/movie` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
  * @summary Busca paginada de filmes por texto livre
  */
-
 export function useSearchTmdbMovie<
   TData = Awaited<ReturnType<typeof searchTmdbMovie>>,
   TError = ErrorType<
@@ -609,6 +649,12 @@ export type SearchTmdbTvInfiniteQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/**
+ * Busca no endpoint `/3/search/tv` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de séries por texto livre
+ */
 export function useSearchTmdbTvInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchTmdbTv>>,
@@ -647,6 +693,12 @@ export function useSearchTmdbTvInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Busca no endpoint `/3/search/tv` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de séries por texto livre
+ */
 export function useSearchTmdbTvInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchTmdbTv>>,
@@ -685,6 +737,12 @@ export function useSearchTmdbTvInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Busca no endpoint `/3/search/tv` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de séries por texto livre
+ */
 export function useSearchTmdbTvInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchTmdbTv>>,
@@ -715,9 +773,11 @@ export function useSearchTmdbTvInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Busca no endpoint `/3/search/tv` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
  * @summary Busca paginada de séries por texto livre
  */
-
 export function useSearchTmdbTvInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchTmdbTv>>,
@@ -801,6 +861,12 @@ export type SearchTmdbTvQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/**
+ * Busca no endpoint `/3/search/tv` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de séries por texto livre
+ */
 export function useSearchTmdbTv<
   TData = Awaited<ReturnType<typeof searchTmdbTv>>,
   TError = ErrorType<
@@ -829,6 +895,12 @@ export function useSearchTmdbTv<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Busca no endpoint `/3/search/tv` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de séries por texto livre
+ */
 export function useSearchTmdbTv<
   TData = Awaited<ReturnType<typeof searchTmdbTv>>,
   TError = ErrorType<
@@ -857,6 +929,12 @@ export function useSearchTmdbTv<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Busca no endpoint `/3/search/tv` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
+ * @summary Busca paginada de séries por texto livre
+ */
 export function useSearchTmdbTv<
   TData = Awaited<ReturnType<typeof searchTmdbTv>>,
   TError = ErrorType<
@@ -878,9 +956,11 @@ export function useSearchTmdbTv<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Busca no endpoint `/3/search/tv` do TMDB. Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404. Sem `size`: o TMDB pagina em blocos fixos de 20,
+ * sem suporte a tamanho configurável.
  * @summary Busca paginada de séries por texto livre
  */
-
 export function useSearchTmdbTv<
   TData = Awaited<ReturnType<typeof searchTmdbTv>>,
   TError = ErrorType<

@@ -12,7 +12,7 @@ export default defineConfig({
       client: 'react-query',
       httpClient: 'fetch',
       mode: 'tags-split',
-      mock: true,
+      mock: false,
       clean: true,
       formatter: 'prettier',
       override: {

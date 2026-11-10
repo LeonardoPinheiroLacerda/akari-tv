@@ -187,6 +187,15 @@ export type QueueCacheDownloadMutationVariables = {
 }
 
 /**
+ * Enfileira o arquivo criando uma linha `QUEUED`. O download acontece depois, dirigido pelo
+ * scheduler interno.
+ *
+ * Responde `400` (`BUSINESS_RULE_VIOLATION`) quando:
+ * - o arquivo já tem linha `QUEUED`, `DOWNLOADING` ou `COMPLETED` — uma linha `FAILED`
+ *   pode ser reenfileirada;
+ * - o arquivo pertence a um provider `LOCAL`, que é lido direto do disco e não usa cache.
+ *
+ * Responde `404` se o `fileId` não existe no catalog.
  * @summary Enfileira o download de um arquivo de vídeo
  */
 export const useQueueCacheDownload = <
@@ -308,6 +317,12 @@ export type ListCachesInfiniteQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Página de todas as linhas, ordenadas por ordem de enfileiramento. `pendingOnly=true`
+ * restringe às linhas com status diferente de `COMPLETED` (inclui `FAILED`, já que pode
+ * ser reenfileirada).
+ * @summary Lista todas as linhas do cache
+ */
 export function useListCachesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listCaches>>,
@@ -341,6 +356,12 @@ export function useListCachesInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Página de todas as linhas, ordenadas por ordem de enfileiramento. `pendingOnly=true`
+ * restringe às linhas com status diferente de `COMPLETED` (inclui `FAILED`, já que pode
+ * ser reenfileirada).
+ * @summary Lista todas as linhas do cache
+ */
 export function useListCachesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listCaches>>,
@@ -374,6 +395,12 @@ export function useListCachesInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Página de todas as linhas, ordenadas por ordem de enfileiramento. `pendingOnly=true`
+ * restringe às linhas com status diferente de `COMPLETED` (inclui `FAILED`, já que pode
+ * ser reenfileirada).
+ * @summary Lista todas as linhas do cache
+ */
 export function useListCachesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listCaches>>,
@@ -399,9 +426,11 @@ export function useListCachesInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Página de todas as linhas, ordenadas por ordem de enfileiramento. `pendingOnly=true`
+ * restringe às linhas com status diferente de `COMPLETED` (inclui `FAILED`, já que pode
+ * ser reenfileirada).
  * @summary Lista todas as linhas do cache
  */
-
 export function useListCachesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listCaches>>,
@@ -472,6 +501,12 @@ export type ListCachesQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Página de todas as linhas, ordenadas por ordem de enfileiramento. `pendingOnly=true`
+ * restringe às linhas com status diferente de `COMPLETED` (inclui `FAILED`, já que pode
+ * ser reenfileirada).
+ * @summary Lista todas as linhas do cache
+ */
 export function useListCaches<
   TData = Awaited<ReturnType<typeof listCaches>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -495,6 +530,12 @@ export function useListCaches<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Página de todas as linhas, ordenadas por ordem de enfileiramento. `pendingOnly=true`
+ * restringe às linhas com status diferente de `COMPLETED` (inclui `FAILED`, já que pode
+ * ser reenfileirada).
+ * @summary Lista todas as linhas do cache
+ */
 export function useListCaches<
   TData = Awaited<ReturnType<typeof listCaches>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -518,6 +559,12 @@ export function useListCaches<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Página de todas as linhas, ordenadas por ordem de enfileiramento. `pendingOnly=true`
+ * restringe às linhas com status diferente de `COMPLETED` (inclui `FAILED`, já que pode
+ * ser reenfileirada).
+ * @summary Lista todas as linhas do cache
+ */
 export function useListCaches<
   TData = Awaited<ReturnType<typeof listCaches>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -534,9 +581,11 @@ export function useListCaches<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Página de todas as linhas, ordenadas por ordem de enfileiramento. `pendingOnly=true`
+ * restringe às linhas com status diferente de `COMPLETED` (inclui `FAILED`, já que pode
+ * ser reenfileirada).
  * @summary Lista todas as linhas do cache
  */
-
 export function useListCaches<
   TData = Awaited<ReturnType<typeof listCaches>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -647,6 +696,16 @@ export type DeleteCacheItemMutationError = ErrorType<
 export type DeleteCacheItemMutationVariables = { itemId: string }
 
 /**
+ * Remove a linha do cache. O efeito depende do status:
+ * - `QUEUED`/`DOWNLOADING`: cancela — se `DOWNLOADING`, interrompe o job rclone em
+ *   andamento antes de remover.
+ * - `COMPLETED`: apaga o arquivo já baixado de `cache.dir` antes de remover a linha.
+ *
+ * Responde `400` (`BUSINESS_RULE_VIOLATION`) se a linha estiver `FAILED` — o único caminho
+ * para ela é reenfileirar (`POST /v1/cache/items`). Uma linha `FAILED` não é removida pela
+ * eviction LRU, que só considera linhas `COMPLETED`: ela permanece até ser reenfileirada.
+ *
+ * Responde `404` se o `itemId` não existir.
  * @summary Remove uma linha do cache, cancelando ou apagando o arquivo conforme o status
  */
 export const useDeleteCacheItem = <

@@ -178,6 +178,7 @@ export type ListStorageProvidersInfiniteQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/** @summary Lista paginada de providers cadastrados */
 export function useListStorageProvidersInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listStorageProviders>>,
@@ -211,6 +212,7 @@ export function useListStorageProvidersInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Lista paginada de providers cadastrados */
 export function useListStorageProvidersInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listStorageProviders>>,
@@ -244,6 +246,7 @@ export function useListStorageProvidersInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Lista paginada de providers cadastrados */
 export function useListStorageProvidersInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listStorageProviders>>,
@@ -268,10 +271,7 @@ export function useListStorageProvidersInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Lista paginada de providers cadastrados
- */
-
+/** @summary Lista paginada de providers cadastrados */
 export function useListStorageProvidersInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listStorageProviders>>,
@@ -351,6 +351,7 @@ export type ListStorageProvidersQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/** @summary Lista paginada de providers cadastrados */
 export function useListStorageProviders<
   TData = Awaited<ReturnType<typeof listStorageProviders>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -378,6 +379,7 @@ export function useListStorageProviders<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Lista paginada de providers cadastrados */
 export function useListStorageProviders<
   TData = Awaited<ReturnType<typeof listStorageProviders>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -405,6 +407,7 @@ export function useListStorageProviders<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Lista paginada de providers cadastrados */
 export function useListStorageProviders<
   TData = Awaited<ReturnType<typeof listStorageProviders>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -424,10 +427,7 @@ export function useListStorageProviders<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Lista paginada de providers cadastrados
- */
-
+/** @summary Lista paginada de providers cadastrados */
 export function useListStorageProviders<
   TData = Awaited<ReturnType<typeof listStorageProviders>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -563,6 +563,10 @@ export type CreateStorageProviderMutationVariables = {
 }
 
 /**
+ * `config` é um mapa livre de chave-valor cujo schema **depende de `type`** (ex.:
+ * `MEGA` exige `email` e `password`). A validação do schema tipado acontece dentro do
+ * service; campos anotados `@Obscure` no record de config passam pelo rclone antes de
+ * persistir.
  * @summary Cadastra um novo provider
  */
 export const useCreateStorageProvider = <
@@ -661,6 +665,7 @@ export type GetStorageProviderByIdQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/** @summary Busca um provider por id (sem expor `config`) */
 export function useGetStorageProviderById<
   TData = Awaited<ReturnType<typeof getStorageProviderById>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -688,6 +693,7 @@ export function useGetStorageProviderById<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Busca um provider por id (sem expor `config`) */
 export function useGetStorageProviderById<
   TData = Awaited<ReturnType<typeof getStorageProviderById>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -715,6 +721,7 @@ export function useGetStorageProviderById<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Busca um provider por id (sem expor `config`) */
 export function useGetStorageProviderById<
   TData = Awaited<ReturnType<typeof getStorageProviderById>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -734,10 +741,7 @@ export function useGetStorageProviderById<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Busca um provider por id (sem expor `config`)
- */
-
+/** @summary Busca um provider por id (sem expor `config`) */
 export function useGetStorageProviderById<
   TData = Awaited<ReturnType<typeof getStorageProviderById>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -840,9 +844,7 @@ export type DeleteStorageProviderMutationError = ErrorType<
 >
 export type DeleteStorageProviderMutationVariables = { providerId: number }
 
-/**
- * @summary Remove o provider
- */
+/** @summary Remove o provider */
 export const useDeleteStorageProvider = <
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
   TContext = unknown,
@@ -980,6 +982,8 @@ export type UpdateStorageProviderConfigMutationVariables = {
 }
 
 /**
+ * `type` é imutável — só a `config` pode ser trocada. O schema esperado do map
+ * depende do `type` já persistido; campos `@Obscure` reobscurecidos antes de gravar.
  * @summary Substitui a configuração do provider
  */
 export const useUpdateStorageProviderConfig = <
@@ -1087,6 +1091,13 @@ export type CheckStorageProviderHealthQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse | BadGatewayResponse
 >
 
+/**
+ * Sempre `200` quando o teste roda — o resultado vem em `healthy`. `healthy: false`
+ * cobre qualquer falha do lado do provider (config inválida, credenciais erradas, remoto
+ * fora do ar; para `LOCAL`, `rootPath` que não é um diretório). `502` fica reservado para
+ * falha do próprio rclone (rcd fora do ar), não do provider.
+ * @summary Testa conectividade real com o provider
+ */
 export function useCheckStorageProviderHealth<
   TData = Awaited<ReturnType<typeof checkStorageProviderHealth>>,
   TError = ErrorType<
@@ -1116,6 +1127,13 @@ export function useCheckStorageProviderHealth<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Sempre `200` quando o teste roda — o resultado vem em `healthy`. `healthy: false`
+ * cobre qualquer falha do lado do provider (config inválida, credenciais erradas, remoto
+ * fora do ar; para `LOCAL`, `rootPath` que não é um diretório). `502` fica reservado para
+ * falha do próprio rclone (rcd fora do ar), não do provider.
+ * @summary Testa conectividade real com o provider
+ */
 export function useCheckStorageProviderHealth<
   TData = Awaited<ReturnType<typeof checkStorageProviderHealth>>,
   TError = ErrorType<
@@ -1145,6 +1163,13 @@ export function useCheckStorageProviderHealth<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Sempre `200` quando o teste roda — o resultado vem em `healthy`. `healthy: false`
+ * cobre qualquer falha do lado do provider (config inválida, credenciais erradas, remoto
+ * fora do ar; para `LOCAL`, `rootPath` que não é um diretório). `502` fica reservado para
+ * falha do próprio rclone (rcd fora do ar), não do provider.
+ * @summary Testa conectividade real com o provider
+ */
 export function useCheckStorageProviderHealth<
   TData = Awaited<ReturnType<typeof checkStorageProviderHealth>>,
   TError = ErrorType<
@@ -1167,9 +1192,12 @@ export function useCheckStorageProviderHealth<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Sempre `200` quando o teste roda — o resultado vem em `healthy`. `healthy: false`
+ * cobre qualquer falha do lado do provider (config inválida, credenciais erradas, remoto
+ * fora do ar; para `LOCAL`, `rootPath` que não é um diretório). `502` fica reservado para
+ * falha do próprio rclone (rcd fora do ar), não do provider.
  * @summary Testa conectividade real com o provider
  */
-
 export function useCheckStorageProviderHealth<
   TData = Awaited<ReturnType<typeof checkStorageProviderHealth>>,
   TError = ErrorType<

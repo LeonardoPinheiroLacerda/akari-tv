@@ -150,6 +150,11 @@ export type GetTmdbFilePairingSchemaQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/**
+ * Responde `404` se o anime não tem binding TMDB e `400` (`BUSINESS_RULE_VIOLATION`) se
+ * o binding é de filme — só séries têm temporadas/episódios para parear.
+ * @summary Estrutura da série TMDB (temporadas → episódios) para o modal de pairing
+ */
 export function useGetTmdbFilePairingSchema<
   TData = Awaited<ReturnType<typeof getTmdbFilePairingSchema>>,
   TError = ErrorType<
@@ -183,6 +188,11 @@ export function useGetTmdbFilePairingSchema<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Responde `404` se o anime não tem binding TMDB e `400` (`BUSINESS_RULE_VIOLATION`) se
+ * o binding é de filme — só séries têm temporadas/episódios para parear.
+ * @summary Estrutura da série TMDB (temporadas → episódios) para o modal de pairing
+ */
 export function useGetTmdbFilePairingSchema<
   TData = Awaited<ReturnType<typeof getTmdbFilePairingSchema>>,
   TError = ErrorType<
@@ -216,6 +226,11 @@ export function useGetTmdbFilePairingSchema<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Responde `404` se o anime não tem binding TMDB e `400` (`BUSINESS_RULE_VIOLATION`) se
+ * o binding é de filme — só séries têm temporadas/episódios para parear.
+ * @summary Estrutura da série TMDB (temporadas → episódios) para o modal de pairing
+ */
 export function useGetTmdbFilePairingSchema<
   TData = Awaited<ReturnType<typeof getTmdbFilePairingSchema>>,
   TError = ErrorType<
@@ -242,9 +257,10 @@ export function useGetTmdbFilePairingSchema<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Responde `404` se o anime não tem binding TMDB e `400` (`BUSINESS_RULE_VIOLATION`) se
+ * o binding é de filme — só séries têm temporadas/episódios para parear.
  * @summary Estrutura da série TMDB (temporadas → episódios) para o modal de pairing
  */
-
 export function useGetTmdbFilePairingSchema<
   TData = Awaited<ReturnType<typeof getTmdbFilePairingSchema>>,
   TError = ErrorType<
@@ -350,6 +366,11 @@ export type GetTmdbFilePairingQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/**
+ * Arquivo sem pairing gravado responde `200` com `seasonNumber`, `episodeNumber` e
+ * `thumbnailPath` `null`. `404` só quando o `fileId` não existe no catalog.
+ * @summary Lê o pairing atual (campos `null` quando ausente)
+ */
 export function useGetTmdbFilePairing<
   TData = Awaited<ReturnType<typeof getTmdbFilePairing>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -377,6 +398,11 @@ export function useGetTmdbFilePairing<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Arquivo sem pairing gravado responde `200` com `seasonNumber`, `episodeNumber` e
+ * `thumbnailPath` `null`. `404` só quando o `fileId` não existe no catalog.
+ * @summary Lê o pairing atual (campos `null` quando ausente)
+ */
 export function useGetTmdbFilePairing<
   TData = Awaited<ReturnType<typeof getTmdbFilePairing>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -404,6 +430,11 @@ export function useGetTmdbFilePairing<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Arquivo sem pairing gravado responde `200` com `seasonNumber`, `episodeNumber` e
+ * `thumbnailPath` `null`. `404` só quando o `fileId` não existe no catalog.
+ * @summary Lê o pairing atual (campos `null` quando ausente)
+ */
 export function useGetTmdbFilePairing<
   TData = Awaited<ReturnType<typeof getTmdbFilePairing>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -424,9 +455,10 @@ export function useGetTmdbFilePairing<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Arquivo sem pairing gravado responde `200` com `seasonNumber`, `episodeNumber` e
+ * `thumbnailPath` `null`. `404` só quando o `fileId` não existe no catalog.
  * @summary Lê o pairing atual (campos `null` quando ausente)
  */
-
 export function useGetTmdbFilePairing<
   TData = Awaited<ReturnType<typeof getTmdbFilePairing>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -560,6 +592,7 @@ export type UpdateTmdbFilePairingMutationVariables = {
 }
 
 /**
+ * Responde `404` quando o `fileId` não existe no catalog.
  * @summary Cria ou substitui o pairing (campos `null` zeram aquela dimensão)
  */
 export const useUpdateTmdbFilePairing = <
@@ -661,6 +694,7 @@ export type DeleteTmdbFilePairingMutationError = ErrorType<
 export type DeleteTmdbFilePairingMutationVariables = { fileId: number }
 
 /**
+ * Responde `404` quando o arquivo não tem pairing gravado.
  * @summary Remove a linha do pairing
  */
 export const useDeleteTmdbFilePairing = <

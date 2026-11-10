@@ -172,6 +172,13 @@ export type ListVideoFilesInfiniteQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Não há listagem de várias pastas ao mesmo tempo — o cliente sempre olha os arquivos de
+ * uma pasta por vez. Se a pasta não existir ou não tiver arquivos, devolve página vazia
+ * (não 404). Cada arquivo já vem com `tmdbPairing` preenchido quando pareado — não é
+ * preciso uma segunda chamada pra buscar os pairings da página.
+ * @summary Lista paginada dos arquivos de uma pasta específica
+ */
 export function useListVideoFilesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listVideoFiles>>,
@@ -205,6 +212,13 @@ export function useListVideoFilesInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Não há listagem de várias pastas ao mesmo tempo — o cliente sempre olha os arquivos de
+ * uma pasta por vez. Se a pasta não existir ou não tiver arquivos, devolve página vazia
+ * (não 404). Cada arquivo já vem com `tmdbPairing` preenchido quando pareado — não é
+ * preciso uma segunda chamada pra buscar os pairings da página.
+ * @summary Lista paginada dos arquivos de uma pasta específica
+ */
 export function useListVideoFilesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listVideoFiles>>,
@@ -238,6 +252,13 @@ export function useListVideoFilesInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Não há listagem de várias pastas ao mesmo tempo — o cliente sempre olha os arquivos de
+ * uma pasta por vez. Se a pasta não existir ou não tiver arquivos, devolve página vazia
+ * (não 404). Cada arquivo já vem com `tmdbPairing` preenchido quando pareado — não é
+ * preciso uma segunda chamada pra buscar os pairings da página.
+ * @summary Lista paginada dos arquivos de uma pasta específica
+ */
 export function useListVideoFilesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listVideoFiles>>,
@@ -263,9 +284,12 @@ export function useListVideoFilesInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Não há listagem de várias pastas ao mesmo tempo — o cliente sempre olha os arquivos de
+ * uma pasta por vez. Se a pasta não existir ou não tiver arquivos, devolve página vazia
+ * (não 404). Cada arquivo já vem com `tmdbPairing` preenchido quando pareado — não é
+ * preciso uma segunda chamada pra buscar os pairings da página.
  * @summary Lista paginada dos arquivos de uma pasta específica
  */
-
 export function useListVideoFilesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listVideoFiles>>,
@@ -336,6 +360,13 @@ export type ListVideoFilesQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Não há listagem de várias pastas ao mesmo tempo — o cliente sempre olha os arquivos de
+ * uma pasta por vez. Se a pasta não existir ou não tiver arquivos, devolve página vazia
+ * (não 404). Cada arquivo já vem com `tmdbPairing` preenchido quando pareado — não é
+ * preciso uma segunda chamada pra buscar os pairings da página.
+ * @summary Lista paginada dos arquivos de uma pasta específica
+ */
 export function useListVideoFiles<
   TData = Awaited<ReturnType<typeof listVideoFiles>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -359,6 +390,13 @@ export function useListVideoFiles<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Não há listagem de várias pastas ao mesmo tempo — o cliente sempre olha os arquivos de
+ * uma pasta por vez. Se a pasta não existir ou não tiver arquivos, devolve página vazia
+ * (não 404). Cada arquivo já vem com `tmdbPairing` preenchido quando pareado — não é
+ * preciso uma segunda chamada pra buscar os pairings da página.
+ * @summary Lista paginada dos arquivos de uma pasta específica
+ */
 export function useListVideoFiles<
   TData = Awaited<ReturnType<typeof listVideoFiles>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -382,6 +420,13 @@ export function useListVideoFiles<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Não há listagem de várias pastas ao mesmo tempo — o cliente sempre olha os arquivos de
+ * uma pasta por vez. Se a pasta não existir ou não tiver arquivos, devolve página vazia
+ * (não 404). Cada arquivo já vem com `tmdbPairing` preenchido quando pareado — não é
+ * preciso uma segunda chamada pra buscar os pairings da página.
+ * @summary Lista paginada dos arquivos de uma pasta específica
+ */
 export function useListVideoFiles<
   TData = Awaited<ReturnType<typeof listVideoFiles>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -398,9 +443,12 @@ export function useListVideoFiles<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Não há listagem de várias pastas ao mesmo tempo — o cliente sempre olha os arquivos de
+ * uma pasta por vez. Se a pasta não existir ou não tiver arquivos, devolve página vazia
+ * (não 404). Cada arquivo já vem com `tmdbPairing` preenchido quando pareado — não é
+ * preciso uma segunda chamada pra buscar os pairings da página.
  * @summary Lista paginada dos arquivos de uma pasta específica
  */
-
 export function useListVideoFiles<
   TData = Awaited<ReturnType<typeof listVideoFiles>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -526,6 +574,9 @@ export type CreateVideoFileMutationVariables = {
 }
 
 /**
+ * O `path` é derivado server-side a partir da pasta pai + `name`.
+ *
+ * Responde `404` se o `folderId` informado não existe.
  * @summary Cria um novo arquivo
  */
 export const useCreateVideoFile = <
@@ -612,6 +663,7 @@ export type GetVideoFileQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/** @summary Busca um arquivo por id */
 export function useGetVideoFile<
   TData = Awaited<ReturnType<typeof getVideoFile>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -635,6 +687,7 @@ export function useGetVideoFile<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Busca um arquivo por id */
 export function useGetVideoFile<
   TData = Awaited<ReturnType<typeof getVideoFile>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -658,6 +711,7 @@ export function useGetVideoFile<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Busca um arquivo por id */
 export function useGetVideoFile<
   TData = Awaited<ReturnType<typeof getVideoFile>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -673,10 +727,7 @@ export function useGetVideoFile<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Busca um arquivo por id
- */
-
+/** @summary Busca um arquivo por id */
 export function useGetVideoFile<
   TData = Awaited<ReturnType<typeof getVideoFile>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -804,6 +855,9 @@ export type UpdateVideoFileMutationVariables = {
 }
 
 /**
+ * Se `folderId` mudar, o `path` é rederivado.
+ *
+ * Responde `404` se o `fileId` ou o `folderId` informado não existe.
  * @summary Substitui os campos mutáveis do arquivo
  */
 export const useUpdateVideoFile = <
@@ -898,6 +952,7 @@ export type DeleteVideoFileMutationError = ErrorType<
 export type DeleteVideoFileMutationVariables = { fileId: number }
 
 /**
+ * Sem cascata — arquivo é folha.
  * @summary Remove o arquivo
  */
 export const useDeleteVideoFile = <

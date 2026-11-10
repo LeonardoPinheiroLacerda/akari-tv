@@ -167,6 +167,11 @@ export type ListNotificationsInfiniteQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Página de notificações, lidas ou não, ordenadas da mais nova para a mais antiga —
+ * pensada para um botão "ver mais" no cliente (cada clique pede a próxima `page`).
+ * @summary Lista paginada das notificações, da mais nova para a mais antiga
+ */
 export function useListNotificationsInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listNotifications>>,
@@ -200,6 +205,11 @@ export function useListNotificationsInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Página de notificações, lidas ou não, ordenadas da mais nova para a mais antiga —
+ * pensada para um botão "ver mais" no cliente (cada clique pede a próxima `page`).
+ * @summary Lista paginada das notificações, da mais nova para a mais antiga
+ */
 export function useListNotificationsInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listNotifications>>,
@@ -233,6 +243,11 @@ export function useListNotificationsInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Página de notificações, lidas ou não, ordenadas da mais nova para a mais antiga —
+ * pensada para um botão "ver mais" no cliente (cada clique pede a próxima `page`).
+ * @summary Lista paginada das notificações, da mais nova para a mais antiga
+ */
 export function useListNotificationsInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listNotifications>>,
@@ -258,9 +273,10 @@ export function useListNotificationsInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Página de notificações, lidas ou não, ordenadas da mais nova para a mais antiga —
+ * pensada para um botão "ver mais" no cliente (cada clique pede a próxima `page`).
  * @summary Lista paginada das notificações, da mais nova para a mais antiga
  */
-
 export function useListNotificationsInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listNotifications>>,
@@ -336,6 +352,11 @@ export type ListNotificationsQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Página de notificações, lidas ou não, ordenadas da mais nova para a mais antiga —
+ * pensada para um botão "ver mais" no cliente (cada clique pede a próxima `page`).
+ * @summary Lista paginada das notificações, da mais nova para a mais antiga
+ */
 export function useListNotifications<
   TData = Awaited<ReturnType<typeof listNotifications>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -363,6 +384,11 @@ export function useListNotifications<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Página de notificações, lidas ou não, ordenadas da mais nova para a mais antiga —
+ * pensada para um botão "ver mais" no cliente (cada clique pede a próxima `page`).
+ * @summary Lista paginada das notificações, da mais nova para a mais antiga
+ */
 export function useListNotifications<
   TData = Awaited<ReturnType<typeof listNotifications>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -390,6 +416,11 @@ export function useListNotifications<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Página de notificações, lidas ou não, ordenadas da mais nova para a mais antiga —
+ * pensada para um botão "ver mais" no cliente (cada clique pede a próxima `page`).
+ * @summary Lista paginada das notificações, da mais nova para a mais antiga
+ */
 export function useListNotifications<
   TData = Awaited<ReturnType<typeof listNotifications>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -410,9 +441,10 @@ export function useListNotifications<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Página de notificações, lidas ou não, ordenadas da mais nova para a mais antiga —
+ * pensada para um botão "ver mais" no cliente (cada clique pede a próxima `page`).
  * @summary Lista paginada das notificações, da mais nova para a mais antiga
  */
-
 export function useListNotifications<
   TData = Awaited<ReturnType<typeof listNotifications>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -491,6 +523,7 @@ export type GetUnreadCountQueryResult = NonNullable<
 >
 export type GetUnreadCountQueryError = ErrorType<InternalServerErrorResponse>
 
+/** @summary Conta as notificações não-lidas */
 export function useGetUnreadCount<
   TData = Awaited<ReturnType<typeof getUnreadCount>>,
   TError = ErrorType<InternalServerErrorResponse>,
@@ -513,6 +546,7 @@ export function useGetUnreadCount<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Conta as notificações não-lidas */
 export function useGetUnreadCount<
   TData = Awaited<ReturnType<typeof getUnreadCount>>,
   TError = ErrorType<InternalServerErrorResponse>,
@@ -535,6 +569,7 @@ export function useGetUnreadCount<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Conta as notificações não-lidas */
 export function useGetUnreadCount<
   TData = Awaited<ReturnType<typeof getUnreadCount>>,
   TError = ErrorType<InternalServerErrorResponse>,
@@ -549,10 +584,7 @@ export function useGetUnreadCount<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Conta as notificações não-lidas
- */
-
+/** @summary Conta as notificações não-lidas */
 export function useGetUnreadCount<
   TData = Awaited<ReturnType<typeof getUnreadCount>>,
   TError = ErrorType<InternalServerErrorResponse>,
@@ -651,6 +683,9 @@ export type MarkNotificationReadMutationError = ErrorType<
 export type MarkNotificationReadMutationVariables = { notificationId: number }
 
 /**
+ * Idempotente: marcar de novo uma notificação já lida responde `204`. Um
+ * `notificationId` inexistente também responde `204` — nada é alterado. `404` só quando
+ * o `notificationId` não é numérico.
  * @summary Marca uma notificação como lida
  */
 export const useMarkNotificationRead = <
@@ -743,9 +778,7 @@ export type MarkAllNotificationsReadMutationResult = NonNullable<
 export type MarkAllNotificationsReadMutationError =
   ErrorType<InternalServerErrorResponse>
 
-/**
- * @summary Marca todas as notificações como lidas
- */
+/** @summary Marca todas as notificações como lidas */
 export const useMarkAllNotificationsRead = <
   TError = ErrorType<InternalServerErrorResponse>,
   TContext = unknown,

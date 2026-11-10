@@ -168,6 +168,11 @@ export type ListRelationRootsInfiniteQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
+ * @summary Animes-raiz da coleção (paginado)
+ */
 export function useListRelationRootsInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listRelationRoots>>,
@@ -201,6 +206,11 @@ export function useListRelationRootsInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
+ * @summary Animes-raiz da coleção (paginado)
+ */
 export function useListRelationRootsInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listRelationRoots>>,
@@ -234,6 +244,11 @@ export function useListRelationRootsInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
+ * @summary Animes-raiz da coleção (paginado)
+ */
 export function useListRelationRootsInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listRelationRoots>>,
@@ -259,9 +274,10 @@ export function useListRelationRootsInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
  * @summary Animes-raiz da coleção (paginado)
  */
-
 export function useListRelationRootsInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listRelationRoots>>,
@@ -337,6 +353,11 @@ export type ListRelationRootsQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
+ * @summary Animes-raiz da coleção (paginado)
+ */
 export function useListRelationRoots<
   TData = Awaited<ReturnType<typeof listRelationRoots>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -364,6 +385,11 @@ export function useListRelationRoots<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
+ * @summary Animes-raiz da coleção (paginado)
+ */
 export function useListRelationRoots<
   TData = Awaited<ReturnType<typeof listRelationRoots>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -391,6 +417,11 @@ export function useListRelationRoots<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
+ * @summary Animes-raiz da coleção (paginado)
+ */
 export function useListRelationRoots<
   TData = Awaited<ReturnType<typeof listRelationRoots>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -411,9 +442,10 @@ export function useListRelationRoots<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Raízes das franquias — naturais e manuais, as mesmas de `GET /v1/metadata/franchises`
+ * (ver lá as regras de resolução). Ordenadas por `anilistId`.
  * @summary Animes-raiz da coleção (paginado)
  */
-
 export function useListRelationRoots<
   TData = Awaited<ReturnType<typeof listRelationRoots>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -536,6 +568,7 @@ export type GetAnimeRelationGraphQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/** @summary Grafo materializado (BFS bidirecional) até `depth` saltos */
 export function useGetAnimeRelationGraph<
   TData = Awaited<ReturnType<typeof getAnimeRelationGraph>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -564,6 +597,7 @@ export function useGetAnimeRelationGraph<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Grafo materializado (BFS bidirecional) até `depth` saltos */
 export function useGetAnimeRelationGraph<
   TData = Awaited<ReturnType<typeof getAnimeRelationGraph>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -592,6 +626,7 @@ export function useGetAnimeRelationGraph<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Grafo materializado (BFS bidirecional) até `depth` saltos */
 export function useGetAnimeRelationGraph<
   TData = Awaited<ReturnType<typeof getAnimeRelationGraph>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -612,10 +647,7 @@ export function useGetAnimeRelationGraph<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Grafo materializado (BFS bidirecional) até `depth` saltos
- */
-
+/** @summary Grafo materializado (BFS bidirecional) até `depth` saltos */
 export function useGetAnimeRelationGraph<
   TData = Awaited<ReturnType<typeof getAnimeRelationGraph>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -736,6 +768,26 @@ export type GetAnimeFranchiseQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/**
+ * Franquia à qual o anime pertence (`franchiseOf`, regras em `GET
+ * /v1/metadata/franchises`), mesmo que o `anilistId` informado não seja a raiz. `404` se
+ * o anime não está na coleção ou está fora de qualquer franquia (oculto, direto ou por
+ * herança).
+ *
+ * Os **membros** são todos os animes cuja franquia é esta raiz, incluindo a própria raiz:
+ * - **`seasons`**: a raiz mais a cadeia de `SEQUEL` a partir dela, só entre os membros, na
+ *   ordem da cadeia, filtrada pelos formatos de série (`TV`, `TV_SHORT`, `ONA`). A cadeia
+ *   continua através de um membro de outro formato; ele só não entra em `seasons`.
+ * - **`movies`**\/**`specials`**: os demais membros, separados por formato — `MOVIE` em
+ *   `movies`, o resto em `specials` —, ordenados por `year`, depois `season`
+ *   (`WINTER`/`SPRING`/`SUMMER`/`FALL`), com `anilistId` como desempate. Um membro sem
+ *   relação com os outros entra mesmo assim, pelo formato.
+ *
+ * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
+ * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
+ * duplicatas: cada membro aparece em só uma das listas.
+ * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
+ */
 export function useGetAnimeFranchise<
   TData = Awaited<ReturnType<typeof getAnimeFranchise>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -763,6 +815,26 @@ export function useGetAnimeFranchise<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Franquia à qual o anime pertence (`franchiseOf`, regras em `GET
+ * /v1/metadata/franchises`), mesmo que o `anilistId` informado não seja a raiz. `404` se
+ * o anime não está na coleção ou está fora de qualquer franquia (oculto, direto ou por
+ * herança).
+ *
+ * Os **membros** são todos os animes cuja franquia é esta raiz, incluindo a própria raiz:
+ * - **`seasons`**: a raiz mais a cadeia de `SEQUEL` a partir dela, só entre os membros, na
+ *   ordem da cadeia, filtrada pelos formatos de série (`TV`, `TV_SHORT`, `ONA`). A cadeia
+ *   continua através de um membro de outro formato; ele só não entra em `seasons`.
+ * - **`movies`**\/**`specials`**: os demais membros, separados por formato — `MOVIE` em
+ *   `movies`, o resto em `specials` —, ordenados por `year`, depois `season`
+ *   (`WINTER`/`SPRING`/`SUMMER`/`FALL`), com `anilistId` como desempate. Um membro sem
+ *   relação com os outros entra mesmo assim, pelo formato.
+ *
+ * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
+ * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
+ * duplicatas: cada membro aparece em só uma das listas.
+ * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
+ */
 export function useGetAnimeFranchise<
   TData = Awaited<ReturnType<typeof getAnimeFranchise>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -790,6 +862,26 @@ export function useGetAnimeFranchise<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Franquia à qual o anime pertence (`franchiseOf`, regras em `GET
+ * /v1/metadata/franchises`), mesmo que o `anilistId` informado não seja a raiz. `404` se
+ * o anime não está na coleção ou está fora de qualquer franquia (oculto, direto ou por
+ * herança).
+ *
+ * Os **membros** são todos os animes cuja franquia é esta raiz, incluindo a própria raiz:
+ * - **`seasons`**: a raiz mais a cadeia de `SEQUEL` a partir dela, só entre os membros, na
+ *   ordem da cadeia, filtrada pelos formatos de série (`TV`, `TV_SHORT`, `ONA`). A cadeia
+ *   continua através de um membro de outro formato; ele só não entra em `seasons`.
+ * - **`movies`**\/**`specials`**: os demais membros, separados por formato — `MOVIE` em
+ *   `movies`, o resto em `specials` —, ordenados por `year`, depois `season`
+ *   (`WINTER`/`SPRING`/`SUMMER`/`FALL`), com `anilistId` como desempate. Um membro sem
+ *   relação com os outros entra mesmo assim, pelo formato.
+ *
+ * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
+ * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
+ * duplicatas: cada membro aparece em só uma das listas.
+ * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
+ */
 export function useGetAnimeFranchise<
   TData = Awaited<ReturnType<typeof getAnimeFranchise>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -810,9 +902,25 @@ export function useGetAnimeFranchise<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Franquia à qual o anime pertence (`franchiseOf`, regras em `GET
+ * /v1/metadata/franchises`), mesmo que o `anilistId` informado não seja a raiz. `404` se
+ * o anime não está na coleção ou está fora de qualquer franquia (oculto, direto ou por
+ * herança).
+ *
+ * Os **membros** são todos os animes cuja franquia é esta raiz, incluindo a própria raiz:
+ * - **`seasons`**: a raiz mais a cadeia de `SEQUEL` a partir dela, só entre os membros, na
+ *   ordem da cadeia, filtrada pelos formatos de série (`TV`, `TV_SHORT`, `ONA`). A cadeia
+ *   continua através de um membro de outro formato; ele só não entra em `seasons`.
+ * - **`movies`**\/**`specials`**: os demais membros, separados por formato — `MOVIE` em
+ *   `movies`, o resto em `specials` —, ordenados por `year`, depois `season`
+ *   (`WINTER`/`SPRING`/`SUMMER`/`FALL`), com `anilistId` como desempate. Um membro sem
+ *   relação com os outros entra mesmo assim, pelo formato.
+ *
+ * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
+ * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
+ * duplicatas: cada membro aparece em só uma das listas.
  * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
  */
-
 export function useGetAnimeFranchise<
   TData = Awaited<ReturnType<typeof getAnimeFranchise>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,

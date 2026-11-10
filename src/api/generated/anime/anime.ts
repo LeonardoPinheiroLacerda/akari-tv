@@ -127,6 +127,7 @@ export type GetAnimeQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/** @summary Lê a metadata do anime (base local, sem buscar de novo na AniList) */
 export function useGetAnime<
   TData = Awaited<ReturnType<typeof getAnime>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -150,6 +151,7 @@ export function useGetAnime<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Lê a metadata do anime (base local, sem buscar de novo na AniList) */
 export function useGetAnime<
   TData = Awaited<ReturnType<typeof getAnime>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -173,6 +175,7 @@ export function useGetAnime<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Lê a metadata do anime (base local, sem buscar de novo na AniList) */
 export function useGetAnime<
   TData = Awaited<ReturnType<typeof getAnime>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -188,10 +191,7 @@ export function useGetAnime<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Lê a metadata do anime (base local, sem buscar de novo na AniList)
- */
-
+/** @summary Lê a metadata do anime (base local, sem buscar de novo na AniList) */
 export function useGetAnime<
   TData = Awaited<ReturnType<typeof getAnime>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -283,9 +283,7 @@ export type DeleteAnimeMutationError = ErrorType<
 >
 export type DeleteAnimeMutationVariables = { anilistId: number }
 
-/**
- * @summary Remove a metadata; a pasta volta a ficar livre
- */
+/** @summary Remove a metadata; a pasta volta a ficar livre */
 export const useDeleteAnime = <
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
   TContext = unknown,
@@ -382,9 +380,7 @@ export type SyncAnimeMutationError = ErrorType<
 >
 export type SyncAnimeMutationVariables = { anilistId: number }
 
-/**
- * @summary Busca de novo na AniList, mantendo a pasta atual
- */
+/** @summary Busca de novo na AniList, mantendo a pasta atual */
 export const useSyncAnime = <
   TError = ErrorType<
     | NotFoundResponse
@@ -519,9 +515,7 @@ export type BindAnimeToFolderMutationVariables = {
   data: AnimeBindingRequestBodyBody
 }
 
-/**
- * @summary Cria metadata do anime atrelada a uma pasta do catalog
- */
+/** @summary Cria metadata do anime atrelada a uma pasta do catalog */
 export const useBindAnimeToFolder = <
   TError = ErrorType<
     | BadRequestResponse
@@ -555,8 +549,8 @@ export const getMarkAnimeAsReviewedUrl = (anilistId: number) => {
 }
 
 /**
- * Marca `reviewStatus` como `REVIEWED`. A partir daqui, o auto-bind da ingestão nunca
- * mais altera esse campo, mesmo reprocessando a pasta numa reconciliação futura.
+ * Marca `reviewStatus` como `REVIEWED`. A partir daqui, nenhum recálculo automático
+ * altera esse campo.
  * @summary Confirma manualmente que a ingestão desse anime está correta
  */
 export const markAnimeAsReviewed = async (
@@ -620,6 +614,8 @@ export type MarkAnimeAsReviewedMutationError = ErrorType<
 export type MarkAnimeAsReviewedMutationVariables = { anilistId: number }
 
 /**
+ * Marca `reviewStatus` como `REVIEWED`. A partir daqui, nenhum recálculo automático
+ * altera esse campo.
  * @summary Confirma manualmente que a ingestão desse anime está correta
  */
 export const useMarkAnimeAsReviewed = <
@@ -712,6 +708,7 @@ export type GetAnimeByFolderQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/** @summary Lê a metadata do anime vinculado a uma pasta do catalog */
 export function useGetAnimeByFolder<
   TData = Awaited<ReturnType<typeof getAnimeByFolder>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -739,6 +736,7 @@ export function useGetAnimeByFolder<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Lê a metadata do anime vinculado a uma pasta do catalog */
 export function useGetAnimeByFolder<
   TData = Awaited<ReturnType<typeof getAnimeByFolder>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -766,6 +764,7 @@ export function useGetAnimeByFolder<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Lê a metadata do anime vinculado a uma pasta do catalog */
 export function useGetAnimeByFolder<
   TData = Awaited<ReturnType<typeof getAnimeByFolder>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -785,10 +784,7 @@ export function useGetAnimeByFolder<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Lê a metadata do anime vinculado a uma pasta do catalog
- */
-
+/** @summary Lê a metadata do anime vinculado a uma pasta do catalog */
 export function useGetAnimeByFolder<
   TData = Awaited<ReturnType<typeof getAnimeByFolder>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,

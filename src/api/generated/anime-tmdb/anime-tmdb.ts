@@ -140,6 +140,7 @@ export type GetTmdbStateQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/** @summary Estado atual do binding TMDB (binding + overrides + dados do TMDB) */
 export function useGetTmdbState<
   TData = Awaited<ReturnType<typeof getTmdbState>>,
   TError = ErrorType<
@@ -168,6 +169,7 @@ export function useGetTmdbState<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Estado atual do binding TMDB (binding + overrides + dados do TMDB) */
 export function useGetTmdbState<
   TData = Awaited<ReturnType<typeof getTmdbState>>,
   TError = ErrorType<
@@ -196,6 +198,7 @@ export function useGetTmdbState<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Estado atual do binding TMDB (binding + overrides + dados do TMDB) */
 export function useGetTmdbState<
   TData = Awaited<ReturnType<typeof getTmdbState>>,
   TError = ErrorType<
@@ -216,10 +219,7 @@ export function useGetTmdbState<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Estado atual do binding TMDB (binding + overrides + dados do TMDB)
- */
-
+/** @summary Estado atual do binding TMDB (binding + overrides + dados do TMDB) */
 export function useGetTmdbState<
   TData = Awaited<ReturnType<typeof getTmdbState>>,
   TError = ErrorType<
@@ -356,9 +356,7 @@ export type BindTmdbMutationVariables = {
   data: TmdbBindingRequestBodyBody
 }
 
-/**
- * @summary Cria binding TMDB (série ou filme)
- */
+/** @summary Cria binding TMDB (série ou filme) */
 export const useBindTmdb = <
   TError = ErrorType<
     | BadRequestResponse
@@ -395,9 +393,8 @@ export const getClearTmdbBindingUrl = (anilistId: number) => {
  * Remove o binding TMDB do anime e limpa junto tudo que dependia dele: os overrides
  * (título, sinopse, pôster, backdrop e logo) e os pairings TMDB de todos os arquivos da
  * pasta do anime — eles apontam pra temporadas/episódios do título desvinculado e ficariam
- * errados num novo binding. Um novo `POST .../tmdb/binding` volta a pré-preencher backdrop e
- * logo; os pairings precisam ser refeitos (manualmente, pela proposta de pairing ou numa
- * nova ingestão).
+ * errados num novo binding. Os pairings precisam ser refeitos (manualmente ou pela
+ * proposta de pairing).
  * @summary Remove binding TMDB, junto com os overrides e os pairings dos episódios
  */
 export const clearTmdbBinding = async (
@@ -464,6 +461,11 @@ export type ClearTmdbBindingMutationError = ErrorType<
 export type ClearTmdbBindingMutationVariables = { anilistId: number }
 
 /**
+ * Remove o binding TMDB do anime e limpa junto tudo que dependia dele: os overrides
+ * (título, sinopse, pôster, backdrop e logo) e os pairings TMDB de todos os arquivos da
+ * pasta do anime — eles apontam pra temporadas/episódios do título desvinculado e ficariam
+ * errados num novo binding. Os pairings precisam ser refeitos (manualmente ou pela
+ * proposta de pairing).
  * @summary Remove binding TMDB, junto com os overrides e os pairings dos episódios
  */
 export const useClearTmdbBinding = <
@@ -600,6 +602,7 @@ export type UpdateTmdbOverridesMutationVariables = {
 }
 
 /**
+ * Body com todos campos `null` apaga a linha de overrides.
  * @summary Substitui o bloco inteiro de overrides
  */
 export const useUpdateTmdbOverrides = <
@@ -734,6 +737,7 @@ export type GetTmdbOverridesSchemaQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/** @summary Opções concretas por campo que aceita override (traduções e imagens do TMDB) */
 export function useGetTmdbOverridesSchema<
   TData = Awaited<ReturnType<typeof getTmdbOverridesSchema>>,
   TError = ErrorType<
@@ -767,6 +771,7 @@ export function useGetTmdbOverridesSchema<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Opções concretas por campo que aceita override (traduções e imagens do TMDB) */
 export function useGetTmdbOverridesSchema<
   TData = Awaited<ReturnType<typeof getTmdbOverridesSchema>>,
   TError = ErrorType<
@@ -800,6 +805,7 @@ export function useGetTmdbOverridesSchema<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Opções concretas por campo que aceita override (traduções e imagens do TMDB) */
 export function useGetTmdbOverridesSchema<
   TData = Awaited<ReturnType<typeof getTmdbOverridesSchema>>,
   TError = ErrorType<
@@ -825,10 +831,7 @@ export function useGetTmdbOverridesSchema<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Opções concretas por campo que aceita override (traduções e imagens do TMDB)
- */
-
+/** @summary Opções concretas por campo que aceita override (traduções e imagens do TMDB) */
 export function useGetTmdbOverridesSchema<
   TData = Awaited<ReturnType<typeof getTmdbOverridesSchema>>,
   TError = ErrorType<

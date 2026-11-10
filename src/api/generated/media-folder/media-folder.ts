@@ -184,6 +184,18 @@ export type ListFoldersInfiniteQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Filtros são AND — cada query param não-nulo restringe o resultado. `sort` aceita
+ * specs `field[:asc|desc]` na whitelist `name`, `createdAt`. Cada pasta já vem com
+ * `animeBinding` preenchido quando vinculada — não é preciso uma segunda chamada pra
+ * buscar os bindings da página.
+ *
+ * `reviewStatus`, `hasAnilist`, `hasTmdb` e `allEpisodesPaired` filtram pelo anime
+ * vinculado à pasta (quando houver); pastas sem nenhum anime vinculado só batem com
+ * `hasAnilist=false` — qualquer um dos outros três junto de uma pasta sem binding
+ * não traz resultado.
+ * @summary Lista paginada de pastas com filtros AND
+ */
 export function useListFoldersInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listFolders>>,
@@ -217,6 +229,18 @@ export function useListFoldersInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Filtros são AND — cada query param não-nulo restringe o resultado. `sort` aceita
+ * specs `field[:asc|desc]` na whitelist `name`, `createdAt`. Cada pasta já vem com
+ * `animeBinding` preenchido quando vinculada — não é preciso uma segunda chamada pra
+ * buscar os bindings da página.
+ *
+ * `reviewStatus`, `hasAnilist`, `hasTmdb` e `allEpisodesPaired` filtram pelo anime
+ * vinculado à pasta (quando houver); pastas sem nenhum anime vinculado só batem com
+ * `hasAnilist=false` — qualquer um dos outros três junto de uma pasta sem binding
+ * não traz resultado.
+ * @summary Lista paginada de pastas com filtros AND
+ */
 export function useListFoldersInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listFolders>>,
@@ -250,6 +274,18 @@ export function useListFoldersInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Filtros são AND — cada query param não-nulo restringe o resultado. `sort` aceita
+ * specs `field[:asc|desc]` na whitelist `name`, `createdAt`. Cada pasta já vem com
+ * `animeBinding` preenchido quando vinculada — não é preciso uma segunda chamada pra
+ * buscar os bindings da página.
+ *
+ * `reviewStatus`, `hasAnilist`, `hasTmdb` e `allEpisodesPaired` filtram pelo anime
+ * vinculado à pasta (quando houver); pastas sem nenhum anime vinculado só batem com
+ * `hasAnilist=false` — qualquer um dos outros três junto de uma pasta sem binding
+ * não traz resultado.
+ * @summary Lista paginada de pastas com filtros AND
+ */
 export function useListFoldersInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listFolders>>,
@@ -275,9 +311,17 @@ export function useListFoldersInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Filtros são AND — cada query param não-nulo restringe o resultado. `sort` aceita
+ * specs `field[:asc|desc]` na whitelist `name`, `createdAt`. Cada pasta já vem com
+ * `animeBinding` preenchido quando vinculada — não é preciso uma segunda chamada pra
+ * buscar os bindings da página.
+ *
+ * `reviewStatus`, `hasAnilist`, `hasTmdb` e `allEpisodesPaired` filtram pelo anime
+ * vinculado à pasta (quando houver); pastas sem nenhum anime vinculado só batem com
+ * `hasAnilist=false` — qualquer um dos outros três junto de uma pasta sem binding
+ * não traz resultado.
  * @summary Lista paginada de pastas com filtros AND
  */
-
 export function useListFoldersInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listFolders>>,
@@ -348,6 +392,18 @@ export type ListFoldersQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Filtros são AND — cada query param não-nulo restringe o resultado. `sort` aceita
+ * specs `field[:asc|desc]` na whitelist `name`, `createdAt`. Cada pasta já vem com
+ * `animeBinding` preenchido quando vinculada — não é preciso uma segunda chamada pra
+ * buscar os bindings da página.
+ *
+ * `reviewStatus`, `hasAnilist`, `hasTmdb` e `allEpisodesPaired` filtram pelo anime
+ * vinculado à pasta (quando houver); pastas sem nenhum anime vinculado só batem com
+ * `hasAnilist=false` — qualquer um dos outros três junto de uma pasta sem binding
+ * não traz resultado.
+ * @summary Lista paginada de pastas com filtros AND
+ */
 export function useListFolders<
   TData = Awaited<ReturnType<typeof listFolders>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -371,6 +427,18 @@ export function useListFolders<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Filtros são AND — cada query param não-nulo restringe o resultado. `sort` aceita
+ * specs `field[:asc|desc]` na whitelist `name`, `createdAt`. Cada pasta já vem com
+ * `animeBinding` preenchido quando vinculada — não é preciso uma segunda chamada pra
+ * buscar os bindings da página.
+ *
+ * `reviewStatus`, `hasAnilist`, `hasTmdb` e `allEpisodesPaired` filtram pelo anime
+ * vinculado à pasta (quando houver); pastas sem nenhum anime vinculado só batem com
+ * `hasAnilist=false` — qualquer um dos outros três junto de uma pasta sem binding
+ * não traz resultado.
+ * @summary Lista paginada de pastas com filtros AND
+ */
 export function useListFolders<
   TData = Awaited<ReturnType<typeof listFolders>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -394,6 +462,18 @@ export function useListFolders<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Filtros são AND — cada query param não-nulo restringe o resultado. `sort` aceita
+ * specs `field[:asc|desc]` na whitelist `name`, `createdAt`. Cada pasta já vem com
+ * `animeBinding` preenchido quando vinculada — não é preciso uma segunda chamada pra
+ * buscar os bindings da página.
+ *
+ * `reviewStatus`, `hasAnilist`, `hasTmdb` e `allEpisodesPaired` filtram pelo anime
+ * vinculado à pasta (quando houver); pastas sem nenhum anime vinculado só batem com
+ * `hasAnilist=false` — qualquer um dos outros três junto de uma pasta sem binding
+ * não traz resultado.
+ * @summary Lista paginada de pastas com filtros AND
+ */
 export function useListFolders<
   TData = Awaited<ReturnType<typeof listFolders>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -410,9 +490,17 @@ export function useListFolders<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Filtros são AND — cada query param não-nulo restringe o resultado. `sort` aceita
+ * specs `field[:asc|desc]` na whitelist `name`, `createdAt`. Cada pasta já vem com
+ * `animeBinding` preenchido quando vinculada — não é preciso uma segunda chamada pra
+ * buscar os bindings da página.
+ *
+ * `reviewStatus`, `hasAnilist`, `hasTmdb` e `allEpisodesPaired` filtram pelo anime
+ * vinculado à pasta (quando houver); pastas sem nenhum anime vinculado só batem com
+ * `hasAnilist=false` — qualquer um dos outros três junto de uma pasta sem binding
+ * não traz resultado.
  * @summary Lista paginada de pastas com filtros AND
  */
-
 export function useListFolders<
   TData = Awaited<ReturnType<typeof listFolders>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -538,6 +626,11 @@ export type CreateFolderMutationError = ErrorType<
 export type CreateFolderMutationVariables = { data: MediaFolderRequestBodyBody }
 
 /**
+ * A pasta pai é derivada do `path`: é a pasta do mesmo provider cujo path é o `path` sem o
+ * último segmento. Se ela não estiver registrada, a nova pasta vira raiz (`parentId`
+ * `null`) — não é erro.
+ *
+ * Responde `404` se o `storageProviderId` informado não existe.
  * @summary Cria uma nova pasta
  */
 export const useCreateFolder = <
@@ -622,6 +715,7 @@ export type GetFolderQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/** @summary Busca uma pasta por id */
 export function useGetFolder<
   TData = Awaited<ReturnType<typeof getFolder>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -645,6 +739,7 @@ export function useGetFolder<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Busca uma pasta por id */
 export function useGetFolder<
   TData = Awaited<ReturnType<typeof getFolder>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -668,6 +763,7 @@ export function useGetFolder<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/** @summary Busca uma pasta por id */
 export function useGetFolder<
   TData = Awaited<ReturnType<typeof getFolder>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -683,10 +779,7 @@ export function useGetFolder<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
-/**
- * @summary Busca uma pasta por id
- */
-
+/** @summary Busca uma pasta por id */
 export function useGetFolder<
   TData = Awaited<ReturnType<typeof getFolder>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -813,6 +906,8 @@ export type UpdateFolderMutationVariables = {
 }
 
 /**
+ * Payload substituto (não patch). A pasta pai é redescoberta a partir do novo `path`
+ * (raiz se não houver pai registrado); `createdAt` é preservado.
  * @summary Substitui os campos mutáveis da pasta
  */
 export const useUpdateFolder = <
@@ -907,6 +1002,7 @@ export type DeleteFolderMutationError = ErrorType<
 export type DeleteFolderMutationVariables = { folderId: number }
 
 /**
+ * Descendentes e arquivos abrigados descem pela cascata do DDL.
  * @summary Remove a pasta
  */
 export const useDeleteFolder = <

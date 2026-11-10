@@ -155,6 +155,22 @@ export type GetFileAvailabilityQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/**
+ * Consulta, sem efeito colateral (não enfileira nada no cache), o que falta antes de
+ * iniciar uma sessão de playback pra este arquivo:
+ * - `READY`: já pode chamar `POST /v1/playback/sessions` — provider `LOCAL`, ou remoto
+ *   com o cache `COMPLETED`.
+ * - `NEEDS_DOWNLOAD`: provider remoto sem linha de cache, ou com a linha `FAILED`. O
+ *   cliente enfileira com `POST /v1/cache/items`.
+ * - `DOWNLOADING`: provider remoto com linha `QUEUED` ou `DOWNLOADING`. Não enfileire de
+ *   novo — só acompanhe pelo SSE de `/v1/cache/events` até chegar `COMPLETED`.
+ *
+ * Não traz progresso nem percentual — isso é papel exclusivo do SSE. `cacheItemId` vem
+ * preenchido sempre que já existe uma linha de cache (em qualquer status), pra o cliente
+ * correlacionar os eventos do SSE a este arquivo; `null` para provider `LOCAL` ou quando
+ * ainda não há linha.
+ * @summary Diz se o arquivo já pode tocar ou precisa ser baixado pro cache antes
+ */
 export function useGetFileAvailability<
   TData = Awaited<ReturnType<typeof getFileAvailability>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -182,6 +198,22 @@ export function useGetFileAvailability<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Consulta, sem efeito colateral (não enfileira nada no cache), o que falta antes de
+ * iniciar uma sessão de playback pra este arquivo:
+ * - `READY`: já pode chamar `POST /v1/playback/sessions` — provider `LOCAL`, ou remoto
+ *   com o cache `COMPLETED`.
+ * - `NEEDS_DOWNLOAD`: provider remoto sem linha de cache, ou com a linha `FAILED`. O
+ *   cliente enfileira com `POST /v1/cache/items`.
+ * - `DOWNLOADING`: provider remoto com linha `QUEUED` ou `DOWNLOADING`. Não enfileire de
+ *   novo — só acompanhe pelo SSE de `/v1/cache/events` até chegar `COMPLETED`.
+ *
+ * Não traz progresso nem percentual — isso é papel exclusivo do SSE. `cacheItemId` vem
+ * preenchido sempre que já existe uma linha de cache (em qualquer status), pra o cliente
+ * correlacionar os eventos do SSE a este arquivo; `null` para provider `LOCAL` ou quando
+ * ainda não há linha.
+ * @summary Diz se o arquivo já pode tocar ou precisa ser baixado pro cache antes
+ */
 export function useGetFileAvailability<
   TData = Awaited<ReturnType<typeof getFileAvailability>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -209,6 +241,22 @@ export function useGetFileAvailability<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Consulta, sem efeito colateral (não enfileira nada no cache), o que falta antes de
+ * iniciar uma sessão de playback pra este arquivo:
+ * - `READY`: já pode chamar `POST /v1/playback/sessions` — provider `LOCAL`, ou remoto
+ *   com o cache `COMPLETED`.
+ * - `NEEDS_DOWNLOAD`: provider remoto sem linha de cache, ou com a linha `FAILED`. O
+ *   cliente enfileira com `POST /v1/cache/items`.
+ * - `DOWNLOADING`: provider remoto com linha `QUEUED` ou `DOWNLOADING`. Não enfileire de
+ *   novo — só acompanhe pelo SSE de `/v1/cache/events` até chegar `COMPLETED`.
+ *
+ * Não traz progresso nem percentual — isso é papel exclusivo do SSE. `cacheItemId` vem
+ * preenchido sempre que já existe uma linha de cache (em qualquer status), pra o cliente
+ * correlacionar os eventos do SSE a este arquivo; `null` para provider `LOCAL` ou quando
+ * ainda não há linha.
+ * @summary Diz se o arquivo já pode tocar ou precisa ser baixado pro cache antes
+ */
 export function useGetFileAvailability<
   TData = Awaited<ReturnType<typeof getFileAvailability>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -229,9 +277,21 @@ export function useGetFileAvailability<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Consulta, sem efeito colateral (não enfileira nada no cache), o que falta antes de
+ * iniciar uma sessão de playback pra este arquivo:
+ * - `READY`: já pode chamar `POST /v1/playback/sessions` — provider `LOCAL`, ou remoto
+ *   com o cache `COMPLETED`.
+ * - `NEEDS_DOWNLOAD`: provider remoto sem linha de cache, ou com a linha `FAILED`. O
+ *   cliente enfileira com `POST /v1/cache/items`.
+ * - `DOWNLOADING`: provider remoto com linha `QUEUED` ou `DOWNLOADING`. Não enfileire de
+ *   novo — só acompanhe pelo SSE de `/v1/cache/events` até chegar `COMPLETED`.
+ *
+ * Não traz progresso nem percentual — isso é papel exclusivo do SSE. `cacheItemId` vem
+ * preenchido sempre que já existe uma linha de cache (em qualquer status), pra o cliente
+ * correlacionar os eventos do SSE a este arquivo; `null` para provider `LOCAL` ou quando
+ * ainda não há linha.
  * @summary Diz se o arquivo já pode tocar ou precisa ser baixado pro cache antes
  */
-
 export function useGetFileAvailability<
   TData = Awaited<ReturnType<typeof getFileAvailability>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -376,6 +436,16 @@ export type StartPlaybackSessionMutationVariables = {
 }
 
 /**
+ * Inicia o transcode da mídia (referenciada por `fileId`) com o perfil e as faixas de
+ * áudio e legenda escolhidos. Cada faixa não informada sai das preferências
+ * `playback.default.*`, de forma independente (ver `StartPlaybackSessionRequest`). Gera e
+ * devolve o `sessionId` (UUID) que identifica a sessão, junto do endereço da playlist
+ * `m3u8` e das faixas ativas (`audioTrackIndex`/`subtitleTrackIndex`).
+ *
+ * Responde `404` se o vídeo é de provider remoto e ainda não terminou de baixar no cache.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` sair com erro logo depois de subir,
+ * antes de confirmar que o transcode começou — nesse caso a sessão não é criada. Terminar
+ * com sucesso logo depois de subir (remux curto) não é falha.
  * @summary Inicia uma sessão de transcode
  */
 export const useStartPlaybackSession = <
@@ -519,6 +589,11 @@ export type SeekPlaybackSessionMutationVariables = {
 }
 
 /**
+ * Reposiciona o transcode de uma sessão já iniciada para o instante informado. A playlist
+ * `m3u8` passa a refletir a nova posição, a partir do `startOffsetSeconds` devolvido (que,
+ * com o vídeo copiado sem recodificar, é um keyframe em ou antes da posição pedida). Responde
+ * `404` se a sessão não existe ou já expirou. Responde `500` com `TRANSCODE_FAILED` se o
+ * reinício do `ffmpeg` falhar logo depois de subir.
  * @summary Reposiciona o transcode de uma sessão
  */
 export const useSeekPlaybackSession = <
@@ -667,6 +742,12 @@ export type SwitchPlaybackSessionTracksMutationVariables = {
 }
 
 /**
+ * Troca a faixa de áudio e, opcionalmente, a de legenda de uma sessão já iniciada,
+ * reiniciando o transcode a partir do instante informado. Ao contrário do `seek`, esta
+ * operação sempre reinicia o processo de transcode — não há posição que evite o
+ * reinício, já que trocar `-map`/filtro de legenda exige um novo processo `ffmpeg`.
+ * Responde `404` se a sessão não existe ou já expirou. Responde `500` com
+ * `TRANSCODE_FAILED` se o reinício do `ffmpeg` falhar logo depois de subir.
  * @summary Troca as faixas de áudio/legenda de uma sessão
  */
 export const useSwitchPlaybackSessionTracks = <
@@ -784,6 +865,26 @@ export type GetPlaybackPlaylistQueryError = ErrorType<
   NotFoundResponse | TranscodeFailedResponse | ServiceUnavailableResponse
 >
 
+/**
+ * Devolve a playlist `m3u8` gerada pelo transcode da sessão, no content-type HLS. Quando o
+ * transcode produz um master playlist (ABR com várias resoluções, ou legenda soft), é ele que
+ * é devolvido — e ele referencia os variant playlists `stream_N.m3u8`. Caso contrário,
+ * devolve a media playlist da rendition única. Responde `404` se a sessão não existe,
+ * expirou ou ainda não produziu playlist (incluindo um master playlist que ainda não lista
+ * nenhuma variante) — nesse caso o cliente deve continuar tentando.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` já saiu com erro e essa playlist
+ * nunca vai ser gerada — nesse caso o cliente deve parar de tentar e mostrar erro. Uma
+ * sessão cujo `ffmpeg` já concluiu com sucesso continua servindo a playlist normalmente.
+ *
+ * O header `X-Playback-Heartbeat-Ttl-Seconds` informa, em segundos, o TTL do heartbeat que o
+ * cliente deve respeitar — é o mesmo prazo devolvido no corpo do endpoint de heartbeat. O
+ * valor é uma preferência do admin.
+ *
+ * Todos os arquivos referenciados pela playlist (variant playlists, segmentos, init segment e
+ * segmentos de legenda) são servidos pelo endpoint
+ * `GET /v1/playback/sessions/{sessionId}/{file}`.
+ * @summary Serve a playlist HLS da sessão
+ */
 export function useGetPlaybackPlaylist<
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
@@ -813,6 +914,26 @@ export function useGetPlaybackPlaylist<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Devolve a playlist `m3u8` gerada pelo transcode da sessão, no content-type HLS. Quando o
+ * transcode produz um master playlist (ABR com várias resoluções, ou legenda soft), é ele que
+ * é devolvido — e ele referencia os variant playlists `stream_N.m3u8`. Caso contrário,
+ * devolve a media playlist da rendition única. Responde `404` se a sessão não existe,
+ * expirou ou ainda não produziu playlist (incluindo um master playlist que ainda não lista
+ * nenhuma variante) — nesse caso o cliente deve continuar tentando.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` já saiu com erro e essa playlist
+ * nunca vai ser gerada — nesse caso o cliente deve parar de tentar e mostrar erro. Uma
+ * sessão cujo `ffmpeg` já concluiu com sucesso continua servindo a playlist normalmente.
+ *
+ * O header `X-Playback-Heartbeat-Ttl-Seconds` informa, em segundos, o TTL do heartbeat que o
+ * cliente deve respeitar — é o mesmo prazo devolvido no corpo do endpoint de heartbeat. O
+ * valor é uma preferência do admin.
+ *
+ * Todos os arquivos referenciados pela playlist (variant playlists, segmentos, init segment e
+ * segmentos de legenda) são servidos pelo endpoint
+ * `GET /v1/playback/sessions/{sessionId}/{file}`.
+ * @summary Serve a playlist HLS da sessão
+ */
 export function useGetPlaybackPlaylist<
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
@@ -842,6 +963,26 @@ export function useGetPlaybackPlaylist<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Devolve a playlist `m3u8` gerada pelo transcode da sessão, no content-type HLS. Quando o
+ * transcode produz um master playlist (ABR com várias resoluções, ou legenda soft), é ele que
+ * é devolvido — e ele referencia os variant playlists `stream_N.m3u8`. Caso contrário,
+ * devolve a media playlist da rendition única. Responde `404` se a sessão não existe,
+ * expirou ou ainda não produziu playlist (incluindo um master playlist que ainda não lista
+ * nenhuma variante) — nesse caso o cliente deve continuar tentando.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` já saiu com erro e essa playlist
+ * nunca vai ser gerada — nesse caso o cliente deve parar de tentar e mostrar erro. Uma
+ * sessão cujo `ffmpeg` já concluiu com sucesso continua servindo a playlist normalmente.
+ *
+ * O header `X-Playback-Heartbeat-Ttl-Seconds` informa, em segundos, o TTL do heartbeat que o
+ * cliente deve respeitar — é o mesmo prazo devolvido no corpo do endpoint de heartbeat. O
+ * valor é uma preferência do admin.
+ *
+ * Todos os arquivos referenciados pela playlist (variant playlists, segmentos, init segment e
+ * segmentos de legenda) são servidos pelo endpoint
+ * `GET /v1/playback/sessions/{sessionId}/{file}`.
+ * @summary Serve a playlist HLS da sessão
+ */
 export function useGetPlaybackPlaylist<
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
@@ -864,9 +1005,25 @@ export function useGetPlaybackPlaylist<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Devolve a playlist `m3u8` gerada pelo transcode da sessão, no content-type HLS. Quando o
+ * transcode produz um master playlist (ABR com várias resoluções, ou legenda soft), é ele que
+ * é devolvido — e ele referencia os variant playlists `stream_N.m3u8`. Caso contrário,
+ * devolve a media playlist da rendition única. Responde `404` se a sessão não existe,
+ * expirou ou ainda não produziu playlist (incluindo um master playlist que ainda não lista
+ * nenhuma variante) — nesse caso o cliente deve continuar tentando.
+ * Responde `500` com `TRANSCODE_FAILED` se o `ffmpeg` já saiu com erro e essa playlist
+ * nunca vai ser gerada — nesse caso o cliente deve parar de tentar e mostrar erro. Uma
+ * sessão cujo `ffmpeg` já concluiu com sucesso continua servindo a playlist normalmente.
+ *
+ * O header `X-Playback-Heartbeat-Ttl-Seconds` informa, em segundos, o TTL do heartbeat que o
+ * cliente deve respeitar — é o mesmo prazo devolvido no corpo do endpoint de heartbeat. O
+ * valor é uma preferência do admin.
+ *
+ * Todos os arquivos referenciados pela playlist (variant playlists, segmentos, init segment e
+ * segmentos de legenda) são servidos pelo endpoint
+ * `GET /v1/playback/sessions/{sessionId}/{file}`.
  * @summary Serve a playlist HLS da sessão
  */
-
 export function useGetPlaybackPlaylist<
   TData = Awaited<ReturnType<typeof getPlaybackPlaylist>>,
   TError = ErrorType<
@@ -983,6 +1140,16 @@ export type GetPlaybackMediaFileQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/**
+ * Devolve um arquivo referenciado pela playlist da sessão (ver `MediaFileName` para os nomes
+ * aceitos). O content-type é escolhido pela extensão: `.ts` → `video/mp2t`; `.m4s` e
+ * `init.mp4` → `video/mp4`; `.m3u8` → `application/vnd.apple.mpegurl`; `.vtt` → `text/vtt`.
+ *
+ * Responde `404` se a sessão não existe, expirou, se o nome não corresponde a um arquivo
+ * aceito, ou se o transcode ainda não o produziu — no caso de segmento ainda não gerado, o
+ * player deve retentar ao alcançar a borda ao vivo.
+ * @summary Serve um arquivo HLS referenciado pela playlist da sessão
+ */
 export function useGetPlaybackMediaFile<
   TData = Awaited<ReturnType<typeof getPlaybackMediaFile>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -1011,6 +1178,16 @@ export function useGetPlaybackMediaFile<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Devolve um arquivo referenciado pela playlist da sessão (ver `MediaFileName` para os nomes
+ * aceitos). O content-type é escolhido pela extensão: `.ts` → `video/mp2t`; `.m4s` e
+ * `init.mp4` → `video/mp4`; `.m3u8` → `application/vnd.apple.mpegurl`; `.vtt` → `text/vtt`.
+ *
+ * Responde `404` se a sessão não existe, expirou, se o nome não corresponde a um arquivo
+ * aceito, ou se o transcode ainda não o produziu — no caso de segmento ainda não gerado, o
+ * player deve retentar ao alcançar a borda ao vivo.
+ * @summary Serve um arquivo HLS referenciado pela playlist da sessão
+ */
 export function useGetPlaybackMediaFile<
   TData = Awaited<ReturnType<typeof getPlaybackMediaFile>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -1039,6 +1216,16 @@ export function useGetPlaybackMediaFile<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Devolve um arquivo referenciado pela playlist da sessão (ver `MediaFileName` para os nomes
+ * aceitos). O content-type é escolhido pela extensão: `.ts` → `video/mp2t`; `.m4s` e
+ * `init.mp4` → `video/mp4`; `.m3u8` → `application/vnd.apple.mpegurl`; `.vtt` → `text/vtt`.
+ *
+ * Responde `404` se a sessão não existe, expirou, se o nome não corresponde a um arquivo
+ * aceito, ou se o transcode ainda não o produziu — no caso de segmento ainda não gerado, o
+ * player deve retentar ao alcançar a borda ao vivo.
+ * @summary Serve um arquivo HLS referenciado pela playlist da sessão
+ */
 export function useGetPlaybackMediaFile<
   TData = Awaited<ReturnType<typeof getPlaybackMediaFile>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -1060,9 +1247,15 @@ export function useGetPlaybackMediaFile<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Devolve um arquivo referenciado pela playlist da sessão (ver `MediaFileName` para os nomes
+ * aceitos). O content-type é escolhido pela extensão: `.ts` → `video/mp2t`; `.m4s` e
+ * `init.mp4` → `video/mp4`; `.m3u8` → `application/vnd.apple.mpegurl`; `.vtt` → `text/vtt`.
+ *
+ * Responde `404` se a sessão não existe, expirou, se o nome não corresponde a um arquivo
+ * aceito, ou se o transcode ainda não o produziu — no caso de segmento ainda não gerado, o
+ * player deve retentar ao alcançar a borda ao vivo.
  * @summary Serve um arquivo HLS referenciado pela playlist da sessão
  */
-
 export function useGetPlaybackMediaFile<
   TData = Awaited<ReturnType<typeof getPlaybackMediaFile>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -1174,6 +1367,10 @@ export type HeartbeatPlaybackSessionMutationError = ErrorType<
 export type HeartbeatPlaybackSessionMutationVariables = { sessionId: string }
 
 /**
+ * Ping periódico do cliente para sinalizar que a sessão ainda está em uso — renova o TTL da
+ * sessão e devolve a validade restante. O TTL é uma preferência do admin. O cliente deve
+ * chamar novamente antes de a validade expirar. Responde `404` se a sessão não existe ou já
+ * expirou.
  * @summary Mantém a sessão viva
  */
 export const useHeartbeatPlaybackSession = <

@@ -200,6 +200,26 @@ export type SetAnimeFranchiseMutationVariables = {
 }
 
 /**
+ * - `AUTO`: o anime volta à regra automática (`rootId` proibido).
+ * - `MANUAL_MEMBER`: o anime vai pra franquia de `rootId`, que é obrigatório e precisa ser
+ *   uma raiz atual. Os animes `AUTO` que sobem até ele (o galho automático) vão junto,
+ *   assim como os `MANUAL_MEMBER` que apontam pra ele.
+ * - `HIDDEN`: o anime fica fora de qualquer franquia (`rootId` proibido), e o galho
+ *   automático dele e os `MANUAL_MEMBER` que apontam pra ele também.
+ * - `MANUAL_ROOT` não é aceito aqui: raiz manual só nasce em `POST /v1/metadata/franchises`.
+ *
+ * Mover uma **raiz** pra outra franquia junta as duas: se a raiz é manual, ela deixa de
+ * ser raiz e os membros `MANUAL_MEMBER` dela passam pra `rootId`; se é natural, o galho
+ * segue pela resolução. Uma raiz manual que volta pra `AUTO` ou é oculta deixa de ser
+ * raiz, e os membros `MANUAL_MEMBER` dela a acompanham.
+ *
+ * Devolve a franquia de destino com `MANUAL_MEMBER`, e a de origem com `AUTO`/`HIDDEN`. Se
+ * a franquia de origem deixou de existir (o anime era a raiz), devolve a franquia em que o
+ * anime está agora; se ele não está em nenhuma, a resposta vem sem corpo.
+ *
+ * `400` se `assignment` for `MANUAL_ROOT`, se `rootId` faltar com `MANUAL_MEMBER`, vier com
+ * `AUTO`/`HIDDEN`, não for uma raiz atual, for a franquia atual do anime ou o próprio
+ * anime; `404` se o anime ou `rootId` não estão na coleção.
  * @summary Move o anime de franquia ou o oculta
  */
 export const useSetAnimeFranchise = <
@@ -349,6 +369,34 @@ export type ListFranchisesInfiniteQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Cada anime pertence a no máximo uma franquia, identificada pela obra de início (a raiz).
+ *
+ * **Pai automático** (no máximo um por anime), pelas arestas de `anime_relation`, em ordem
+ * de prioridade:
+ * 1. `PREQUEL` saindo dele (a obra anterior);
+ * 2. `PARENT` saindo dele (a obra principal);
+ * 3. `SIDE_STORY`/`SPIN_OFF`/`SUMMARY` chegando nele (é derivado de quem aponta).
+ *
+ * Dentro da mesma prioridade, desempata pelo `year` mais antigo (sem ano por último),
+ * depois pelo menor `anilistId`. `ALTERNATIVE`, `OTHER` e `CHARACTER` nunca geram pai.
+ *
+ * **Franquia de um anime** (`franchiseOf`), pela atribuição (`franchiseAssignment`):
+ * 1. `HIDDEN` → nenhuma.
+ * 2. `MANUAL_ROOT` (raiz criada em `POST /v1/metadata/franchises`) → ela mesma.
+ * 3. `MANUAL_MEMBER` → a franquia da obra escolhida (`franchiseOf(rootId)`); enquanto ela é
+ *    raiz, é ela mesma.
+ * 4. `AUTO` sem pai automático → ela mesma (raiz natural).
+ * 5. `AUTO` com pai automático → a franquia do pai. O galho segue o pai: se o pai foi
+ *    movido ou está oculto, o anime vai junto, a menos que tenha atribuição própria.
+ * 6. Ciclo na subida → o anime onde o ciclo foi detectado vira raiz.
+ *
+ * As raízes são os animes cuja franquia é eles mesmos: `MANUAL` (raiz manual) ou `NATURAL`
+ * (as demais). `q` busca, sem diferenciar maiúsculas, no título principal, inglês ou
+ * manual da raiz e dos membros — acha a franquia que contém a obra procurada. Ordenadas
+ * por `anilistId` da raiz.
+ * @summary Franquias da coleção (paginado)
+ */
 export function useListFranchisesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listFranchises>>,
@@ -382,6 +430,34 @@ export function useListFranchisesInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Cada anime pertence a no máximo uma franquia, identificada pela obra de início (a raiz).
+ *
+ * **Pai automático** (no máximo um por anime), pelas arestas de `anime_relation`, em ordem
+ * de prioridade:
+ * 1. `PREQUEL` saindo dele (a obra anterior);
+ * 2. `PARENT` saindo dele (a obra principal);
+ * 3. `SIDE_STORY`/`SPIN_OFF`/`SUMMARY` chegando nele (é derivado de quem aponta).
+ *
+ * Dentro da mesma prioridade, desempata pelo `year` mais antigo (sem ano por último),
+ * depois pelo menor `anilistId`. `ALTERNATIVE`, `OTHER` e `CHARACTER` nunca geram pai.
+ *
+ * **Franquia de um anime** (`franchiseOf`), pela atribuição (`franchiseAssignment`):
+ * 1. `HIDDEN` → nenhuma.
+ * 2. `MANUAL_ROOT` (raiz criada em `POST /v1/metadata/franchises`) → ela mesma.
+ * 3. `MANUAL_MEMBER` → a franquia da obra escolhida (`franchiseOf(rootId)`); enquanto ela é
+ *    raiz, é ela mesma.
+ * 4. `AUTO` sem pai automático → ela mesma (raiz natural).
+ * 5. `AUTO` com pai automático → a franquia do pai. O galho segue o pai: se o pai foi
+ *    movido ou está oculto, o anime vai junto, a menos que tenha atribuição própria.
+ * 6. Ciclo na subida → o anime onde o ciclo foi detectado vira raiz.
+ *
+ * As raízes são os animes cuja franquia é eles mesmos: `MANUAL` (raiz manual) ou `NATURAL`
+ * (as demais). `q` busca, sem diferenciar maiúsculas, no título principal, inglês ou
+ * manual da raiz e dos membros — acha a franquia que contém a obra procurada. Ordenadas
+ * por `anilistId` da raiz.
+ * @summary Franquias da coleção (paginado)
+ */
 export function useListFranchisesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listFranchises>>,
@@ -415,6 +491,34 @@ export function useListFranchisesInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Cada anime pertence a no máximo uma franquia, identificada pela obra de início (a raiz).
+ *
+ * **Pai automático** (no máximo um por anime), pelas arestas de `anime_relation`, em ordem
+ * de prioridade:
+ * 1. `PREQUEL` saindo dele (a obra anterior);
+ * 2. `PARENT` saindo dele (a obra principal);
+ * 3. `SIDE_STORY`/`SPIN_OFF`/`SUMMARY` chegando nele (é derivado de quem aponta).
+ *
+ * Dentro da mesma prioridade, desempata pelo `year` mais antigo (sem ano por último),
+ * depois pelo menor `anilistId`. `ALTERNATIVE`, `OTHER` e `CHARACTER` nunca geram pai.
+ *
+ * **Franquia de um anime** (`franchiseOf`), pela atribuição (`franchiseAssignment`):
+ * 1. `HIDDEN` → nenhuma.
+ * 2. `MANUAL_ROOT` (raiz criada em `POST /v1/metadata/franchises`) → ela mesma.
+ * 3. `MANUAL_MEMBER` → a franquia da obra escolhida (`franchiseOf(rootId)`); enquanto ela é
+ *    raiz, é ela mesma.
+ * 4. `AUTO` sem pai automático → ela mesma (raiz natural).
+ * 5. `AUTO` com pai automático → a franquia do pai. O galho segue o pai: se o pai foi
+ *    movido ou está oculto, o anime vai junto, a menos que tenha atribuição própria.
+ * 6. Ciclo na subida → o anime onde o ciclo foi detectado vira raiz.
+ *
+ * As raízes são os animes cuja franquia é eles mesmos: `MANUAL` (raiz manual) ou `NATURAL`
+ * (as demais). `q` busca, sem diferenciar maiúsculas, no título principal, inglês ou
+ * manual da raiz e dos membros — acha a franquia que contém a obra procurada. Ordenadas
+ * por `anilistId` da raiz.
+ * @summary Franquias da coleção (paginado)
+ */
 export function useListFranchisesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listFranchises>>,
@@ -440,9 +544,33 @@ export function useListFranchisesInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Cada anime pertence a no máximo uma franquia, identificada pela obra de início (a raiz).
+ *
+ * **Pai automático** (no máximo um por anime), pelas arestas de `anime_relation`, em ordem
+ * de prioridade:
+ * 1. `PREQUEL` saindo dele (a obra anterior);
+ * 2. `PARENT` saindo dele (a obra principal);
+ * 3. `SIDE_STORY`/`SPIN_OFF`/`SUMMARY` chegando nele (é derivado de quem aponta).
+ *
+ * Dentro da mesma prioridade, desempata pelo `year` mais antigo (sem ano por último),
+ * depois pelo menor `anilistId`. `ALTERNATIVE`, `OTHER` e `CHARACTER` nunca geram pai.
+ *
+ * **Franquia de um anime** (`franchiseOf`), pela atribuição (`franchiseAssignment`):
+ * 1. `HIDDEN` → nenhuma.
+ * 2. `MANUAL_ROOT` (raiz criada em `POST /v1/metadata/franchises`) → ela mesma.
+ * 3. `MANUAL_MEMBER` → a franquia da obra escolhida (`franchiseOf(rootId)`); enquanto ela é
+ *    raiz, é ela mesma.
+ * 4. `AUTO` sem pai automático → ela mesma (raiz natural).
+ * 5. `AUTO` com pai automático → a franquia do pai. O galho segue o pai: se o pai foi
+ *    movido ou está oculto, o anime vai junto, a menos que tenha atribuição própria.
+ * 6. Ciclo na subida → o anime onde o ciclo foi detectado vira raiz.
+ *
+ * As raízes são os animes cuja franquia é eles mesmos: `MANUAL` (raiz manual) ou `NATURAL`
+ * (as demais). `q` busca, sem diferenciar maiúsculas, no título principal, inglês ou
+ * manual da raiz e dos membros — acha a franquia que contém a obra procurada. Ordenadas
+ * por `anilistId` da raiz.
  * @summary Franquias da coleção (paginado)
  */
-
 export function useListFranchisesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listFranchises>>,
@@ -513,6 +641,34 @@ export type ListFranchisesQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Cada anime pertence a no máximo uma franquia, identificada pela obra de início (a raiz).
+ *
+ * **Pai automático** (no máximo um por anime), pelas arestas de `anime_relation`, em ordem
+ * de prioridade:
+ * 1. `PREQUEL` saindo dele (a obra anterior);
+ * 2. `PARENT` saindo dele (a obra principal);
+ * 3. `SIDE_STORY`/`SPIN_OFF`/`SUMMARY` chegando nele (é derivado de quem aponta).
+ *
+ * Dentro da mesma prioridade, desempata pelo `year` mais antigo (sem ano por último),
+ * depois pelo menor `anilistId`. `ALTERNATIVE`, `OTHER` e `CHARACTER` nunca geram pai.
+ *
+ * **Franquia de um anime** (`franchiseOf`), pela atribuição (`franchiseAssignment`):
+ * 1. `HIDDEN` → nenhuma.
+ * 2. `MANUAL_ROOT` (raiz criada em `POST /v1/metadata/franchises`) → ela mesma.
+ * 3. `MANUAL_MEMBER` → a franquia da obra escolhida (`franchiseOf(rootId)`); enquanto ela é
+ *    raiz, é ela mesma.
+ * 4. `AUTO` sem pai automático → ela mesma (raiz natural).
+ * 5. `AUTO` com pai automático → a franquia do pai. O galho segue o pai: se o pai foi
+ *    movido ou está oculto, o anime vai junto, a menos que tenha atribuição própria.
+ * 6. Ciclo na subida → o anime onde o ciclo foi detectado vira raiz.
+ *
+ * As raízes são os animes cuja franquia é eles mesmos: `MANUAL` (raiz manual) ou `NATURAL`
+ * (as demais). `q` busca, sem diferenciar maiúsculas, no título principal, inglês ou
+ * manual da raiz e dos membros — acha a franquia que contém a obra procurada. Ordenadas
+ * por `anilistId` da raiz.
+ * @summary Franquias da coleção (paginado)
+ */
 export function useListFranchises<
   TData = Awaited<ReturnType<typeof listFranchises>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -536,6 +692,34 @@ export function useListFranchises<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Cada anime pertence a no máximo uma franquia, identificada pela obra de início (a raiz).
+ *
+ * **Pai automático** (no máximo um por anime), pelas arestas de `anime_relation`, em ordem
+ * de prioridade:
+ * 1. `PREQUEL` saindo dele (a obra anterior);
+ * 2. `PARENT` saindo dele (a obra principal);
+ * 3. `SIDE_STORY`/`SPIN_OFF`/`SUMMARY` chegando nele (é derivado de quem aponta).
+ *
+ * Dentro da mesma prioridade, desempata pelo `year` mais antigo (sem ano por último),
+ * depois pelo menor `anilistId`. `ALTERNATIVE`, `OTHER` e `CHARACTER` nunca geram pai.
+ *
+ * **Franquia de um anime** (`franchiseOf`), pela atribuição (`franchiseAssignment`):
+ * 1. `HIDDEN` → nenhuma.
+ * 2. `MANUAL_ROOT` (raiz criada em `POST /v1/metadata/franchises`) → ela mesma.
+ * 3. `MANUAL_MEMBER` → a franquia da obra escolhida (`franchiseOf(rootId)`); enquanto ela é
+ *    raiz, é ela mesma.
+ * 4. `AUTO` sem pai automático → ela mesma (raiz natural).
+ * 5. `AUTO` com pai automático → a franquia do pai. O galho segue o pai: se o pai foi
+ *    movido ou está oculto, o anime vai junto, a menos que tenha atribuição própria.
+ * 6. Ciclo na subida → o anime onde o ciclo foi detectado vira raiz.
+ *
+ * As raízes são os animes cuja franquia é eles mesmos: `MANUAL` (raiz manual) ou `NATURAL`
+ * (as demais). `q` busca, sem diferenciar maiúsculas, no título principal, inglês ou
+ * manual da raiz e dos membros — acha a franquia que contém a obra procurada. Ordenadas
+ * por `anilistId` da raiz.
+ * @summary Franquias da coleção (paginado)
+ */
 export function useListFranchises<
   TData = Awaited<ReturnType<typeof listFranchises>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -559,6 +743,34 @@ export function useListFranchises<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Cada anime pertence a no máximo uma franquia, identificada pela obra de início (a raiz).
+ *
+ * **Pai automático** (no máximo um por anime), pelas arestas de `anime_relation`, em ordem
+ * de prioridade:
+ * 1. `PREQUEL` saindo dele (a obra anterior);
+ * 2. `PARENT` saindo dele (a obra principal);
+ * 3. `SIDE_STORY`/`SPIN_OFF`/`SUMMARY` chegando nele (é derivado de quem aponta).
+ *
+ * Dentro da mesma prioridade, desempata pelo `year` mais antigo (sem ano por último),
+ * depois pelo menor `anilistId`. `ALTERNATIVE`, `OTHER` e `CHARACTER` nunca geram pai.
+ *
+ * **Franquia de um anime** (`franchiseOf`), pela atribuição (`franchiseAssignment`):
+ * 1. `HIDDEN` → nenhuma.
+ * 2. `MANUAL_ROOT` (raiz criada em `POST /v1/metadata/franchises`) → ela mesma.
+ * 3. `MANUAL_MEMBER` → a franquia da obra escolhida (`franchiseOf(rootId)`); enquanto ela é
+ *    raiz, é ela mesma.
+ * 4. `AUTO` sem pai automático → ela mesma (raiz natural).
+ * 5. `AUTO` com pai automático → a franquia do pai. O galho segue o pai: se o pai foi
+ *    movido ou está oculto, o anime vai junto, a menos que tenha atribuição própria.
+ * 6. Ciclo na subida → o anime onde o ciclo foi detectado vira raiz.
+ *
+ * As raízes são os animes cuja franquia é eles mesmos: `MANUAL` (raiz manual) ou `NATURAL`
+ * (as demais). `q` busca, sem diferenciar maiúsculas, no título principal, inglês ou
+ * manual da raiz e dos membros — acha a franquia que contém a obra procurada. Ordenadas
+ * por `anilistId` da raiz.
+ * @summary Franquias da coleção (paginado)
+ */
 export function useListFranchises<
   TData = Awaited<ReturnType<typeof listFranchises>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -575,9 +787,33 @@ export function useListFranchises<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Cada anime pertence a no máximo uma franquia, identificada pela obra de início (a raiz).
+ *
+ * **Pai automático** (no máximo um por anime), pelas arestas de `anime_relation`, em ordem
+ * de prioridade:
+ * 1. `PREQUEL` saindo dele (a obra anterior);
+ * 2. `PARENT` saindo dele (a obra principal);
+ * 3. `SIDE_STORY`/`SPIN_OFF`/`SUMMARY` chegando nele (é derivado de quem aponta).
+ *
+ * Dentro da mesma prioridade, desempata pelo `year` mais antigo (sem ano por último),
+ * depois pelo menor `anilistId`. `ALTERNATIVE`, `OTHER` e `CHARACTER` nunca geram pai.
+ *
+ * **Franquia de um anime** (`franchiseOf`), pela atribuição (`franchiseAssignment`):
+ * 1. `HIDDEN` → nenhuma.
+ * 2. `MANUAL_ROOT` (raiz criada em `POST /v1/metadata/franchises`) → ela mesma.
+ * 3. `MANUAL_MEMBER` → a franquia da obra escolhida (`franchiseOf(rootId)`); enquanto ela é
+ *    raiz, é ela mesma.
+ * 4. `AUTO` sem pai automático → ela mesma (raiz natural).
+ * 5. `AUTO` com pai automático → a franquia do pai. O galho segue o pai: se o pai foi
+ *    movido ou está oculto, o anime vai junto, a menos que tenha atribuição própria.
+ * 6. Ciclo na subida → o anime onde o ciclo foi detectado vira raiz.
+ *
+ * As raízes são os animes cuja franquia é eles mesmos: `MANUAL` (raiz manual) ou `NATURAL`
+ * (as demais). `q` busca, sem diferenciar maiúsculas, no título principal, inglês ou
+ * manual da raiz e dos membros — acha a franquia que contém a obra procurada. Ordenadas
+ * por `anilistId` da raiz.
  * @summary Franquias da coleção (paginado)
  */
-
 export function useListFranchises<
   TData = Awaited<ReturnType<typeof listFranchises>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -708,6 +944,8 @@ export type CreateFranchiseMutationVariables = {
 }
 
 /**
+ * A atribuição do anime vira `MANUAL_ROOT`: ele sai da franquia em que estava e o galho
+ * automático dele vem junto. `409` se ele já é raiz; `404` se não está na coleção.
  * @summary Cria uma franquia manual com o anime informado como raiz
  */
 export const useCreateFranchise = <
@@ -842,6 +1080,11 @@ export type ListHiddenAnimesInfiniteQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Os ocultos à mão (`HIDDEN`) e os que ficaram de fora por herança (o galho automático de
+ * um anime oculto). Ordenados por `anilistId`.
+ * @summary Animes fora de qualquer franquia (paginado)
+ */
 export function useListHiddenAnimesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listHiddenAnimes>>,
@@ -875,6 +1118,11 @@ export function useListHiddenAnimesInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Os ocultos à mão (`HIDDEN`) e os que ficaram de fora por herança (o galho automático de
+ * um anime oculto). Ordenados por `anilistId`.
+ * @summary Animes fora de qualquer franquia (paginado)
+ */
 export function useListHiddenAnimesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listHiddenAnimes>>,
@@ -908,6 +1156,11 @@ export function useListHiddenAnimesInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Os ocultos à mão (`HIDDEN`) e os que ficaram de fora por herança (o galho automático de
+ * um anime oculto). Ordenados por `anilistId`.
+ * @summary Animes fora de qualquer franquia (paginado)
+ */
 export function useListHiddenAnimesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listHiddenAnimes>>,
@@ -933,9 +1186,10 @@ export function useListHiddenAnimesInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Os ocultos à mão (`HIDDEN`) e os que ficaram de fora por herança (o galho automático de
+ * um anime oculto). Ordenados por `anilistId`.
  * @summary Animes fora de qualquer franquia (paginado)
  */
-
 export function useListHiddenAnimesInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof listHiddenAnimes>>,
@@ -1010,6 +1264,11 @@ export type ListHiddenAnimesQueryError = ErrorType<
   BadRequestResponse | InternalServerErrorResponse
 >
 
+/**
+ * Os ocultos à mão (`HIDDEN`) e os que ficaram de fora por herança (o galho automático de
+ * um anime oculto). Ordenados por `anilistId`.
+ * @summary Animes fora de qualquer franquia (paginado)
+ */
 export function useListHiddenAnimes<
   TData = Awaited<ReturnType<typeof listHiddenAnimes>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -1037,6 +1296,11 @@ export function useListHiddenAnimes<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Os ocultos à mão (`HIDDEN`) e os que ficaram de fora por herança (o galho automático de
+ * um anime oculto). Ordenados por `anilistId`.
+ * @summary Animes fora de qualquer franquia (paginado)
+ */
 export function useListHiddenAnimes<
   TData = Awaited<ReturnType<typeof listHiddenAnimes>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -1064,6 +1328,11 @@ export function useListHiddenAnimes<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Os ocultos à mão (`HIDDEN`) e os que ficaram de fora por herança (o galho automático de
+ * um anime oculto). Ordenados por `anilistId`.
+ * @summary Animes fora de qualquer franquia (paginado)
+ */
 export function useListHiddenAnimes<
   TData = Awaited<ReturnType<typeof listHiddenAnimes>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -1084,9 +1353,10 @@ export function useListHiddenAnimes<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Os ocultos à mão (`HIDDEN`) e os que ficaram de fora por herança (o galho automático de
+ * um anime oculto). Ordenados por `anilistId`.
  * @summary Animes fora de qualquer franquia (paginado)
  */
-
 export function useListHiddenAnimes<
   TData = Awaited<ReturnType<typeof listHiddenAnimes>>,
   TError = ErrorType<BadRequestResponse | InternalServerErrorResponse>,
@@ -1180,6 +1450,13 @@ export type GetFranchiseQueryError = ErrorType<
   NotFoundResponse | InternalServerErrorResponse
 >
 
+/**
+ * Membros (com atribuição e pai automático), animes relacionados que estão em outra
+ * franquia ou ocultos, as arestas entre eles pro desenho, e a prévia da classificação em
+ * temporadas/filmes/especiais (mesmas regras de `GET
+ * /v1/metadata/animes/{anilistId}/franchise`). `404` se `rootId` não é uma raiz atual.
+ * @summary Detalhe da franquia pra organização no portal
+ */
 export function useGetFranchise<
   TData = Awaited<ReturnType<typeof getFranchise>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -1203,6 +1480,13 @@ export function useGetFranchise<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Membros (com atribuição e pai automático), animes relacionados que estão em outra
+ * franquia ou ocultos, as arestas entre eles pro desenho, e a prévia da classificação em
+ * temporadas/filmes/especiais (mesmas regras de `GET
+ * /v1/metadata/animes/{anilistId}/franchise`). `404` se `rootId` não é uma raiz atual.
+ * @summary Detalhe da franquia pra organização no portal
+ */
 export function useGetFranchise<
   TData = Awaited<ReturnType<typeof getFranchise>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -1226,6 +1510,13 @@ export function useGetFranchise<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Membros (com atribuição e pai automático), animes relacionados que estão em outra
+ * franquia ou ocultos, as arestas entre eles pro desenho, e a prévia da classificação em
+ * temporadas/filmes/especiais (mesmas regras de `GET
+ * /v1/metadata/animes/{anilistId}/franchise`). `404` se `rootId` não é uma raiz atual.
+ * @summary Detalhe da franquia pra organização no portal
+ */
 export function useGetFranchise<
   TData = Awaited<ReturnType<typeof getFranchise>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -1242,9 +1533,12 @@ export function useGetFranchise<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Membros (com atribuição e pai automático), animes relacionados que estão em outra
+ * franquia ou ocultos, as arestas entre eles pro desenho, e a prévia da classificação em
+ * temporadas/filmes/especiais (mesmas regras de `GET
+ * /v1/metadata/animes/{anilistId}/franchise`). `404` se `rootId` não é uma raiz atual.
  * @summary Detalhe da franquia pra organização no portal
  */
-
 export function useGetFranchise<
   TData = Awaited<ReturnType<typeof getFranchise>>,
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
@@ -1341,6 +1635,8 @@ export type DeleteFranchiseMutationError = ErrorType<
 export type DeleteFranchiseMutationVariables = { rootId: number }
 
 /**
+ * A raiz (`MANUAL_ROOT`) e os membros `MANUAL_MEMBER` dela voltam pra `AUTO`. `400`
+ * se a raiz é natural; `404` se `rootId` não é uma raiz atual.
  * @summary Remove uma franquia manual
  */
 export const useDeleteFranchise = <

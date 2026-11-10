@@ -177,6 +177,11 @@ export type SearchAnilistMediaInfiniteQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/**
+ * Delega à AniList (query GraphQL de search). Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404 quando `q` não bate com nenhum anime.
+ * @summary Busca paginada de anime por texto livre
+ */
 export function useSearchAnilistMediaInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchAnilistMedia>>,
@@ -215,6 +220,11 @@ export function useSearchAnilistMediaInfinite<
 ): DefinedUseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Delega à AniList (query GraphQL de search). Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404 quando `q` não bate com nenhum anime.
+ * @summary Busca paginada de anime por texto livre
+ */
 export function useSearchAnilistMediaInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchAnilistMedia>>,
@@ -253,6 +263,11 @@ export function useSearchAnilistMediaInfinite<
 ): UseInfiniteQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Delega à AniList (query GraphQL de search). Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404 quando `q` não bate com nenhum anime.
+ * @summary Busca paginada de anime por texto livre
+ */
 export function useSearchAnilistMediaInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchAnilistMedia>>,
@@ -283,9 +298,10 @@ export function useSearchAnilistMediaInfinite<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Delega à AniList (query GraphQL de search). Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404 quando `q` não bate com nenhum anime.
  * @summary Busca paginada de anime por texto livre
  */
-
 export function useSearchAnilistMediaInfinite<
   TData = InfiniteData<
     Awaited<ReturnType<typeof searchAnilistMedia>>,
@@ -377,6 +393,11 @@ export type SearchAnilistMediaQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/**
+ * Delega à AniList (query GraphQL de search). Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404 quando `q` não bate com nenhum anime.
+ * @summary Busca paginada de anime por texto livre
+ */
 export function useSearchAnilistMedia<
   TData = Awaited<ReturnType<typeof searchAnilistMedia>>,
   TError = ErrorType<
@@ -409,6 +430,11 @@ export function useSearchAnilistMedia<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Delega à AniList (query GraphQL de search). Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404 quando `q` não bate com nenhum anime.
+ * @summary Busca paginada de anime por texto livre
+ */
 export function useSearchAnilistMedia<
   TData = Awaited<ReturnType<typeof searchAnilistMedia>>,
   TError = ErrorType<
@@ -441,6 +467,11 @@ export function useSearchAnilistMedia<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Delega à AniList (query GraphQL de search). Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404 quando `q` não bate com nenhum anime.
+ * @summary Busca paginada de anime por texto livre
+ */
 export function useSearchAnilistMedia<
   TData = Awaited<ReturnType<typeof searchAnilistMedia>>,
   TError = ErrorType<
@@ -466,9 +497,10 @@ export function useSearchAnilistMedia<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Delega à AniList (query GraphQL de search). Paginação **0-based**. Página vazia é
+ * resposta válida — não devolve 404 quando `q` não bate com nenhum anime.
  * @summary Busca paginada de anime por texto livre
  */
-
 export function useSearchAnilistMedia<
   TData = Awaited<ReturnType<typeof searchAnilistMedia>>,
   TError = ErrorType<

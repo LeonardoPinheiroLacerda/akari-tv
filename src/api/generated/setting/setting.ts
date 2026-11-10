@@ -133,6 +133,10 @@ export type ListSettingsQueryResult = NonNullable<
 >
 export type ListSettingsQueryError = ErrorType<InternalServerErrorResponse>
 
+/**
+ * Sem o parâmetro `name`, devolve todas as preferências ordenadas pela chave. Com `name`, filtra por substring case-insensitive da chave, também ordenado.
+ * @summary Lista as preferências, opcionalmente filtrando por nome (substring da chave)
+ */
 export function useListSettings<
   TData = Awaited<ReturnType<typeof listSettings>>,
   TError = ErrorType<InternalServerErrorResponse>,
@@ -156,6 +160,10 @@ export function useListSettings<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Sem o parâmetro `name`, devolve todas as preferências ordenadas pela chave. Com `name`, filtra por substring case-insensitive da chave, também ordenado.
+ * @summary Lista as preferências, opcionalmente filtrando por nome (substring da chave)
+ */
 export function useListSettings<
   TData = Awaited<ReturnType<typeof listSettings>>,
   TError = ErrorType<InternalServerErrorResponse>,
@@ -179,6 +187,10 @@ export function useListSettings<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Sem o parâmetro `name`, devolve todas as preferências ordenadas pela chave. Com `name`, filtra por substring case-insensitive da chave, também ordenado.
+ * @summary Lista as preferências, opcionalmente filtrando por nome (substring da chave)
+ */
 export function useListSettings<
   TData = Awaited<ReturnType<typeof listSettings>>,
   TError = ErrorType<InternalServerErrorResponse>,
@@ -195,9 +207,9 @@ export function useListSettings<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Sem o parâmetro `name`, devolve todas as preferências ordenadas pela chave. Com `name`, filtra por substring case-insensitive da chave, também ordenado.
  * @summary Lista as preferências, opcionalmente filtrando por nome (substring da chave)
  */
-
 export function useListSettings<
   TData = Awaited<ReturnType<typeof listSettings>>,
   TError = ErrorType<InternalServerErrorResponse>,
@@ -323,6 +335,7 @@ export type UpdateSettingMutationVariables = {
 }
 
 /**
+ * Só preferências já cadastradas podem ser atualizadas — chave inexistente responde `404`.
  * @summary Atualiza o valor de uma preferência existente
  */
 export const useUpdateSetting = <

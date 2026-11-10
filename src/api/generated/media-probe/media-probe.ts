@@ -134,6 +134,13 @@ export type GetMediaProbeQueryError = ErrorType<
   | ServiceUnavailableResponse
 >
 
+/**
+ * Resolve o arquivo em disco (direto, para provider `LOCAL`; pelo cache, para provider
+ * remoto) e roda `ffprobe -show_format -show_streams`. Responde `404` se o arquivo de
+ * provider remoto ainda não terminou de baixar no cache, e `502` se o ffprobe falhar sobre
+ * um arquivo existente.
+ * @summary Extrai o probe de um vídeo disponível em disco
+ */
 export function useGetMediaProbe<
   TData = Awaited<ReturnType<typeof getMediaProbe>>,
   TError = ErrorType<
@@ -162,6 +169,13 @@ export function useGetMediaProbe<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Resolve o arquivo em disco (direto, para provider `LOCAL`; pelo cache, para provider
+ * remoto) e roda `ffprobe -show_format -show_streams`. Responde `404` se o arquivo de
+ * provider remoto ainda não terminou de baixar no cache, e `502` se o ffprobe falhar sobre
+ * um arquivo existente.
+ * @summary Extrai o probe de um vídeo disponível em disco
+ */
 export function useGetMediaProbe<
   TData = Awaited<ReturnType<typeof getMediaProbe>>,
   TError = ErrorType<
@@ -190,6 +204,13 @@ export function useGetMediaProbe<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 }
+/**
+ * Resolve o arquivo em disco (direto, para provider `LOCAL`; pelo cache, para provider
+ * remoto) e roda `ffprobe -show_format -show_streams`. Responde `404` se o arquivo de
+ * provider remoto ainda não terminou de baixar no cache, e `502` se o ffprobe falhar sobre
+ * um arquivo existente.
+ * @summary Extrai o probe de um vídeo disponível em disco
+ */
 export function useGetMediaProbe<
   TData = Awaited<ReturnType<typeof getMediaProbe>>,
   TError = ErrorType<
@@ -211,9 +232,12 @@ export function useGetMediaProbe<
   queryKey: DataTag<QueryKey, TData, TError>
 }
 /**
+ * Resolve o arquivo em disco (direto, para provider `LOCAL`; pelo cache, para provider
+ * remoto) e roda `ffprobe -show_format -show_streams`. Responde `404` se o arquivo de
+ * provider remoto ainda não terminou de baixar no cache, e `502` se o ffprobe falhar sobre
+ * um arquivo existente.
  * @summary Extrai o probe de um vídeo disponível em disco
  */
-
 export function useGetMediaProbe<
   TData = Awaited<ReturnType<typeof getMediaProbe>>,
   TError = ErrorType<
