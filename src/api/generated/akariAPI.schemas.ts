@@ -2702,6 +2702,146 @@ export interface NotificationEvent {
 }
 
 /**
+ * Campo da raiz usado na ordenação dos itens.
+ *
+ * - `SCORE` — média ponderada da AniList.
+ * - `MEAN_SCORE` — média simples da AniList.
+ * - `POPULARITY` — popularidade na AniList.
+ * - `YEAR` — ano da temporada de lançamento.
+ * - `TITLE` — título principal.
+ */
+export type SmartListSortField =
+  (typeof SmartListSortField)[keyof typeof SmartListSortField]
+
+export const SmartListSortField = {
+  SCORE: 'SCORE',
+  MEAN_SCORE: 'MEAN_SCORE',
+  POPULARITY: 'POPULARITY',
+  YEAR: 'YEAR',
+  TITLE: 'TITLE',
+} as const
+
+/**
+ * Direção da ordenação
+ */
+export type SortDirection = (typeof SortDirection)[keyof typeof SortDirection]
+
+export const SortDirection = {
+  ASC: 'ASC',
+  DESC: 'DESC',
+} as const
+
+/**
+ * Filtro da lista. Todos os campos são opcionais; campo ausente não filtra. Valores de
+ * texto usam os nomes da AniList (ex.: `Comedy`, `TV`, `RELEASING`).
+ */
+export interface SmartListCriteria {
+  /**
+   * Gêneros que o membro precisa ter, todos
+   * @nullable
+   */
+  includeGenres?: string[] | null
+  /**
+   * Gêneros que o membro não pode ter, nenhum
+   * @nullable
+   */
+  excludeGenres?: string[] | null
+  /**
+   * Tags que o membro precisa ter, todas
+   * @nullable
+   */
+  includeTags?: string[] | null
+  /**
+   * Tags que o membro não pode ter, nenhuma
+   * @nullable
+   */
+  excludeTags?: string[] | null
+  /**
+   * Estúdios aceitos pro membro, qualquer um
+   * @nullable
+   */
+  studios?: string[] | null
+  /**
+   * Status aceitos pro membro, qualquer um (`FINISHED`, `RELEASING`, ...)
+   * @nullable
+   */
+  statuses?: string[] | null
+  /**
+   * Formatos aceitos pra raiz, qualquer um (`TV`, `MOVIE`, ...)
+   * @nullable
+   */
+  formats?: string[] | null
+  /**
+   * Ano mínimo de lançamento da raiz, inclusivo
+   * @nullable
+   */
+  yearFrom?: number | null
+  /**
+   * Ano máximo de lançamento da raiz, inclusivo
+   * @nullable
+   */
+  yearTo?: number | null
+  /**
+   * Média ponderada mínima da raiz (0–10)
+   * @nullable
+   */
+  minScore?: number | null
+  /**
+   * Média simples mínima da raiz (0–10)
+   * @nullable
+   */
+  minMeanScore?: number | null
+  /**
+   * Popularidade mínima da raiz
+   * @nullable
+   */
+  minPopularity?: number | null
+  /**
+   * `true` só adultos, `false` só não adultos; ausente não filtra
+   * @nullable
+   */
+  adult?: boolean | null
+}
+
+/**
+ * Payload de `POST /v1/smart-lists` e `PUT /v1/smart-lists/{listId}`
+ */
+export interface SmartListRequest {
+  /**
+   * Nome exibido no front
+   * @minLength 1
+   */
+  name: string
+  /**
+   * Posição na listagem das listas; menor aparece primeiro
+   * @minimum 0
+   */
+  position: number
+  /** Filtro da lista; `{}` não filtra nada */
+  criteria: SmartListCriteria
+  sortField: SmartListSortField
+  sortDirection?: SortDirection
+}
+
+/**
+ * Lista cadastrada
+ */
+export interface SmartListResponse {
+  id: number
+  name: string
+  position: number
+  criteria: SmartListCriteria
+  sortField: SmartListSortField
+  sortDirection: SortDirection
+  createdAt: string
+}
+
+/**
+ * Listas cadastradas, ordenadas por `position` e `id`
+ */
+export type SmartListList = SmartListResponse[]
+
+/**
  * Payload ou parâmetros inválidos (`VALIDATION_ERROR`), ou regra de negócio violada (`BUSINESS_RULE_VIOLATION`)
  */
 export type BadRequestResponse = ApiError
@@ -3018,6 +3158,21 @@ export type NotificationReadResponse = void
 export type AllNotificationsReadResponse = void
 
 /**
+ * Lista (possivelmente vazia) de listas
+ */
+export type SmartListListOkResponse = SmartListList
+
+/**
+ * Lista encontrada/atualizada
+ */
+export type SmartListOkResponse = SmartListResponse
+
+/**
+ * Lista cadastrada
+ */
+export type SmartListCreatedResponse = SmartListResponse
+
+/**
  * Payload de criação — type + config em claro
  */
 export type CreateStorageProviderRequestBodyBody = CreateStorageProviderRequest
@@ -3109,6 +3264,11 @@ export type TmdbFilePairingRequestBodyBody = TmdbFilePairingRequest
  * Novo valor da preferência
  */
 export type UpdateSettingRequestBodyBody = UpdateSettingRequest
+
+/**
+ * Nome, posição, filtro e ordenação da lista
+ */
+export type SmartListRequestBodyBody = SmartListRequest
 
 export type PageParamParameter = PageNumber
 
@@ -3325,6 +3485,13 @@ export type ListSettingsParams = {
 }
 
 export type ListNotificationsParams = {
+  /** Número da página (0-based) */
+  page?: PageParamParameter
+  /** Tamanho máximo de itens por página */
+  size?: SizeParamParameter
+}
+
+export type ListSmartListItemsParams = {
   /** Número da página (0-based) */
   page?: PageParamParameter
   /** Tamanho máximo de itens por página */
