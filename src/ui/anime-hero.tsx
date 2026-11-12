@@ -93,8 +93,8 @@ export const Backdrop = memo(function Backdrop({ src, blurred = false }: Partial
   )
 })
 
-interface AnimeHeroProps {
-  store: Store<AnimeResponse | undefined>
+interface AnimeHeroViewProps {
+  anime?: AnimeResponse
   /** Sinopse cortada vira item focável que abre o texto inteiro (franquia, filme). */
   expandableSynopsis?: boolean
   /**
@@ -209,16 +209,25 @@ export function AnimeTitle({ anime }: { anime?: AnimeResponse }) {
   )
 }
 
+interface AnimeHeroProps extends Omit<AnimeHeroViewProps, 'anime'> {
+  store: Store<AnimeResponse | undefined>
+}
+
 /**
  * Hero fixo das telas de anime (Início, detalhe): mostra o anime em foco nas
  * linhas de pôsteres, recebido por `store` para o foco não subir para a tela.
  */
-export const AnimeHero = memo(function AnimeHero({
-  store,
+export const AnimeHero = memo(function AnimeHero({ store, ...props }: AnimeHeroProps) {
+  const anime = useSettled(useStore(store), SETTLE_MS)
+  return <AnimeHeroView anime={anime} {...props} />
+})
+
+/** O conteúdo do hero para um anime já decidido (o `AnimeHero` espera o foco assentar antes). */
+export const AnimeHeroView = memo(function AnimeHeroView({
+  anime,
   expandableSynopsis = false,
   placeholder = true,
-}: AnimeHeroProps) {
-  const anime = useSettled(useStore(store), SETTLE_MS)
+}: AnimeHeroViewProps) {
   const backdrop = anime?.banner ?? anime?.thumbnails?.small ?? anime?.thumbnails?.medium
 
   const badges = anime ? badgesFor(anime) : []

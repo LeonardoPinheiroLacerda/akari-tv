@@ -82,11 +82,17 @@ export const PosterRow = memo(function PosterRow({
   )
 })
 
-/** Linha de pôsteres carregando, na mesma altura e folga da real; segura o foco (seção 6). */
-export function PosterRowSkeleton({ count = 8 }: { count?: number }) {
+interface PosterRowSkeletonProps {
+  count?: number
+  /** Segura o foco enquanto carrega (seção 6); só a linha do foco inicial precisa. */
+  holdFocus?: boolean
+}
+
+/** Linha de pôsteres carregando, na mesma altura e folga da real. */
+export function PosterRowSkeleton({ count = 8, holdFocus = true }: PosterRowSkeletonProps) {
   return (
     <SkeletonGroup
-      holdFocus
+      holdFocus={holdFocus}
       className="flex gap-6 overflow-hidden"
       style={{ height: `${POSTER_ROW_HEIGHT_REM}rem`, padding: `${ROW_PADDING_REM}rem` }}
     >
