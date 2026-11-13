@@ -34,9 +34,9 @@ import {
   FranchisePoster,
   FranchisePosterSkeleton,
 } from './franchise-poster'
+import { applyKey } from './apply-key'
 import {
   KEY_BACKSPACE,
-  KEY_CLEAR,
   KEYBOARD_WIDTH_REM,
   SearchKeyboard,
 } from './search-keyboard'
@@ -62,14 +62,6 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
     return () => clearTimeout(timeout)
   }, [value, delayMs])
   return debounced
-}
-
-function applyKey(query: string, value: string): string {
-  if (value === KEY_BACKSPACE) return query.slice(0, -1)
-  if (value === KEY_CLEAR) return ''
-  // Sem espaço no começo nem dois seguidos: não mudam a busca e só confundem o campo.
-  if (value === ' ' && (query === '' || query.endsWith(' '))) return query
-  return (query + value).slice(0, MAX_QUERY_LENGTH)
 }
 
 /** Campo de busca (só exibição): o texto vem do teclado na tela ou do físico. */
@@ -227,7 +219,8 @@ export function SearchScreen() {
   }, [term, focusedStore])
 
   const handleKey = useCallback(
-    (value: string) => setQuery((current) => applyKey(current, value)),
+    (value: string) =>
+      setQuery((current) => applyKey(current, value, MAX_QUERY_LENGTH)),
     [],
   )
 

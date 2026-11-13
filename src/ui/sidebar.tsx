@@ -1,10 +1,13 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, type ReactNode } from 'react'
 import {
   FocusContext,
   useFocusable,
 } from '@noriginmedia/norigin-spatial-navigation'
 import { House, Search, type LucideIcon } from 'lucide-react'
+import { activeProfile } from '@/lib/profile'
+import { useStore } from '@/lib/store'
 import { Focusable } from './focusable'
+import { ProfileAvatar } from './profile-avatar'
 
 const ITEMS = [
   { key: 'home', label: 'Início', icon: House },
@@ -15,7 +18,14 @@ const ITEMS = [
   icon: LucideIcon
 }>
 
-export type SidebarItemKey = (typeof ITEMS)[number]['key']
+// Trocar perfil fica sozinho na base, com o avatar do perfil atual no lugar do ícone.
+const PROFILES_KEY = 'profiles'
+
+export type SidebarItemKey = (typeof ITEMS)[number]['key'] | typeof PROFILES_KEY
+
+function itemFocusKey(key: SidebarItemKey): string {
+  return `SIDEBAR_${key}`
+}
 
 interface SidebarProps {
   /** Item da tela atual: destacado em laranja mesmo sem foco. */
@@ -29,9 +39,28 @@ interface SidebarProps {
 // margem até 1,5rem antes da borda.
 const EDGE_REM = 2
 const COLLAPSED_REM = 8
-const EXPANDED_REM = 15
+const EXPANDED_REM = 19.5
 const ROW_PADDING_REM = 1
 const ICON_SLOT_REM = 3
+// Brilho atrás do logo com o painel aberto: o mesmo laranja da lanterna da
+// seleção de perfis, um degradê fixo (sem blur, seção 7). Abrindo, ele se
+// espalha a partir da lanterna (cresce e acende). Só transform e opacity
+// animam.
+const LOGO_GLOW =
+  'radial-gradient(circle, rgb(255 105 0 / 0.28), transparent 65%)'
+const LOGO_EXPANDED_SCALE = 1.6
+
+// Abrir e fechar a sidebar é uma animação só: o painel, os rótulos, o
+// deslize e o crescimento da lanterna e o brilho começam e terminam juntos,
+// com a mesma duração e curva. Fechar é mais rápido, para devolver logo a
+// tela.
+const EXPAND_OPEN_MS = 400
+const EXPAND_CLOSE_MS = 160
+
+function expandTransition(expanded: boolean, ...properties: string[]): string {
+  const ms = expanded ? EXPAND_OPEN_MS : EXPAND_CLOSE_MS
+  return properties.map((property) => `${property} ${ms}ms ease-out`).join(', ')
+}
 // Distância do centro da coluna dos ícones até o centro do painel aberto.
 const LOGO_EXPANDED_SHIFT_REM =
   EXPANDED_REM / 2 - (EDGE_REM + ROW_PADDING_REM + ICON_SLOT_REM / 2)
@@ -39,7 +68,9 @@ const LOGO_EXPANDED_SHIFT_REM =
 interface SidebarItemProps {
   itemKey: SidebarItemKey
   label: string
-  icon: LucideIcon
+  /** Ícone do item; ou, no lugar dele, `avatar` (já na cor própria, não muda com o foco). */
+  icon?: LucideIcon
+  avatar?: ReactNode
   expanded: boolean
   active: boolean
   onSelect?: (key: SidebarItemKey) => void
@@ -54,6 +85,7 @@ const SidebarItem = memo(function SidebarItem({
   itemKey,
   label,
   icon: Icon,
+  avatar,
   expanded,
   active,
   onSelect,
@@ -64,7 +96,7 @@ const SidebarItem = memo(function SidebarItem({
   )
 
   return (
-    <Focusable onEnterPress={handleEnterPress}>
+    <Focusable focusKey={itemFocusKey(itemKey)} onEnterPress={handleEnterPress}>
       {(focused) => (
         <div
           className="relative flex h-16 items-center"
@@ -85,20 +117,23 @@ const SidebarItem = memo(function SidebarItem({
             className="relative flex shrink-0 justify-center"
             style={{ width: `${ICON_SLOT_REM}rem` }}
           >
-            <Icon
-              aria-hidden
-              className="size-8"
-              strokeWidth={2.25}
-              color={
-                focused
-                  ? 'var(--color-bg)'
-                  : active
-                    ? 'var(--color-brand)'
-                    : expanded
-                      ? 'var(--color-text)'
-                      : 'var(--color-text-muted)'
-              }
-            />
+            {avatar}
+            {Icon && (
+              <Icon
+                aria-hidden
+                className="size-8"
+                strokeWidth={2.25}
+                color={
+                  focused
+                    ? 'var(--color-bg)'
+                    : active
+                      ? 'var(--color-brand)'
+                      : expanded
+                        ? 'var(--color-text)'
+                        : 'var(--color-text-muted)'
+                }
+              />
+            )}
           </span>
           <span
             className="relative ml-4 text-[1.75rem] font-medium whitespace-nowrap"
@@ -110,7 +145,7 @@ const SidebarItem = memo(function SidebarItem({
                   : 'var(--color-text-muted)',
               opacity: expanded ? 1 : 0,
               transform: expanded ? 'translateX(0)' : 'translateX(-0.75rem)',
-              transition: 'opacity 160ms, transform 160ms',
+              transition: expandTransition(expanded, 'opacity', 'transform'),
             }}
           >
             {label}
@@ -135,9 +170,15 @@ export const Sidebar = memo(function Sidebar({
 }: SidebarProps) {
   const { ref, focusKey, hasFocusedChild } = useFocusable({
     focusKey: 'SIDEBAR',
-    saveLastFocusedChild: true,
+    // Entrar pela seta cai sempre na aba da tela atual (sem aba, no primeiro
+    // item), nunca no item mais perto de onde estava o foco: com "Trocar
+    // perfil" na base, a seta esquerda de um pôster embaixo cairia nele.
+    preferredChildFocusKey: activeKey ? itemFocusKey(activeKey) : undefined,
+    // O padrão da lib é lembrar o último item, que passaria na frente da aba.
+    saveLastFocusedChild: false,
     trackChildren: true,
   })
+  const profile = useStore(activeProfile)
 
   return (
     <FocusContext.Provider value={focusKey}>
@@ -161,7 +202,11 @@ export const Sidebar = memo(function Sidebar({
           style={{
             opacity: hasFocusedChild ? 1 : 0,
             transform: hasFocusedChild ? 'translateX(0)' : 'translateX(-4rem)',
-            transition: 'opacity 160ms, transform 160ms',
+            transition: expandTransition(
+              hasFocusedChild,
+              'opacity',
+              'transform',
+            ),
           }}
         >
           <div
@@ -180,19 +225,44 @@ export const Sidebar = memo(function Sidebar({
         >
           {/* `logo.png` é o ícone com o fundo transparente (o `icon.png` tem
               fundo #110c08 e viraria um quadrado sobre o painel ou o banner).
-              Aberto, o logo desliza pro centro do painel e cresce — só
-              transform, como o resto do painel (seção 7). */}
-          <img
-            src="/logo.png"
-            alt="Akari TV"
-            className="size-16 max-w-none shrink-0"
+              Aberto, o bloco desliza pro centro do painel no tempo dele, e
+              a lanterna cresce junto com o brilho que acende atrás dela —
+              só transform e opacity, como o resto do painel (seção 7). */}
+          <div
+            className="relative size-16 shrink-0"
             style={{
               transform: hasFocusedChild
-                ? `translateX(${LOGO_EXPANDED_SHIFT_REM}rem) scale(1.25)`
+                ? `translateX(${LOGO_EXPANDED_SHIFT_REM}rem)`
                 : 'none',
-              transition: 'transform 160ms',
+              transition: expandTransition(hasFocusedChild, 'transform'),
             }}
-          />
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-1/2 size-90 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                background: LOGO_GLOW,
+                opacity: hasFocusedChild ? 1 : 0,
+                transform: hasFocusedChild ? 'scale(1)' : 'scale(0.3)',
+                transition: expandTransition(
+                  hasFocusedChild,
+                  'opacity',
+                  'transform',
+                ),
+              }}
+            />
+            <img
+              src="/logo.png"
+              alt="Akari TV"
+              className="relative size-16 max-w-none"
+              style={{
+                transform: hasFocusedChild
+                  ? `scale(${LOGO_EXPANDED_SCALE})`
+                  : 'none',
+                transition: expandTransition(hasFocusedChild, 'transform'),
+              }}
+            />
+          </div>
         </div>
 
         <div className="relative mt-16 flex flex-col gap-3">
@@ -207,6 +277,17 @@ export const Sidebar = memo(function Sidebar({
               onSelect={onSelect}
             />
           ))}
+        </div>
+
+        <div className="relative mt-auto">
+          <SidebarItem
+            itemKey={PROFILES_KEY}
+            label="Trocar perfil"
+            avatar={<ProfileAvatar profile={profile} sizeRem={2.75} />}
+            expanded={hasFocusedChild}
+            active={false}
+            onSelect={onSelect}
+          />
         </div>
       </nav>
     </FocusContext.Provider>

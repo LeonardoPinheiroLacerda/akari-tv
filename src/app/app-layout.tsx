@@ -14,6 +14,7 @@ import {
 } from 'react-router-dom'
 import { setFocus } from '@noriginmedia/norigin-spatial-navigation'
 import { HOME_FOCUS_KEY } from '@/features/home/home-screen'
+import { PROFILES_FOCUS_KEY } from '@/features/profiles/profiles-screen'
 import { SEARCH_FOCUS_KEY } from '@/features/search/search-screen'
 import { isPushedScreen } from '@/lib/navigation'
 import {
@@ -25,13 +26,16 @@ import { registerBackHandler } from './back'
 import { ScreenActiveContext } from './screen'
 
 const PATHS: Record<SidebarItemKey, string> = {
-  home: '/',
+  home: '/home',
   search: '/search',
+  // Fora da casca: sai dela, desmontando a pilha toda.
+  profiles: '/',
 }
 
 const SCREEN_FOCUS_KEYS: Record<SidebarItemKey, string> = {
   home: HOME_FOCUS_KEY,
   search: SEARCH_FOCUS_KEY,
+  profiles: PROFILES_FOCUS_KEY,
 }
 
 // Telas montadas ao mesmo tempo (seção 6). Acima disso a mais antiga
@@ -78,7 +82,8 @@ function sidebarKeyFor(pathname: string): SidebarItemKey | undefined {
  * Casca das telas: sidebar fixa + tela atual no `<Outlet>`. Os itens da
  * sidebar são abas (navegação com `replace`, sem empilhar). Voltar numa tela
  * aberta a partir de outra (detalhe do anime) desfaz o passo; numa aba fora do
- * Início volta pro Início; no Início deixa o app fechar. As telas abaixo do
+ * Início volta pro Início; no Início volta pra seleção de perfis (onde o
+ * Voltar deixa o app fechar). As telas abaixo do
  * topo da pilha ficam montadas e ocultas (`display: none`), então foco,
  * rolagem e dados voltam sem refazer a tela (seção 6).
  */
@@ -136,8 +141,10 @@ export function AppLayout() {
         navigate(-1)
         return true
       }
-      if (route.current.pathname === PATHS.home) return false
-      navigate(PATHS.home, { replace: true })
+      navigate(
+        route.current.pathname === PATHS.home ? PATHS.profiles : PATHS.home,
+        { replace: true },
+      )
       return true
     })
   }, [navigate])

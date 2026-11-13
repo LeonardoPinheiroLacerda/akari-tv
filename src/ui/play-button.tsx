@@ -1,4 +1,4 @@
-import { Play } from 'lucide-react'
+import { Play, type LucideIcon } from 'lucide-react'
 import { Focusable } from './focusable'
 import { Skeleton } from './skeleton'
 
@@ -6,8 +6,13 @@ export const PLAY_BUTTON_HEIGHT_REM = 4.5
 
 interface PlayButtonProps {
   label?: string
+  /** Ícone à esquerda do rótulo; só o de play é preenchido. */
+  icon?: LucideIcon
   autoFocus?: boolean
+  /** Chave de foco, para devolver o foco a este botão com `setFocus`. */
+  focusKey?: string
   onPress?: () => void
+  onFocus?: () => void
 }
 
 /**
@@ -15,9 +20,22 @@ interface PlayButtonProps {
  * abas: fundo laranja numa camada própria que entra por opacidade, scale no
  * contêiner — só opacity/transform animam (seção 7, APRENDIZADOS.md).
  */
-export function PlayButton({ label = 'Assistir', autoFocus, onPress }: PlayButtonProps) {
+export function PlayButton({
+  label = 'Assistir',
+  icon: Icon = Play,
+  autoFocus,
+  focusKey,
+  onPress,
+  onFocus,
+}: PlayButtonProps) {
+  const filled = Icon === Play
   return (
-    <Focusable autoFocus={autoFocus} onEnterPress={onPress}>
+    <Focusable
+      focusKey={focusKey}
+      autoFocus={autoFocus}
+      onEnterPress={onPress}
+      onFocus={onFocus}
+    >
       {(focused) => (
         <div
           role="button"
@@ -34,11 +52,12 @@ export function PlayButton({ label = 'Assistir', autoFocus, onPress }: PlayButto
             className="absolute inset-0 rounded-full bg-brand"
             style={{ opacity: focused ? 1 : 0, transition: 'opacity 120ms' }}
           />
-          <Play
+          <Icon
             aria-hidden
             className="relative size-8"
+            strokeWidth={filled ? undefined : 2.5}
             color={focused ? 'var(--color-bg)' : 'var(--color-text)'}
-            fill={focused ? 'var(--color-bg)' : 'var(--color-text)'}
+            fill={!filled ? 'none' : focused ? 'var(--color-bg)' : 'var(--color-text)'}
           />
           <span
             className="relative text-[2rem] font-medium"
