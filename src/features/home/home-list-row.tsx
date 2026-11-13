@@ -1,19 +1,19 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
+import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query'
 import { observeElementRect, useVirtualizer, type Virtualizer } from '@tanstack/react-virtual'
+import type { ApiError } from '@/api/errors'
 import type {
   AnimeBindingSummary,
-  SmartListResponse,
+  AnimeBindingSummaryPage,
 } from '@/api/generated/akariAPI.schemas'
-import { useListSmartListItemsInfinite } from '@/api/generated/smart-list/smart-list'
-import { pageInfiniteOptions } from '@/api/pagination'
 import { remToPx } from '@/lib/layout'
 import { focusMemory } from '@/lib/navigation'
 import { scrollTarget, smoothScrollTo } from '@/lib/scroll'
 import { AnimeSummaryPoster, POSTER_WIDTH_REM } from '@/ui/anime-poster'
 import { POSTER_ROW_HEIGHT_REM, PosterRowSkeleton, ROW_PADDING_REM } from '@/ui/poster-row'
 
-const PAGE_SIZE = 20
+export const HOME_LIST_PAGE_SIZE = 20
 // Carrega a próxima página quando o foco chega a este número de itens do fim.
 const PREFETCH_ITEMS = 8
 const POSTER_GAP_REM = 1.5
@@ -21,9 +21,18 @@ const POSTER_GAP_REM = 1.5
 // quando a seta chega nele, e o total fica abaixo dos 20 da seção 7.
 const OVERSCAN = 5
 
+/** Uma linha da Início: a lista do perfil ou uma lista inteligente. */
+export interface HomeList {
+  key: string
+  name: string
+}
+
+/** Itens de uma linha, paginados no envelope de resumos de anime. */
+export type HomeListQuery = UseInfiniteQueryResult<InfiniteData<AnimeBindingSummaryPage>, ApiError>
+
 /** Região de foco da lista; também a chave do último pôster focado nela. */
-function smartListFocusKey(listId: number): string {
-  return `HOME_LIST_${listId}`
+function homeListFocusKey(listKey: string): string {
+  return `HOME_LIST_${listKey}`
 }
 
 /**
@@ -40,38 +49,34 @@ function observeVisibleRect(
   })
 }
 
-interface SmartListRowProps {
-  list: SmartListResponse
+interface HomeListRowProps {
+  list: HomeList
+  query: HomeListQuery
   /** Esta lista recebe o foco inicial da tela (o último pôster focado nela, ou o primeiro). */
   autoFocus: boolean
-  onFocused: (list: SmartListResponse, anime: AnimeBindingSummary, row: HTMLElement) => void
+  onFocused: (list: HomeList, anime: AnimeBindingSummary, row: HTMLElement) => void
   onSelect: (anime: AnimeBindingSummary) => void
   /** A lista do foco inicial veio vazia ou com erro: a tela passa o foco inicial adiante. Estável. */
-  onUnavailable: (listId: number) => void
+  onUnavailable: (listKey: string) => void
 }
 
 /**
- * Uma lista inteligente na Início: os itens num carrossel horizontal,
+ * Uma lista na Início: os itens num carrossel horizontal,
  * virtualizado e com paginação infinita (o nome fica no cabeçalho fixo da
  * tela). É uma região de foco
  * própria que lembra o último pôster focado; lista vazia não aparece nem
  * recebe foco.
  */
-export const SmartListRow = memo(function SmartListRow({
+export const HomeListRow = memo(function HomeListRow({
   list,
+  query,
   autoFocus,
   onFocused,
   onSelect,
   onUnavailable,
-}: SmartListRowProps) {
-  const rowFocusKey = smartListFocusKey(list.id)
+}: HomeListRowProps) {
+  const rowFocusKey = homeListFocusKey(list.key)
   const sectionRef = useRef<HTMLElement>(null)
-
-  const query = useListSmartListItemsInfinite(
-    list.id,
-    { size: PAGE_SIZE },
-    { query: pageInfiniteOptions },
-  )
   const animes = useMemo(() => query.data?.pages.flatMap((page) => page.data) ?? [], [query.data])
   const unavailable = query.isError || (query.isSuccess && animes.length === 0)
 
@@ -82,8 +87,8 @@ export const SmartListRow = memo(function SmartListRow({
   })
 
   useEffect(() => {
-    if (autoFocus && unavailable) onUnavailable(list.id)
-  }, [autoFocus, unavailable, onUnavailable, list.id])
+    if (autoFocus && unavailable) onUnavailable(list.key)
+  }, [autoFocus, unavailable, onUnavailable, list.key])
 
   // Foco inicial decidido uma vez, quando os itens chegam: o pôster de onde o
   // usuário saiu, se ainda estiver na lista, ou o primeiro. Só na primeira

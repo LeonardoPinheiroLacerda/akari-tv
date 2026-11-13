@@ -1,4 +1,4 @@
-import { memo, useState, type CSSProperties } from 'react'
+import { memo, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import {
   CalendarDays,
@@ -102,6 +102,8 @@ interface AnimeHeroViewProps {
    * nenhum anime vai chegar (erro, coleção vazia), para não pulsar à toa.
    */
   placeholder?: boolean
+  /** Ações sob a sinopse (ex.: adicionar à lista do perfil). Estável, para o hero memoizado. */
+  actions?: ReactNode
 }
 
 // Larguras variadas para o skeleton não parecer uma grade de blocos iguais.
@@ -227,6 +229,7 @@ export const AnimeHeroView = memo(function AnimeHeroView({
   anime,
   expandableSynopsis = false,
   placeholder = true,
+  actions,
 }: AnimeHeroViewProps) {
   const backdrop = anime?.banner ?? anime?.thumbnails?.small ?? anime?.thumbnails?.medium
 
@@ -268,6 +271,7 @@ export const AnimeHeroView = memo(function AnimeHeroView({
               {htmlToText(anime.synopsis)}
             </p>
           ))}
+        {actions && <div className="mt-2 flex gap-4">{actions}</div>}
       </div>
     </>
   )

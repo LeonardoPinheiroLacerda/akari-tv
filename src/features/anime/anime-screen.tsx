@@ -5,10 +5,12 @@ import { useScreenFocusable } from '@/app/screen'
 import type { AnimeResponse } from '@/api/generated/akariAPI.schemas'
 import { useGetAnimeFranchise } from '@/api/generated/anime-relations/anime-relations'
 import { PUSHED_SCREEN } from '@/lib/navigation'
+import { useUserId } from '@/lib/profile'
 import { createStore } from '@/lib/store'
 import { AnimeHero } from '@/ui/anime-hero'
 import { POSTER_ROW_HEIGHT_REM, PosterRow, PosterRowSkeleton } from '@/ui/poster-row'
 import { FranchiseTabs, FranchiseTabsSkeleton, TABS_HEIGHT_REM } from './franchise-tabs'
+import { WatchlistButton } from './watchlist-button'
 
 const ANIME_FOCUS_KEY = 'ANIME'
 
@@ -28,15 +30,29 @@ interface AnimeScreenProps {
  * e classificação que o backend entrega (`GET .../franchise`). As abas ficam
  * sempre visíveis, para nada da franquia passar despercebido; a linha de
  * pôsteres abaixo mostra a aba ativa e rola na horizontal. Aba vazia não
- * aparece.
+ * aparece. Com um perfil, o hero tem o botão que põe e tira o anime da lista dele.
  */
 function AnimeScreen({ anilistId }: AnimeScreenProps) {
   const { ref, focusKey } = useScreenFocusable({ focusKey: ANIME_FOCUS_KEY })
+  const userId = useUserId()
   const [heroStore] = useState(() => createStore<AnimeResponse | undefined>(undefined))
 
-  const query = useGetAnimeFranchise(anilistId, undefined, {
+  // Com o perfil, a franquia diz se este anime está na lista dele (`inWatchlist`).
+  const params = userId !== undefined ? { userId } : undefined
+  const query = useGetAnimeFranchise(anilistId, params, {
     query: { enabled: Number.isInteger(anilistId) },
   })
+
+  // Elemento estável: o hero é memoizado e a tela re-renderiza a cada aba focada.
+  const inWatchlist = query.data?.inWatchlist
+  const heroActions = useMemo(
+    () =>
+      userId !== undefined &&
+      typeof inWatchlist === 'boolean' && (
+        <WatchlistButton userId={userId} anilistId={anilistId} inWatchlist={inWatchlist} />
+      ),
+    [userId, anilistId, inWatchlist],
+  )
 
   // Até algum pôster ganhar foco, o hero mostra a raiz da franquia. O foco
   // automático da primeira linha chega antes deste efeito e tem prioridade.
@@ -86,7 +102,12 @@ function AnimeScreen({ anilistId }: AnimeScreenProps) {
         aria-label={query.data?.root.titles?.main ?? 'Anime'}
         className="flex h-[calc(100svh-6.75rem)] flex-col"
       >
-        <AnimeHero store={heroStore} expandableSynopsis placeholder={!query.isError} />
+        <AnimeHero
+          store={heroStore}
+          expandableSynopsis
+          placeholder={!query.isError}
+          actions={heroActions}
+        />
 
         <div
           className="mt-2 shrink-0"
