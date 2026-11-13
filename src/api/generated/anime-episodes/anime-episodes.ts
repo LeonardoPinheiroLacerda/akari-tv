@@ -101,6 +101,10 @@ export const getListAnimeEpisodesUrl = (
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export const listAnimeEpisodes = async (
@@ -216,6 +220,10 @@ export type ListAnimeEpisodesInfiniteQueryError = ErrorType<
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export function useListAnimeEpisodesInfinite<
@@ -270,6 +278,10 @@ export function useListAnimeEpisodesInfinite<
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export function useListAnimeEpisodesInfinite<
@@ -324,6 +336,10 @@ export function useListAnimeEpisodesInfinite<
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export function useListAnimeEpisodesInfinite<
@@ -369,6 +385,10 @@ export function useListAnimeEpisodesInfinite<
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export function useListAnimeEpisodesInfinite<
@@ -478,6 +498,10 @@ export type ListAnimeEpisodesQueryError = ErrorType<
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export function useListAnimeEpisodes<
@@ -526,6 +550,10 @@ export function useListAnimeEpisodes<
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export function useListAnimeEpisodes<
@@ -574,6 +602,10 @@ export function useListAnimeEpisodes<
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export function useListAnimeEpisodes<
@@ -614,6 +646,10 @@ export function useListAnimeEpisodes<
  *
  * Anime sem arquivos na pasta devolve página vazia — só é `404` se o `anilistId` não
  * existir.
+ *
+ * Com `userId`, cada episódio vem com o `watchProgress` do usuário (onde parou e se já foi
+ * assistido), pra tela marcar os episódios sem outra chamada; episódio que o usuário nunca
+ * abriu vem com `watchProgress` `null`. `404` se o usuário não existir.
  * @summary Lista paginada dos episódios do anime, pronta pra tela de episódios
  */
 export function useListAnimeEpisodes<

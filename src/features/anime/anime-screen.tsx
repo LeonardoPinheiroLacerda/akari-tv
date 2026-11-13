@@ -34,7 +34,7 @@ function AnimeScreen({ anilistId }: AnimeScreenProps) {
   const { ref, focusKey } = useScreenFocusable({ focusKey: ANIME_FOCUS_KEY })
   const [heroStore] = useState(() => createStore<AnimeResponse | undefined>(undefined))
 
-  const query = useGetAnimeFranchise(anilistId, {
+  const query = useGetAnimeFranchise(anilistId, undefined, {
     query: { enabled: Number.isInteger(anilistId) },
   })
 

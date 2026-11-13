@@ -724,10 +724,10 @@ export const getListSmartListItemsUrl = (
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.
@@ -835,10 +835,10 @@ export type ListSmartListItemsInfiniteQueryError = ErrorType<
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.
@@ -885,10 +885,10 @@ export function useListSmartListItemsInfinite<
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.
@@ -935,10 +935,10 @@ export function useListSmartListItemsInfinite<
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.
@@ -976,10 +976,10 @@ export function useListSmartListItemsInfinite<
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.
@@ -1081,10 +1081,10 @@ export type ListSmartListItemsQueryError = ErrorType<
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.
@@ -1125,10 +1125,10 @@ export function useListSmartListItems<
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.
@@ -1169,10 +1169,10 @@ export function useListSmartListItems<
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.
@@ -1205,10 +1205,10 @@ export function useListSmartListItems<
  * filtro da lista. Animes ocultos são ignorados.
  *
  * - **Critérios de franquia** (`includeGenres`, `excludeGenres`, `includeTags`,
- *   `excludeTags`, `studios`, `statuses`): a raiz entra se **algum membro** da franquia,
- *   incluindo ela, casar todos eles ao mesmo tempo.
+ *   `excludeTags`, `studios`, `statuses`, `adult`): a raiz entra se **algum membro** da
+ *   franquia, incluindo ela, casar todos eles ao mesmo tempo.
  * - **Critérios de raiz** (`formats`, `yearFrom`, `yearTo`, `minScore`, `minMeanScore`,
- *   `minPopularity`, `adult`): valem só pra raiz.
+ *   `minPopularity`): valem só pra raiz.
  *
  * A ordenação usa o valor da raiz; valores ausentes vão pro fim e o empate desempata pelo
  * `anilistId`.

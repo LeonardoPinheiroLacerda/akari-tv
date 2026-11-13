@@ -40,6 +40,7 @@ import type {
   AnimePageOkResponse,
   AnimeRelationGraphOkResponse,
   BadRequestResponse,
+  GetAnimeFranchiseParams,
   GetAnimeRelationGraphParams,
   InternalServerErrorResponse,
   ListRelationRootsParams,
@@ -682,8 +683,23 @@ export function useGetAnimeRelationGraph<
   return withQueryKey(query, queryOptions.queryKey)
 }
 
-export const getGetAnimeFranchiseUrl = (anilistId: number) => {
-  return `/v1/metadata/animes/${anilistId}/franchise`
+export const getGetAnimeFranchiseUrl = (
+  anilistId: number,
+  params?: GetAnimeFranchiseParams,
+) => {
+  const normalizedParams = new URLSearchParams()
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  })
+
+  const stringifiedParams = normalizedParams.toString()
+
+  return stringifiedParams.length > 0
+    ? `/v1/metadata/animes/${anilistId}/franchise?${stringifiedParams}`
+    : `/v1/metadata/animes/${anilistId}/franchise`
 }
 
 /**
@@ -704,14 +720,19 @@ export const getGetAnimeFranchiseUrl = (anilistId: number) => {
  * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
  * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
  * duplicatas: cada membro aparece em só uma das listas.
+ *
+ * Com `userId`, `inWatchlist` diz se o `anilistId` consultado (o da rota, não
+ * necessariamente a raiz) está na lista do usuário; sem `userId`, vem `null`. `404` se o
+ * usuário não existir.
  * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
  */
 export const getAnimeFranchise = async (
   anilistId: number,
+  params?: GetAnimeFranchiseParams,
   options?: Parameters<typeof apiFetch>[1],
 ): Promise<AnimeFranchiseOkResponse> => {
   return apiFetch<AnimeFranchiseOkResponse>(
-    getGetAnimeFranchiseUrl(anilistId),
+    getGetAnimeFranchiseUrl(anilistId, params),
     {
       ...options,
       method: 'GET',
@@ -719,8 +740,14 @@ export const getAnimeFranchise = async (
   )
 }
 
-export const getGetAnimeFranchiseQueryKey = (anilistId: number) => {
-  return [`/v1/metadata/animes/${anilistId}/franchise`] as const
+export const getGetAnimeFranchiseQueryKey = (
+  anilistId: number,
+  params?: GetAnimeFranchiseParams,
+) => {
+  return [
+    `/v1/metadata/animes/${anilistId}/franchise`,
+    ...(params ? [params] : []),
+  ] as const
 }
 
 export const getGetAnimeFranchiseQueryOptions = <
@@ -728,6 +755,7 @@ export const getGetAnimeFranchiseQueryOptions = <
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
 >(
   anilistId: number,
+  params?: GetAnimeFranchiseParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -742,12 +770,12 @@ export const getGetAnimeFranchiseQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {}
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetAnimeFranchiseQueryKey(anilistId)
+    queryOptions?.queryKey ?? getGetAnimeFranchiseQueryKey(anilistId, params)
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getAnimeFranchise>>
   > = ({ signal }) =>
-    getAnimeFranchise(anilistId, { signal, ...requestOptions })
+    getAnimeFranchise(anilistId, params, { signal, ...requestOptions })
 
   return {
     queryKey,
@@ -786,6 +814,10 @@ export type GetAnimeFranchiseQueryError = ErrorType<
  * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
  * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
  * duplicatas: cada membro aparece em só uma das listas.
+ *
+ * Com `userId`, `inWatchlist` diz se o `anilistId` consultado (o da rota, não
+ * necessariamente a raiz) está na lista do usuário; sem `userId`, vem `null`. `404` se o
+ * usuário não existir.
  * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
  */
 export function useGetAnimeFranchise<
@@ -793,6 +825,7 @@ export function useGetAnimeFranchise<
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
 >(
   anilistId: number,
+  params: undefined | GetAnimeFranchiseParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -833,6 +866,10 @@ export function useGetAnimeFranchise<
  * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
  * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
  * duplicatas: cada membro aparece em só uma das listas.
+ *
+ * Com `userId`, `inWatchlist` diz se o `anilistId` consultado (o da rota, não
+ * necessariamente a raiz) está na lista do usuário; sem `userId`, vem `null`. `404` se o
+ * usuário não existir.
  * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
  */
 export function useGetAnimeFranchise<
@@ -840,6 +877,7 @@ export function useGetAnimeFranchise<
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
 >(
   anilistId: number,
+  params?: GetAnimeFranchiseParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -880,6 +918,10 @@ export function useGetAnimeFranchise<
  * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
  * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
  * duplicatas: cada membro aparece em só uma das listas.
+ *
+ * Com `userId`, `inWatchlist` diz se o `anilistId` consultado (o da rota, não
+ * necessariamente a raiz) está na lista do usuário; sem `userId`, vem `null`. `404` se o
+ * usuário não existir.
  * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
  */
 export function useGetAnimeFranchise<
@@ -887,6 +929,7 @@ export function useGetAnimeFranchise<
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
 >(
   anilistId: number,
+  params?: GetAnimeFranchiseParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -919,6 +962,10 @@ export function useGetAnimeFranchise<
  * `root`, `seasons`, `movies` e `specials` usam o `AnimeResponse` completo (mesmos campos
  * de `GET /v1/metadata/animes/{anilistId}`, com os mesmos overrides manuais). Sem
  * duplicatas: cada membro aparece em só uma das listas.
+ *
+ * Com `userId`, `inWatchlist` diz se o `anilistId` consultado (o da rota, não
+ * necessariamente a raiz) está na lista do usuário; sem `userId`, vem `null`. `404` se o
+ * usuário não existir.
  * @summary Franquia do anime, já organizada em raiz/temporadas/filmes/especiais
  */
 export function useGetAnimeFranchise<
@@ -926,6 +973,7 @@ export function useGetAnimeFranchise<
   TError = ErrorType<NotFoundResponse | InternalServerErrorResponse>,
 >(
   anilistId: number,
+  params?: GetAnimeFranchiseParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -940,7 +988,11 @@ export function useGetAnimeFranchise<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>
 } {
-  const queryOptions = getGetAnimeFranchiseQueryOptions(anilistId, options)
+  const queryOptions = getGetAnimeFranchiseQueryOptions(
+    anilistId,
+    params,
+    options,
+  )
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

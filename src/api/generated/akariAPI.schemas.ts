@@ -789,6 +789,26 @@ export interface TmdbFilePairingResponse {
 }
 
 /**
+ * Progresso do usuário num arquivo
+ */
+export interface WatchProgress {
+  /** Última posição recebida no heartbeat, em segundos a partir do início da mídia */
+  positionSeconds: number
+  /**
+   * Duração da mídia, em segundos; `null` se o probe não informou
+   * @nullable
+   */
+  durationSeconds?: number | null
+  /**
+   * `true` quando alguma posição recebida chegou a 90% da duração. Uma vez `true`,
+   * continua `true`, mesmo se o usuário rever o episódio do começo.
+   */
+  watched: boolean
+  /** Quando a última posição foi recebida */
+  lastWatchedAt: string
+}
+
+/**
  * Vista pública de um arquivo ingerido
  */
 export interface VideoFileResponse {
@@ -801,6 +821,8 @@ export interface VideoFileResponse {
   createdAt: string
   /** Pairing TMDB do arquivo, quando houver. Enriquecido só na listagem (`GET /video-files`); `null` nas leituras que não computam esse campo. */
   tmdbPairing?: TmdbFilePairingResponse | null
+  /** Progresso do usuário no arquivo. Preenchido só na listagem de episódios do anime com `userId`; `null` nas demais leituras e em arquivo que o usuário nunca abriu. */
+  watchProgress?: WatchProgress | null
 }
 
 /**
@@ -1224,6 +1246,11 @@ export interface FileAvailabilityResponse {
 }
 
 /**
+ * Id do usuário
+ */
+export type UserId = number
+
+/**
  * Parâmetros para iniciar uma sessão de transcode
  */
 export interface StartPlaybackSessionRequest {
@@ -1261,6 +1288,12 @@ export interface StartPlaybackSessionRequest {
    * preferências.
    */
   subtitleDisabled?: boolean
+  /**
+   * Usuário que está assistindo. Com ele, a posição enviada nos heartbeats da sessão vira
+   * o progresso do arquivo no histórico do usuário; sem ele, a sessão não grava
+   * histórico. Responde `404` se o usuário não existir.
+   */
+  userId?: UserId | null
 }
 
 /**
@@ -1984,6 +2017,12 @@ export interface AnimeFranchiseResponse {
    * @nullable
    */
   specials?: AnimeResponse[] | null
+  /**
+   * Se o anime consultado (o `anilistId` da rota, não necessariamente a raiz) está na
+   * lista do usuário. Só preenchido com `userId`; `null` sem ele.
+   * @nullable
+   */
+  inWatchlist?: boolean | null
 }
 
 /**
@@ -2797,7 +2836,7 @@ export interface SmartListCriteria {
    */
   minPopularity?: number | null
   /**
-   * `true` só adultos, `false` só não adultos; ausente não filtra
+   * `true` membro adulto, `false` membro não adulto; ausente não filtra
    * @nullable
    */
   adult?: boolean | null
@@ -2840,6 +2879,53 @@ export interface SmartListResponse {
  * Listas cadastradas, ordenadas por `position` e `id`
  */
 export type SmartListList = SmartListResponse[]
+
+/**
+ * Payload de `POST /v1/users`
+ */
+export interface UserRequest {
+  /**
+   * Nome exibido no seletor de perfis
+   * @minLength 1
+   */
+  name: string
+}
+
+/**
+ * Usuário cadastrado
+ */
+export interface UserResponse {
+  id: UserId
+  name: string
+  createdAt: string
+}
+
+/**
+ * Usuários cadastrados, ordenados por `id`
+ */
+export type UserList = UserResponse[]
+
+/**
+ * Payload de `POST /v1/users/{userId}/watchlist`
+ */
+export interface WatchlistItemRequest {
+  anilistId: AnilistId
+}
+
+/**
+ * Posição atual do player, enviada no heartbeat
+ */
+export interface PlaybackHeartbeatRequest {
+  /**
+   * Posição atual, em segundos a partir do início da mídia (mesma semântica do
+   * `positionSeconds` do seek), não o `currentTime` da playlist. Numa sessão iniciada com
+   * `userId`, vira a posição do arquivo no histórico do usuário; sem `userId`, é
+   * ignorada.
+   * @minimum 0
+   * @nullable
+   */
+  positionSeconds?: number | null
+}
 
 /**
  * Payload ou parâmetros inválidos (`VALIDATION_ERROR`), ou regra de negócio violada (`BUSINESS_RULE_VIOLATION`)
@@ -3173,6 +3259,16 @@ export type SmartListOkResponse = SmartListResponse
 export type SmartListCreatedResponse = SmartListResponse
 
 /**
+ * Lista (possivelmente vazia) de usuários
+ */
+export type UserListOkResponse = UserList
+
+/**
+ * Usuário cadastrado
+ */
+export type UserCreatedResponse = UserResponse
+
+/**
  * Payload de criação — type + config em claro
  */
 export type CreateStorageProviderRequestBodyBody = CreateStorageProviderRequest
@@ -3270,6 +3366,21 @@ export type UpdateSettingRequestBodyBody = UpdateSettingRequest
  */
 export type SmartListRequestBodyBody = SmartListRequest
 
+/**
+ * Nome do usuário
+ */
+export type UserRequestBodyBody = UserRequest
+
+/**
+ * Título a adicionar na lista
+ */
+export type WatchlistItemRequestBodyBody = WatchlistItemRequest
+
+/**
+ * Posição atual do player
+ */
+export type PlaybackHeartbeatRequestBodyBody = PlaybackHeartbeatRequest
+
 export type PageParamParameter = PageNumber
 
 export type SizeParamParameter = PageSize
@@ -3314,6 +3425,8 @@ export type FranchiseSearchParamParameter = string
 export type FranchiseKindFilterParamParameter = FranchiseKind
 
 export type DepthParamParameter = GraphDepth
+
+export type UserIdQueryParamParameter = UserId
 
 export type ListStorageProvidersParams = {
   /** Número da página (0-based) */
@@ -3439,6 +3552,8 @@ export type ListAnimeEpisodesParams = {
   page?: PageParamParameter
   /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
+  /** Id do usuário */
+  userId?: UserIdQueryParamParameter
 }
 
 export type ListRelationRootsParams = {
@@ -3451,6 +3566,11 @@ export type ListRelationRootsParams = {
 export type GetAnimeRelationGraphParams = {
   /** Profundidade máxima da BFS de relações */
   depth?: DepthParamParameter
+}
+
+export type GetAnimeFranchiseParams = {
+  /** Id do usuário */
+  userId?: UserIdQueryParamParameter
 }
 
 export type ListFranchisesParams = {
@@ -3492,6 +3612,13 @@ export type ListNotificationsParams = {
 }
 
 export type ListSmartListItemsParams = {
+  /** Número da página (0-based) */
+  page?: PageParamParameter
+  /** Tamanho máximo de itens por página */
+  size?: SizeParamParameter
+}
+
+export type ListUserWatchlistParams = {
   /** Número da página (0-based) */
   page?: PageParamParameter
   /** Tamanho máximo de itens por página */
