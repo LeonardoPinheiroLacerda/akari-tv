@@ -8,6 +8,8 @@ import {
   switchPlaybackSessionTracks,
 } from '@/api/generated/playback/playback'
 import { getServerUrl } from '@/api/mutator'
+import { queryClient } from '@/api/queryClient'
+import { useUserId } from '@/lib/profile'
 import { nativePlayback } from './native-player'
 
 // Profile de transcode do dispositivo. No app, o alvo é o Google TV Streamer,
@@ -17,6 +19,8 @@ const PROFILE = nativePlayback ? 'GOOGLE_TV_STREAMER' : 'WEB'
 // Heartbeat a cada terço do TTL; o TTL real vem da resposta do próprio heartbeat.
 const DEFAULT_TTL_SECONDS = 30
 const MIN_HEARTBEAT_MS = 5000
+// Listagem de episódios de um anime, que traz o progresso do perfil.
+const EPISODES_URL = /^\/v1\/metadata\/animes\/\d+\/episodes$/
 
 export interface TrackSelection {
   /** Posição no array `audio` do mediaprobe. */
@@ -48,16 +52,19 @@ export type SessionState =
  * Inicia a sessão e, para retomar no meio, já a reposiciona (a sessão nova
  * começa do início). Sem `selection`, as faixas saem das preferências do
  * backend (`playback.default.*`); com ela, "sem legenda" precisa ir explícito
- * (`subtitleDisabled`), senão o backend aplicaria a legenda padrão.
+ * (`subtitleDisabled`), senão o backend aplicaria a legenda padrão. Com
+ * `userId`, a posição dos heartbeats vira o progresso do perfil no arquivo.
  */
 async function requestSession(
   fileId: number,
+  userId: number | undefined,
   selection: TrackSelection | undefined,
   position: number,
 ): Promise<PlaybackSessionResponse> {
   const response = await startPlaybackSession({
     fileId,
     profile: PROFILE,
+    ...(userId !== undefined && { userId }),
     ...(selection && {
       audioTrackIndex: selection.audio,
       subtitleTrackIndex: selection.subtitle,
@@ -100,9 +107,10 @@ function tracksOf(response: PlaybackSessionResponse) {
 }
 
 /**
- * Ciclo de vida da sessão de transcode (`/v1/playback/sessions`): inicia com as
- * faixas padrão das preferências do backend (as ativas vêm na resposta e viram
- * `tracks`; até lá, `undefined`), mantém viva com heartbeat, reposiciona
+ * Ciclo de vida da sessão de transcode (`/v1/playback/sessions`): inicia em
+ * `startSeconds` com as faixas padrão das preferências do backend (as ativas
+ * vêm na resposta e viram `tracks`; até lá, `undefined`), mantém viva com
+ * heartbeat — que leva a posição atual, gravada no histórico do perfil —, reposiciona
  * (`seek`) e troca faixas. A posição que o resto do app usa é sempre a da mídia (absoluta); o
  * mapeamento para o tempo do `<video>` é `posição - offset` (contrato:
  * `startOffsetSeconds`).
@@ -111,7 +119,8 @@ function tracksOf(response: PlaybackSessionResponse) {
  * iniciar quer dizer que o arquivo saiu do cache: vira `stale`, e a tela volta
  * a preparar o arquivo.
  */
-export function usePlaybackSession(fileId: number) {
+export function usePlaybackSession(fileId: number, startSeconds = 0) {
+  const userId = useUserId()
   const [state, setState] = useState<SessionState>({ kind: 'starting' })
   const [source, setSource] = useState<PlaybackSource>()
   const [tracks, setTracks] = useState<TrackSelection>()
@@ -137,7 +146,7 @@ export function usePlaybackSession(fileId: number) {
 
   const start = useCallback(
     (selection: TrackSelection | undefined, position: number) =>
-      requestSession(fileId, selection, position).then(
+      requestSession(fileId, userId, selection, position).then(
         (response) => {
           if (!alive.current) return
           applySource(response, position)
@@ -152,12 +161,14 @@ export function usePlaybackSession(fileId: number) {
           setState({ kind: 'error', message: messageOf(error) })
         },
       ),
-    [fileId, applySource],
+    [fileId, userId, applySource],
   )
 
-  // Posição atual da mídia, informada pelo player; usada para recriar a sessão
-  // expirada no mesmo ponto.
-  const position = useRef(0)
+  // Posição atual da mídia, informada pelo player; vai nos heartbeats e é
+  // usada para recriar a sessão expirada no mesmo ponto. Até o player
+  // informar, é onde a reprodução começa: um heartbeat logo no início não
+  // pode gravar 0 por cima de onde o perfil tinha parado.
+  const position = useRef(startSeconds)
   const reportPosition = useCallback((seconds: number) => {
     position.current = seconds
   }, [])
@@ -169,12 +180,12 @@ export function usePlaybackSession(fileId: number) {
   // backend. Com o adiamento, a montagem descartada é cancelada antes.
   useEffect(() => {
     alive.current = true
-    const timer = setTimeout(() => void start(undefined, 0), 0)
+    const timer = setTimeout(() => void start(undefined, startSeconds), 0)
     return () => {
       clearTimeout(timer)
       alive.current = false
     }
-  }, [start])
+  }, [start, startSeconds])
 
   // Heartbeat: sem ele o backend encerra a sessão depois do TTL. Ao sair da
   // tela o heartbeat para e a sessão expira sozinha (não há endpoint de fim).
@@ -188,7 +199,9 @@ export function usePlaybackSession(fileId: number) {
       const current = session.current
       if (!current) return
       try {
-        const response = await heartbeatPlaybackSession(current.sessionId)
+        const response = await heartbeatPlaybackSession(current.sessionId, {
+          positionSeconds: position.current,
+        })
         ttl = response.expiresInSeconds || DEFAULT_TTL_SECONDS
       } catch (error) {
         if (!alive.current) return
@@ -202,6 +215,30 @@ export function usePlaybackSession(fileId: number) {
     void beat()
     return () => clearTimeout(timer)
   }, [active, start, tracks])
+
+  // Ao sair do player, um último heartbeat grava onde o perfil parou (o
+  // periódico pode estar até um terço do TTL atrás) e, com ele gravado, a
+  // listagem de episódios montada por baixo recarrega o progresso.
+  useEffect(() => {
+    if (userId === undefined) return
+    return () => {
+      // A sessão e a posição de agora, na saída, não as da montagem.
+      const current = session.current
+      if (!current) return
+      void heartbeatPlaybackSession(current.sessionId, {
+        positionSeconds: position.current,
+      })
+        .catch(() => undefined)
+        .then(() =>
+          queryClient.invalidateQueries({
+            predicate: (query) =>
+              query.queryKey.some(
+                (part) => typeof part === 'string' && EPISODES_URL.test(part),
+              ),
+          }),
+        )
+    }
+  }, [userId])
 
   /**
    * Reposiciona. Dentro do trecho já transcodificado o backend devolve o mesmo

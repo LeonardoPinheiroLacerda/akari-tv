@@ -1,5 +1,6 @@
 import { memo, useCallback } from 'react'
 import type { FocusableComponentLayout } from '@noriginmedia/norigin-spatial-navigation'
+import { Check } from 'lucide-react'
 import type { VideoFileResponse } from '@/api/generated/akariAPI.schemas'
 import { cn } from '@/lib/utils'
 import { Focusable } from '@/ui/focusable'
@@ -27,7 +28,11 @@ interface EpisodeCardProps {
   onSelect?: (episode: VideoFileResponse) => void
 }
 
-/** Card do episódio: thumbnail do TMDB com número e título na base. */
+/**
+ * Card do episódio: thumbnail do TMDB com número e título na base. Com o
+ * progresso do perfil, o assistido ganha um selo no canto e o começado, uma
+ * barra de onde parou rente à base.
+ */
 export const EpisodeCard = memo(function EpisodeCard({
   episode,
   index,
@@ -47,6 +52,12 @@ export const EpisodeCard = memo(function EpisodeCard({
   const thumbnail = episode.tmdbPairing?.thumbnailPreviewUrl
   const number = episodeNumberLabel(episode)
   const title = episodeTitle(episode)
+  const progress = episode.watchProgress
+  const watched = progress?.watched === true
+  const fraction =
+    progress && !watched && progress.durationSeconds
+      ? Math.min(1, progress.positionSeconds / progress.durationSeconds)
+      : undefined
 
   return (
     <Focusable
@@ -83,7 +94,20 @@ export const EpisodeCard = memo(function EpisodeCard({
               style={{ maskImage: COVER_FADE }}
             />
           )}
-          <div className="absolute inset-x-0 bottom-0 px-3 pb-2">
+          {watched && (
+            <div
+              aria-label="Assistido"
+              className="bg-brand absolute top-2 right-2 flex size-10 items-center justify-center rounded-full"
+            >
+              <Check
+                aria-hidden
+                className="size-6"
+                strokeWidth={3}
+                color="var(--color-bg)"
+              />
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 px-3 pb-3">
             {number && (
               <p className="text-[1.75rem] leading-tight font-medium">
                 {number}
@@ -93,6 +117,19 @@ export const EpisodeCard = memo(function EpisodeCard({
               {title}
             </p>
           </div>
+          {fraction !== undefined && (
+            // Preenchimento pelo scaleX de uma camada de largura fixa, como a
+            // barra de download: nada de largura variável (seção 7).
+            <div
+              aria-label={`Assistido ${Math.round(fraction * 100)}%`}
+              className="absolute inset-x-0 bottom-0 h-1.5 bg-white/25"
+            >
+              <div
+                className="bg-brand h-full w-full origin-left"
+                style={{ transform: `scaleX(${fraction})` }}
+              />
+            </div>
+          )}
         </div>
       )}
     </Focusable>

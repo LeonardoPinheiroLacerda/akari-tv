@@ -18,11 +18,14 @@ export interface PlaybackDisplay {
 export interface PlaybackItem {
   fileId: number
   display: PlaybackDisplay
+  /** Posição da mídia onde a reprodução começa (de onde o perfil parou); sem ela, do início. */
+  startSeconds?: number
 }
 
 interface PlaybackState {
   pushed: true
   display: PlaybackDisplay
+  startSeconds?: number
   /** Os que vêm antes na lista de origem, na ordem dela (o último é o anterior). */
   previous: PlaybackItem[]
   /** Os que vêm depois na lista de origem, na ordem dela (o primeiro é o próximo). */
@@ -48,6 +51,7 @@ export function playbackRoute(
   const state: PlaybackState = {
     ...PUSHED_SCREEN,
     display: item.display,
+    startSeconds: item.startSeconds,
     previous: list.previous,
     queue: list.queue,
   }
@@ -86,6 +90,10 @@ export function playbackDisplayFrom(
   return playbackStateFrom(state).display
 }
 
+export function playbackStartFrom(state: unknown): number | undefined {
+  return playbackStateFrom(state).startSeconds
+}
+
 export function playbackListFrom(state: unknown): PlaybackList {
   const parsed = playbackStateFrom(state)
   return { previous: parsed.previous ?? [], queue: parsed.queue ?? [] }
@@ -94,9 +102,10 @@ export function playbackListFrom(state: unknown): PlaybackList {
 // Último item focado por tela, em memória: quando uma tela remonta (aba da
 // sidebar, ou acima do limite da pilha), o foco volta pro item de onde o
 // usuário saiu (seção 6). A cópia no localStorage entra depois.
-const lastFocused = new Map<string, number>()
+const lastFocused = new Map<string, number | string>()
 
 export const focusMemory = {
   get: (screen: string) => lastFocused.get(screen),
-  set: (screen: string, id: number) => void lastFocused.set(screen, id),
+  set: (screen: string, id: number | string) =>
+    void lastFocused.set(screen, id),
 }

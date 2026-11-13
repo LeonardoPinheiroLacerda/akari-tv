@@ -53,6 +53,8 @@ const OSD_HIDE_MS = 5000
 
 interface PlayerProps {
   fileId: number
+  /** Posição da mídia onde a reprodução começa (de onde o perfil parou). */
+  startSeconds?: number
   probe: MediaInfoResponse
   display?: PlaybackDisplay
   /** O arquivo saiu do cache (sessão `404` ao iniciar): a tela volta a prepará-lo. */
@@ -76,6 +78,7 @@ interface PlayerProps {
  */
 export function Player({
   fileId,
+  startSeconds,
   probe,
   display,
   onStale,
@@ -85,7 +88,7 @@ export function Player({
 }: PlayerProps) {
   // As faixas iniciais saem das preferências do backend (idioma padrão de
   // áudio e legenda); `tracks` fica `undefined` até a sessão responder.
-  const playback = usePlaybackSession(fileId)
+  const playback = usePlaybackSession(fileId, startSeconds)
   const { state, source, tracks, seek, switchTracks, reportPosition, retry } =
     playback
 
@@ -102,7 +105,7 @@ export function Player({
   }, [onEnded])
 
   // Posição da mídia = offset da fonte + tempo do motor.
-  const [position, setPosition] = useState(0)
+  const [position, setPosition] = useState(startSeconds ?? 0)
   const [paused, setPaused] = useState(false)
   const [buffering, setBuffering] = useState(true)
   const [pendingSeek, setPendingSeek] = useState<number>()

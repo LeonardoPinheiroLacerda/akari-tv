@@ -8,6 +8,7 @@ import { remainingLabel, sizeLabel, speedLabel } from '@/lib/format'
 import {
   playbackDisplayFrom,
   playbackListFrom,
+  playbackStartFrom,
   siblingPlaybackRoute,
 } from '@/lib/navigation'
 import { Backdrop } from '@/ui/anime-hero'
@@ -108,6 +109,7 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
   }, [focusSelf])
   const location = useLocation()
   const display = playbackDisplayFrom(location.state)
+  const startSeconds = playbackStartFrom(location.state)
   const list = playbackListFrom(location.state)
   const { queue } = list
   const navigate = useNavigate()
@@ -179,6 +181,7 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
         <section ref={ref} aria-label={display?.title ?? 'Reprodução'}>
           <Player
             fileId={fileId}
+            startSeconds={startSeconds}
             probe={probe.data}
             display={display}
             onStale={retry}
