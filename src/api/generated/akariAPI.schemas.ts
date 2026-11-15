@@ -127,6 +127,8 @@ export interface ErrorDetail {
  *   método, `Content-Type` ou `Accept` não suportados.
  * - `INTEGRATION_ERROR` (502): um sistema externo (AniList, TMDB, rclone, ffprobe)
  *   falhou ou está indisponível.
+ * - `RATE_LIMITED` (429): um sistema externo (ex.: um provedor de torrent) recusou a
+ *   chamada por excesso de requisições; o `message` diz quando tentar de novo.
  * - `INTEGRATION_NOT_CONFIGURED` (503): uma preferência obrigatória está sem valor —
  *   o admin precisa configurá-la em
  *   `PUT /v1/settings/{key}`.
@@ -144,6 +146,7 @@ export const ApiErrorCode = {
   CONFLICT: 'CONFLICT',
   REQUEST_ERROR: 'REQUEST_ERROR',
   INTEGRATION_ERROR: 'INTEGRATION_ERROR',
+  RATE_LIMITED: 'RATE_LIMITED',
   INTEGRATION_NOT_CONFIGURED: 'INTEGRATION_NOT_CONFIGURED',
   TRANSCODE_FAILED: 'TRANSCODE_FAILED',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
@@ -2928,6 +2931,306 @@ export interface PlaybackHeartbeatRequest {
 }
 
 /**
+ * Provedor de torrent. Cada valor é lido por uma implementação de webscrap própria.
+ */
+export type TorrentProviderType =
+  (typeof TorrentProviderType)[keyof typeof TorrentProviderType]
+
+export const TorrentProviderType = {
+  NYAA: 'NYAA',
+} as const
+
+/**
+ * Faixas (áudio ou legenda) em mais de um idioma, como o título da release indica.
+ * - `MULTI`: vários idiomas (`MULTi`, `Multi-Audio`, `Multi-Subs`).
+ * - `DUAL`: dois idiomas (`DUAL`, `Dual-Audio`, `Dual-Subs`).
+ */
+export type TorrentTrackType =
+  (typeof TorrentTrackType)[keyof typeof TorrentTrackType]
+
+export const TorrentTrackType = {
+  MULTI: 'MULTI',
+  DUAL: 'DUAL',
+} as const
+
+/**
+ * Estado de uma release no download.
+ * - `NEW`: fora do qBittorrent (removida de lá) — pode ser baixada de novo.
+ * - `DOWNLOADING`: no qBittorrent, baixando na pasta de trabalho.
+ * - `READY`: download concluído, arquivos movidos para a biblioteca e pasta ingerida; o
+ *   torrent já foi removido do qBittorrent.
+ */
+export type TorrentDownloadStatus =
+  (typeof TorrentDownloadStatus)[keyof typeof TorrentDownloadStatus]
+
+export const TorrentDownloadStatus = {
+  NEW: 'NEW',
+  DOWNLOADING: 'DOWNLOADING',
+  READY: 'READY',
+} as const
+
+/**
+ * Release encontrada no provedor
+ */
+export interface TorrentReleaseResponse {
+  /** Info-hash BitTorrent (40 caracteres hexadecimais, minúsculos) */
+  infoHash: string
+  /** Link magnet como o provedor publica (hash, nome e trackers do próprio site) */
+  magnetUri: string
+  /** Título da release como publicado no provedor */
+  title: string
+  /**
+   * Número do episódio extraído do título; `null` em batches e extras
+   * @nullable
+   */
+  episode?: number | null
+  /**
+   * Resolução extraída do título (ex.: `1080p`)
+   * @nullable
+   */
+  resolution?: string | null
+  /**
+   * Tamanho como o provedor exibe (ex.: `1.4 GiB`)
+   * @nullable
+   */
+  size?: string | null
+  /**
+   * Seeders no momento da busca
+   * @nullable
+   */
+  seeders?: number | null
+  /**
+   * Quando a release foi publicada no provedor
+   * @nullable
+   */
+  publishedAt?: string | null
+  /**
+   * Página da release no provedor
+   * @nullable
+   */
+  pageUrl?: string | null
+  /** Estado da release nos downloads do akari; `null` se nunca foi baixada */
+  downloadStatus?: TorrentDownloadStatus | null
+}
+
+/**
+ * Edição de um anime: as releases de um mesmo grupo com os mesmos descritores técnicos no
+ * título. Nome e número do episódio não entram no agrupamento, então todos os episódios da
+ * mesma release caem na mesma edição.
+ */
+export interface TorrentEdition {
+  /**
+   * Chave estável da edição (grupo + descritores normalizados), usada para fixar a
+   * edição escolhida
+   */
+  key: string
+  /**
+   * Grupo de fansub, tirado dos colchetes no início do título; `null` sem colchetes
+   * @nullable
+   */
+  group?: string | null
+  /**
+   * Descritores técnicos na ordem natural (ex.: `S01 1080p CR WEB-DL MULTi AAC2.0 H.264`),
+   * ou `(sem specs)` quando o título não traz nenhum
+   */
+  label: string
+  /**
+   * Resolução (ex.: `1080p`); `null` se o título não traz
+   * @nullable
+   */
+  resolution?: string | null
+  /**
+   * Serviço de origem do vídeo (ex.: `CR`, `NF`, `AMZN`); `null` se o título não traz
+   * @nullable
+   */
+  source?: string | null
+  /**
+   * Mídia de origem (ex.: `WEB-DL`, `BluRay`); `null` se o título não traz
+   * @nullable
+   */
+  medium?: string | null
+  /** Áudio em mais de um idioma; `null` quando o título não indica (um idioma só) */
+  audioType?: TorrentTrackType | null
+  /**
+   * Codec de áudio como aparece no título (ex.: `AAC2.0`, `Opus`, `FLAC`); `null` se não traz
+   * @nullable
+   */
+  audioCodec?: string | null
+  /**
+   * Codec de vídeo normalizado: `H.264`, `H.265` ou `AV1`; `null` se o título não traz
+   * @nullable
+   */
+  videoCodec?: string | null
+  /**
+   * Profundidade de cor ou HDR como aparece no título (ex.: `10bit`, `HDR10`); `null` se não traz
+   * @nullable
+   */
+  bitDepth?: string | null
+  /**
+   * Legendas em mais de um idioma, quando alguma release da edição indica no título
+   * (`Multi-Subs`, `Dual-Subs`); `null` se nenhuma indica. Não faz parte da chave da edição.
+   */
+  subtitleType?: TorrentTrackType | null
+  /** Uma release por episódio, em ordem de episódio; as sem episódio por último */
+  releases: TorrentReleaseResponse[]
+}
+
+/**
+ * Resultado de `GET /v1/torrent/search`
+ */
+export interface TorrentSearchResult {
+  /** Edições encontradas, ordenadas pelo grupo e depois pelo rótulo */
+  editions: TorrentEdition[]
+  /**
+   * `true` quando o provedor cortou a busca no limite dele (o nyaa entrega no máximo
+   * 1000 resultados): as releases mais antigas ficaram de fora e vale refinar a query
+   */
+  truncated: boolean
+}
+
+/**
+ * Payload de `POST /v1/torrent/downloads` — uma release vinda da busca. O info-hash, que
+ * identifica a release, sai do próprio `magnetUri`.
+ */
+export interface TorrentDownloadRequest {
+  provider: TorrentProviderType
+  /**
+   * Link magnet da release, como devolvido pela busca; precisa trazer o info-hash
+   * (`xt=urn:btih:<40 caracteres hexadecimais>`)
+   * @pattern ^magnet:\?.+$
+   */
+  magnetUri: string
+  /**
+   * Título da release, como devolvido pela busca
+   * @minLength 1
+   */
+  title: string
+  anilistId: AnilistId
+}
+
+/**
+ * Uma release baixada (ou baixando) pelo qBittorrent. O arquivo do episódio na pasta do anime
+ * é o de nome igual ao título da release ou, se nenhum tiver, o primeiro com o mesmo número
+ * de episódio.
+ */
+export interface TorrentDownloadResponse {
+  /** Id do download */
+  id: number
+  provider: TorrentProviderType
+  /** Info-hash BitTorrent da release */
+  infoHash: string
+  /** Título da release */
+  title: string
+  /**
+   * Número do episódio extraído do título; `null` em batches e extras
+   * @nullable
+   */
+  episode?: number | null
+  status: TorrentDownloadStatus
+  /** Fração já baixada, de `0` a `1` */
+  progress: number
+  anime: AnimeBindingSummary
+  /**
+   * Imagem 16:9 para o card do download: a imagem do episódio no TMDB, em tamanho original
+   * (para cards grandes, como as Novidades na TV), quando o arquivo
+   * do episódio já está na pasta do anime e pareado; senão, o banner do anime. `null` sem
+   * nenhuma das duas.
+   * @nullable
+   */
+  thumbnail?: string | null
+  /**
+   * Título do episódio no TMDB, quando o arquivo dele já está na pasta do anime e pareado
+   * @nullable
+   */
+  episodeTitle?: string | null
+  /** Progresso do usuário no episódio. Preenchido só na listagem com `userId`; `null` sem `userId`, com o episódio ainda fora da pasta do anime ou que o usuário nunca abriu. */
+  watchProgress?: WatchProgress | null
+  /** Quando o download foi pedido */
+  createdAt: string
+  /**
+   * Quando o download terminou; `null` enquanto não termina
+   * @nullable
+   */
+  completedAt?: string | null
+}
+
+/**
+ * Envelope paginado de downloads
+ */
+export type TorrentDownloadPage = Page & {
+  data: TorrentDownloadResponse[]
+}
+
+/**
+ * Payload de `POST /v1/torrent/tracked`
+ */
+export interface TrackedAnimeRequest {
+  anilistId: AnilistId
+  provider: TorrentProviderType
+  /**
+   * Texto de busca no provedor (ex.: o título romaji do anime)
+   * @minLength 1
+   */
+  query: string
+  /**
+   * `key` da `TorrentEdition` escolhida na busca dessa query
+   * @minLength 1
+   */
+  editionKey: string
+}
+
+/**
+ * Um anime rastreado num provedor de torrent
+ */
+export interface TrackedAnimeResponse {
+  /** Id do rastreio */
+  id: number
+  anilistId: AnilistId
+  /** Título do anime na AniList (romaji) */
+  title: string
+  /**
+   * URL da capa do anime na AniList
+   * @nullable
+   */
+  coverImage?: string | null
+  provider: TorrentProviderType
+  /** Texto de busca no provedor */
+  query: string
+  /** `key` da edição rastreada */
+  editionKey: string
+  /**
+   * Grupo de fansub da edição rastreada; `null` sem grupo
+   * @nullable
+   */
+  editionGroup?: string | null
+  /** Descritores técnicos da edição rastreada (o `label` de `TorrentEdition`) */
+  editionLabel: string
+  /**
+   * Maior episódio da edição já encontrado no provedor; episódios acima dele são baixados
+   * na próxima checagem. `null` se a edição ainda não tinha episódio numerado.
+   * @nullable
+   */
+  latestEpisode?: number | null
+  /**
+   * Quando a última checagem bem-sucedida terminou; `null` antes da primeira
+   * @nullable
+   */
+  lastCheckedAt?: string | null
+  /**
+   * Erro da última checagem; `null` se ela deu certo
+   * @nullable
+   */
+  lastError?: string | null
+  /** Quando o rastreio foi criado */
+  createdAt: string
+}
+
+/**
+ * Animes rastreados, do mais recente para o mais antigo
+ */
+export type TrackedAnimeList = TrackedAnimeResponse[]
+
+/**
  * Payload ou parâmetros inválidos (`VALIDATION_ERROR`), ou regra de negócio violada (`BUSINESS_RULE_VIOLATION`)
  */
 export type BadRequestResponse = ApiError
@@ -2946,6 +3249,11 @@ export type ConflictResponse = ApiError
  * Falha num sistema externo — AniList, TMDB, rclone ou ffprobe (`INTEGRATION_ERROR`)
  */
 export type BadGatewayResponse = ApiError
+
+/**
+ * Um sistema externo recusou por excesso de requisições (`RATE_LIMITED`) — tente de novo mais tarde
+ */
+export type TooManyRequestsResponse = ApiError
 
 /**
  * Preferência obrigatória sem valor (`INTEGRATION_NOT_CONFIGURED`) — configure em `PUT /v1/settings/{key}`
@@ -3269,6 +3577,36 @@ export type UserListOkResponse = UserList
 export type UserCreatedResponse = UserResponse
 
 /**
+ * Edições encontradas (possivelmente nenhuma)
+ */
+export type TorrentSearchResultOkResponse = TorrentSearchResult
+
+/**
+ * Página (possivelmente vazia) de downloads
+ */
+export type TorrentDownloadPageOkResponse = TorrentDownloadPage
+
+/**
+ * Download enviado ao qBittorrent (ou já existente, pelo mesmo info-hash)
+ */
+export type TorrentDownloadCreatedResponse = TorrentDownloadResponse
+
+/**
+ * Edição rastreada, com as releases encontradas (possivelmente nenhuma)
+ */
+export type TorrentEditionOkResponse = TorrentEdition
+
+/**
+ * Lista (possivelmente vazia) dos animes rastreados
+ */
+export type TrackedAnimeListOkResponse = TrackedAnimeList
+
+/**
+ * Rastreio criado
+ */
+export type TrackedAnimeCreatedResponse = TrackedAnimeResponse
+
+/**
  * Payload de criação — type + config em claro
  */
 export type CreateStorageProviderRequestBodyBody = CreateStorageProviderRequest
@@ -3381,6 +3719,16 @@ export type WatchlistItemRequestBodyBody = WatchlistItemRequest
  */
 export type PlaybackHeartbeatRequestBodyBody = PlaybackHeartbeatRequest
 
+/**
+ * Release a baixar e o anime a que ela pertence
+ */
+export type TorrentDownloadRequestBodyBody = TorrentDownloadRequest
+
+/**
+ * Anime, provedor, query e edição a rastrear
+ */
+export type TrackedAnimeRequestBodyBody = TrackedAnimeRequest
+
 export type PageParamParameter = PageNumber
 
 export type SizeParamParameter = PageSize
@@ -3427,6 +3775,8 @@ export type FranchiseKindFilterParamParameter = FranchiseKind
 export type DepthParamParameter = GraphDepth
 
 export type UserIdQueryParamParameter = UserId
+
+export type TorrentProviderParamParameter = TorrentProviderType
 
 export type ListStorageProvidersParams = {
   /** Número da página (0-based) */
@@ -3623,4 +3973,23 @@ export type ListUserWatchlistParams = {
   page?: PageParamParameter
   /** Tamanho máximo de itens por página */
   size?: SizeParamParameter
+}
+
+export type SearchTorrentReleasesParams = {
+  /** Provedor de torrent. Cada valor é lido por uma implementação de webscrap própria. */
+  provider: TorrentProviderParamParameter
+  /**
+   * Texto de busca (obrigatório, não vazio)
+   * @minLength 1
+   */
+  q: SearchQueryParamParameter
+}
+
+export type ListTorrentDownloadsParams = {
+  /** Número da página (0-based) */
+  page?: PageParamParameter
+  /** Tamanho máximo de itens por página */
+  size?: SizeParamParameter
+  /** Id do usuário */
+  userId?: UserIdQueryParamParameter
 }
