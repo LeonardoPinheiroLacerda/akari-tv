@@ -3,8 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
 import { keepPreviousData } from '@tanstack/react-query'
 import { useScreenFocusable } from '@/app/screen'
-import type { AnimeBindingSummary } from '@/api/generated/akariAPI.schemas'
+import type {
+  AnimeBindingSummary,
+  AnimeBindingSummaryPage,
+  TorrentDownloadPage,
+  TorrentDownloadResponse,
+} from '@/api/generated/akariAPI.schemas'
 import { useGetAnime } from '@/api/generated/anime/anime'
+import { useListTorrentDownloadsInfinite } from '@/api/generated/torrent-download/torrent-download'
 import {
   useListSmartListItemsInfinite,
   useListSmartLists,
@@ -18,7 +24,8 @@ import { focusMemory, PUSHED_SCREEN } from '@/lib/navigation'
 import { useUserId } from '@/lib/profile'
 import { AnimeHeroView } from '@/ui/anime-hero'
 import { POSTER_ROW_HEIGHT_REM, PosterRowSkeleton, ROW_PADDING_REM } from '@/ui/poster-row'
-import { HOME_LIST_PAGE_SIZE, HomeListRow, type HomeList } from './home-list-row'
+import { HOME_LIST_PAGE_SIZE, HomeListRow, type HomeList, type HomeListItem } from './home-list-row'
+import { NEWS_CARD_WIDTH_REM } from './news-card'
 
 export const HOME_FOCUS_KEY = 'HOME'
 
@@ -27,9 +34,70 @@ interface HomeListEntry extends HomeList {
   smartListId?: number
 }
 
+const NEWS: HomeListEntry = { key: 'news', name: 'Novidades' }
 const WATCHLIST: HomeListEntry = { key: 'watchlist', name: 'Minha lista' }
 
-type HomeRowProps = Omit<Parameters<typeof HomeListRow>[0], 'query'>
+type HomeRowProps = Omit<Parameters<typeof HomeListRow>[0], 'query' | 'items'>
+
+/** Pôsteres das páginas de resumos de anime (as listas): um por anime. */
+function summaryItems(pages: AnimeBindingSummaryPage[] | undefined): HomeListItem[] {
+  return pages?.flatMap((page) => page.data.map((anime) => ({ key: anime.anilistId, anime }))) ?? []
+}
+
+/**
+ * Barra do card de uma Novidade: o download enquanto chega; depois, como no card de episódio, até
+ * onde o perfil assistiu (o assistido ganha o selo, sem barra).
+ */
+function newsBar(download: TorrentDownloadResponse): { fraction: number; label: string } | undefined {
+  if (download.status === 'DOWNLOADING') {
+    return { fraction: download.progress, label: `Baixando ${Math.round(download.progress * 100)}%` }
+  }
+  const progress = download.watchProgress
+  if (!progress || progress.watched || !progress.durationSeconds) return undefined
+  const fraction = Math.min(1, progress.positionSeconds / progress.durationSeconds)
+  return { fraction, label: `Assistido ${Math.round(fraction * 100)}%` }
+}
+
+/** Card de uma Novidade: o episódio, com o progresso do download ou o do perfil. */
+function newsItem(download: TorrentDownloadResponse): HomeListItem {
+  const episode = download.episode != null ? `E${download.episode}` : 'Pacote'
+  const detail =
+    download.status === 'DOWNLOADING' ? `Baixando ${Math.round(download.progress * 100)}%` : download.episodeTitle
+  return {
+    key: `download-${download.id}`,
+    anime: download.anime,
+    news: {
+      thumbnail: download.thumbnail,
+      title: download.anime.title ?? '',
+      subtitle: detail ? `${episode} · ${detail}` : episode,
+      bar: newsBar(download),
+      watched: download.watchProgress?.watched === true,
+    },
+  }
+}
+
+const hasDownloading = (pages: TorrentDownloadPage[] | undefined) =>
+  pages?.some((page) => page.data.some((download) => download.status === 'DOWNLOADING')) ?? false
+
+/**
+ * Novidades: os episódios baixados por torrent, do mais recente para o mais antigo, como o backend
+ * entrega — um card por episódio, com o progresso do perfil (fora do modo anônimo). Enquanto algum
+ * ainda chega, recarrega para o progresso andar.
+ */
+const NewsRow = memo(function NewsRow(props: HomeRowProps) {
+  const userId = useUserId()
+  const query = useListTorrentDownloadsInfinite(
+    { size: HOME_LIST_PAGE_SIZE, userId },
+    {
+      query: {
+        ...pageInfiniteOptions,
+        refetchInterval: (current) => (hasDownloading(current.state.data?.pages) ? 10_000 : false),
+      },
+    },
+  )
+  const items = useMemo(() => query.data?.pages.flatMap((page) => page.data.map(newsItem)) ?? [], [query.data])
+  return <HomeListRow {...props} query={query} items={items} itemWidthRem={NEWS_CARD_WIDTH_REM} />
+})
 
 /** Linha de uma lista inteligente: os itens recalculados pelo filtro dela. */
 const SmartListRow = memo(function SmartListRow({
@@ -41,7 +109,8 @@ const SmartListRow = memo(function SmartListRow({
     { size: HOME_LIST_PAGE_SIZE },
     { query: pageInfiniteOptions },
   )
-  return <HomeListRow {...props} query={query} />
+  const items = useMemo(() => summaryItems(query.data?.pages), [query.data])
+  return <HomeListRow {...props} query={query} items={items} />
 })
 
 /** Linha da lista do perfil, do título adicionado mais recentemente pro mais antigo. */
@@ -54,7 +123,8 @@ const WatchlistRow = memo(function WatchlistRow({
     { size: HOME_LIST_PAGE_SIZE },
     { query: pageInfiniteOptions },
   )
-  return <HomeListRow {...props} query={query} />
+  const items = useMemo(() => summaryItems(query.data?.pages), [query.data])
+  return <HomeListRow {...props} query={query} items={items} />
 })
 
 interface HomeHeroProps {
@@ -105,8 +175,9 @@ const ListHeading = memo(function ListHeading({ store }: { store: Store<HomeList
 
 /**
  * Início: hero fixo ocupando a maior parte da tela com o anime em foco e,
- * embaixo, a única região rolável — a lista do perfil (fora do modo anônimo)
- * e as listas inteligentes, na ordem do backend, um carrossel de pôsteres por
+ * embaixo, a única região rolável — as Novidades (episódios baixados por
+ * torrent), a lista do perfil (fora do modo anônimo) e as listas
+ * inteligentes, na ordem do backend, um carrossel de pôsteres por
  * linha, com o nome da lista em foco fixo acima. A área mostra exatamente uma
  * lista; ▲/▼ trocam de lista e a rolagem segue o foco (seção 6).
  */
@@ -127,7 +198,8 @@ export function HomeScreen() {
       name: list.name,
       smartListId: list.id,
     }))
-    return userId === undefined ? smartLists : [WATCHLIST, ...smartLists]
+    // Novidades primeiro (o que acabou de chegar), depois a lista do perfil e as inteligentes.
+    return userId === undefined ? [NEWS, ...smartLists] : [NEWS, WATCHLIST, ...smartLists]
   }, [query.data, userId])
 
   // Lista do foco inicial, decidida uma vez quando as listas chegam: a de onde
@@ -190,7 +262,16 @@ export function HomeScreen() {
             <p className="text-muted-foreground text-[1.75rem]">Nenhuma lista cadastrada</p>
           )}
           {lists?.map((list) =>
-            list.smartListId !== undefined ? (
+            list.key === NEWS.key ? (
+              <NewsRow
+                key={list.key}
+                list={list}
+                autoFocus={list.key === focusListKey}
+                onFocused={handleFocused}
+                onSelect={handleSelect}
+                onUnavailable={handleUnavailable}
+              />
+            ) : list.smartListId !== undefined ? (
               <SmartListRow
                 key={list.key}
                 smartListId={list.smartListId}

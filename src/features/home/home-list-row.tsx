@@ -1,17 +1,15 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation'
-import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query'
+import type { UseInfiniteQueryResult } from '@tanstack/react-query'
 import { observeElementRect, useVirtualizer, type Virtualizer } from '@tanstack/react-virtual'
 import type { ApiError } from '@/api/errors'
-import type {
-  AnimeBindingSummary,
-  AnimeBindingSummaryPage,
-} from '@/api/generated/akariAPI.schemas'
+import type { AnimeBindingSummary } from '@/api/generated/akariAPI.schemas'
 import { remToPx } from '@/lib/layout'
 import { focusMemory } from '@/lib/navigation'
 import { scrollTarget, smoothScrollTo } from '@/lib/scroll'
 import { AnimeSummaryPoster, POSTER_WIDTH_REM } from '@/ui/anime-poster'
 import { POSTER_ROW_HEIGHT_REM, PosterRowSkeleton, ROW_PADDING_REM } from '@/ui/poster-row'
+import { NewsCard, type NewsCardContent } from './news-card'
 
 export const HOME_LIST_PAGE_SIZE = 20
 // Carrega a próxima página quando o foco chega a este número de itens do fim.
@@ -27,8 +25,19 @@ export interface HomeList {
   name: string
 }
 
-/** Itens de uma linha, paginados no envelope de resumos de anime. */
-export type HomeListQuery = UseInfiniteQueryResult<InfiniteData<AnimeBindingSummaryPage>, ApiError>
+/**
+ * Um item da linha: o anime, num pôster, ou um card 16:9 de episódio quando traz `news`. A chave
+ * identifica o item na linha — nas listas é o próprio anime; nas Novidades, o download (um anime
+ * aparece uma vez por episódio).
+ */
+export interface HomeListItem {
+  key: number | string
+  anime: AnimeBindingSummary
+  news?: NewsCardContent
+}
+
+/** Estado da busca paginada dos itens da linha (carregando, erro, próxima página). */
+export type HomeListQuery = UseInfiniteQueryResult<unknown, ApiError>
 
 /** Região de foco da lista; também a chave do último pôster focado nela. */
 function homeListFocusKey(listKey: string): string {
@@ -52,6 +61,10 @@ function observeVisibleRect(
 interface HomeListRowProps {
   list: HomeList
   query: HomeListQuery
+  /** Os itens já carregados, na ordem do backend. */
+  items: HomeListItem[]
+  /** Largura de cada item: pôster (padrão) ou card de episódio. */
+  itemWidthRem?: number
   /** Esta lista recebe o foco inicial da tela (o último pôster focado nela, ou o primeiro). */
   autoFocus: boolean
   onFocused: (list: HomeList, anime: AnimeBindingSummary, row: HTMLElement) => void
@@ -70,6 +83,8 @@ interface HomeListRowProps {
 export const HomeListRow = memo(function HomeListRow({
   list,
   query,
+  items,
+  itemWidthRem = POSTER_WIDTH_REM,
   autoFocus,
   onFocused,
   onSelect,
@@ -77,13 +92,12 @@ export const HomeListRow = memo(function HomeListRow({
 }: HomeListRowProps) {
   const rowFocusKey = homeListFocusKey(list.key)
   const sectionRef = useRef<HTMLElement>(null)
-  const animes = useMemo(() => query.data?.pages.flatMap((page) => page.data) ?? [], [query.data])
-  const unavailable = query.isError || (query.isSuccess && animes.length === 0)
+  const unavailable = query.isError || (query.isSuccess && items.length === 0)
 
   const { ref, focusKey } = useFocusable<unknown, HTMLDivElement>({
     focusKey: rowFocusKey,
     saveLastFocusedChild: true,
-    focusable: animes.length > 0,
+    focusable: items.length > 0,
   })
 
   useEffect(() => {
@@ -96,19 +110,19 @@ export const HomeListRow = memo(function HomeListRow({
   // `autoFocus` que valesse sempre puxaria o foco de volta (ver `EpisodeRow`).
   const [restoreId] = useState(() => focusMemory.get(rowFocusKey))
   const [initialIndex, setInitialIndex] = useState<number>()
-  if (initialIndex === undefined && animes.length > 0) {
-    setInitialIndex(Math.max(0, animes.findIndex((anime) => anime.anilistId === restoreId)))
+  if (initialIndex === undefined && items.length > 0) {
+    setInitialIndex(Math.max(0, items.findIndex((item) => item.key === restoreId)))
   }
   const [initialFocusDone, setInitialFocusDone] = useState(false)
 
   const padding = remToPx(ROW_PADDING_REM)
-  const posterWidth = remToPx(POSTER_WIDTH_REM)
+  const itemWidth = remToPx(itemWidthRem)
   const gap = remToPx(POSTER_GAP_REM)
   const virtualizer = useVirtualizer({
-    count: animes.length,
+    count: items.length,
     horizontal: true,
     getScrollElement: () => ref.current,
-    estimateSize: () => posterWidth,
+    estimateSize: () => itemWidth,
     gap,
     overscan: OVERSCAN,
     paddingStart: padding,
@@ -116,15 +130,15 @@ export const HomeListRow = memo(function HomeListRow({
     scrollPaddingStart: padding,
     scrollPaddingEnd: padding,
     // Restaurando um pôster mais adiante, a linha já monta rolada até ele.
-    initialOffset: () => (initialIndex ?? 0) * (posterWidth + gap),
+    initialOffset: () => (initialIndex ?? 0) * (itemWidth + gap),
     observeElementRect: observeVisibleRect,
   })
 
   // Último estado da query num ref: o callback de foco fica estável e os
   // pôsteres memoizados não re-renderizam quando uma página nova chega.
-  const latest = useRef({ query, total: animes.length })
+  const latest = useRef({ query, items })
   useLayoutEffect(() => {
-    latest.current = { query, total: animes.length }
+    latest.current = { query, items }
   })
 
   const handleFocused = useCallback(
@@ -140,11 +154,12 @@ export const HomeListRow = memo(function HomeListRow({
         else if (end > current) smoothScrollTo(track, { left: end })
       }
       setInitialFocusDone(true)
-      focusMemory.set(rowFocusKey, anime.anilistId)
+      const { query: current, items: currentItems } = latest.current
+      const key = currentItems[index]?.key
+      if (key !== undefined) focusMemory.set(rowFocusKey, key)
       if (sectionRef.current) onFocused(list, anime, sectionRef.current)
 
-      const { query: current, total } = latest.current
-      if (index >= total - PREFETCH_ITEMS && current.hasNextPage && !current.isFetchingNextPage) {
+      if (index >= currentItems.length - PREFETCH_ITEMS && current.hasNextPage && !current.isFetchingNextPage) {
         void current.fetchNextPage()
       }
     },
@@ -156,7 +171,7 @@ export const HomeListRow = memo(function HomeListRow({
       ref={sectionRef}
       aria-label={list.name}
       // Lista sem itens some: não ocupa espaço nem entra na navegação.
-      hidden={query.isSuccess && animes.length === 0}
+      hidden={query.isSuccess && items.length === 0}
       style={{ height: `${POSTER_ROW_HEIGHT_REM}rem`, contain: 'layout paint' }}
     >
       {query.isPending && <PosterRowSkeleton holdFocus={autoFocus} />}
@@ -173,26 +188,38 @@ export const HomeListRow = memo(function HomeListRow({
         <div
           ref={ref}
           className="overflow-x-auto [scrollbar-width:none]"
-          style={{ height: animes.length > 0 ? `${POSTER_ROW_HEIGHT_REM}rem` : 0 }}
+          style={{ height: items.length > 0 ? `${POSTER_ROW_HEIGHT_REM}rem` : 0 }}
         >
           <div className="relative h-full" style={{ width: virtualizer.getTotalSize() }}>
             {virtualizer.getVirtualItems().map((item) => {
-              const anime = animes[item.index]
-              if (!anime) return null
+              const listItem = items[item.index]
+              if (!listItem) return null
+              const itemAutoFocus = autoFocus && !initialFocusDone && item.index === initialIndex
               return (
                 // Posição por `left`, não `transform`: posição estática, não animação (seção 7).
                 <div
-                  key={anime.anilistId}
+                  key={listItem.key}
                   className="absolute"
                   style={{ top: padding, left: item.start }}
                 >
-                  <AnimeSummaryPoster
-                    anime={anime}
-                    index={item.index}
-                    autoFocus={autoFocus && !initialFocusDone && item.index === initialIndex}
-                    onFocused={handleFocused}
-                    onSelect={onSelect}
-                  />
+                  {listItem.news ? (
+                    <NewsCard
+                      anime={listItem.anime}
+                      content={listItem.news}
+                      index={item.index}
+                      autoFocus={itemAutoFocus}
+                      onFocused={handleFocused}
+                      onSelect={onSelect}
+                    />
+                  ) : (
+                    <AnimeSummaryPoster
+                      anime={listItem.anime}
+                      index={item.index}
+                      autoFocus={itemAutoFocus}
+                      onFocused={handleFocused}
+                      onSelect={onSelect}
+                    />
+                  )}
                 </div>
               )
             })}
