@@ -19,8 +19,9 @@ const PROFILE = nativePlayback ? 'GOOGLE_TV_STREAMER' : 'WEB'
 // Heartbeat a cada terço do TTL; o TTL real vem da resposta do próprio heartbeat.
 const DEFAULT_TTL_SECONDS = 30
 const MIN_HEARTBEAT_MS = 5000
-// Listagem de episódios de um anime, que traz o progresso do perfil.
-const EPISODES_URL = /^\/v1\/metadata\/animes\/\d+\/episodes$/
+// Listagens que trazem o progresso do perfil: os episódios de um anime e os
+// downloads de torrent (as Novidades da Início).
+const WATCH_PROGRESS_URL = /^\/v1\/(metadata\/animes\/\d+\/episodes|torrent\/downloads)$/
 
 export interface TrackSelection {
   /** Posição no array `audio` do mediaprobe. */
@@ -233,7 +234,7 @@ export function usePlaybackSession(fileId: number, startSeconds = 0) {
           queryClient.invalidateQueries({
             predicate: (query) =>
               query.queryKey.some(
-                (part) => typeof part === 'string' && EPISODES_URL.test(part),
+                (part) => typeof part === 'string' && WATCH_PROGRESS_URL.test(part),
               ),
           }),
         )
