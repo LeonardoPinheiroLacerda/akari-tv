@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -10,17 +11,20 @@ import {
   setFocus,
   useFocusable,
 } from '@noriginmedia/norigin-spatial-navigation'
+import { FastForward, RotateCcw, SkipForward } from 'lucide-react'
 import type { MediaInfoResponse } from '@/api/generated/akariAPI.schemas'
 import { registerBackHandler } from '@/app/back'
 import type { PlaybackDisplay } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
-import { PlayButton } from '@/ui/play-button'
 import { Spinner } from '@/ui/spinner'
+import { creditsStart, openingAt } from './chapters'
+import { HudPill } from './hud'
 import {
   CONTROLS_FOCUS_KEY,
   PLAY_FOCUS_KEY,
   PlayerControls,
   TRACKS_FOCUS_KEY,
+  type PlayerOffer,
 } from './player-controls'
 import { transparentPlayer, usePlaybackEngine } from './playback-engine'
 import { TrackPanel } from './track-panel'
@@ -32,8 +36,6 @@ import {
 
 const PLAYER_FOCUS_KEY = 'PLAYER'
 const SEEK_STEP_SECONDS = 10
-// "Pular abertura": salto fixo de 1:25, a duração típica de uma abertura de anime.
-const SKIP_INTRO_SECONDS = 85
 // O seek para a esta distância do fim: um transcode reiniciado no último
 // segundo não gera playlist (o backend responde TRANSCODE_FAILED), e o resto
 // toca até o fim normalmente.
@@ -50,6 +52,9 @@ const SEEK_SETTLE_TOLERANCE_SECONDS = 1.5
 const SEEK_SETTLE_TIMEOUT_MS = 15000
 // Os controles somem sozinhos depois disso sem tecla, se o vídeo estiver tocando.
 const OSD_HIDE_MS = 5000
+// Uma oferta nova ("Pular abertura", "Próximo episódio") flutua sozinha na
+// tela por este tempo; depois fica só nos controles, quando eles aparecem.
+const OFFER_PROMPT_MS = 5000
 
 interface PlayerProps {
   fileId: number
@@ -119,15 +124,23 @@ export function Player({
   const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   )
-  const settleSeek = useCallback(() => {
-    clearTimeout(settleTimer.current)
-    seekTarget.current = undefined
-    setPendingSeek(undefined)
-  }, [])
+  // Durante o seek pelas setas o vídeo fica congelado (pausado) e só volta a
+  // tocar quando chega no ponto escolhido — se estava tocando quando o seek
+  // começou. `undefined`: nenhum seek das setas em andamento.
+  const resumeAfterSeek = useRef<boolean | undefined>(undefined)
+
+  // Créditos finais (encerramento/prévia, pelos capítulos): daí em diante o
+  // próximo episódio fica oferecido.
+  const credits = useMemo(
+    () => creditsStart(probe.chapters, duration),
+    [probe.chapters, duration],
+  )
 
   const {
     view: engineView,
     togglePlay: toggleEngine,
+    play: playEngine,
+    pause: pauseEngine,
     seek: seekEngine,
   } = usePlaybackEngine(source, {
     onTime: (local) => {
@@ -160,6 +173,19 @@ export function Player({
           : 'A reprodução foi interrompida.',
       ),
   })
+
+  // O vídeo chegou no alvo (ou desistiu dele): solta a barra e aplica a
+  // decisão de retomar. Com o transcode reiniciado, a fonte nova começa
+  // tocando sozinha — por isso também pausa quando não é para retomar.
+  const settleSeek = useCallback(() => {
+    clearTimeout(settleTimer.current)
+    seekTarget.current = undefined
+    setPendingSeek(undefined)
+    const resume = resumeAfterSeek.current
+    resumeAfterSeek.current = undefined
+    if (resume === true) playEngine()
+    else if (resume === false) pauseEngine()
+  }, [pauseEngine, playEngine])
 
   // Controles: `controlsActive` = foco nos botões. Visíveis também durante
   // carregamento, pausa ou seek em andamento. Qualquer tecla adia o sumiço.
@@ -203,6 +229,11 @@ export function Player({
   const stepSeek = useCallback(
     (delta: number) => {
       showOsd()
+      // Primeiro toque: congela o vídeo e guarda se ele deve voltar a tocar.
+      if (resumeAfterSeek.current === undefined) {
+        resumeAfterSeek.current = !paused
+        pauseEngine()
+      }
       // Base é o alvo em andamento, mesmo depois de enviado ao backend: um
       // novo toque continua de onde a barra está, não da posição antiga.
       const target = clamp((seekTarget.current ?? position) + delta)
@@ -220,7 +251,16 @@ export function Player({
         })
       }, SEEK_COMMIT_MS)
     },
-    [clamp, position, seek, seekEngine, settleSeek, showOsd],
+    [
+      clamp,
+      paused,
+      pauseEngine,
+      position,
+      seek,
+      seekEngine,
+      settleSeek,
+      showOsd,
+    ],
   )
   useEffect(
     () => () => {
@@ -232,6 +272,12 @@ export function Player({
 
   const togglePlay = useCallback(() => {
     showOsd()
+    // No meio de um seek o vídeo segue congelado (o botão mostra "Reproduzir"):
+    // apertar faz ele tocar quando chegar no alvo.
+    if (resumeAfterSeek.current !== undefined) {
+      resumeAfterSeek.current = true
+      return
+    }
     toggleEngine()
   }, [showOsd, toggleEngine])
 
@@ -240,7 +286,58 @@ export function Player({
     [stepSeek],
   )
 
-  const skipIntro = useCallback(() => stepSeek(SKIP_INTRO_SECONDS), [stepSeek])
+  // Até o fim do capítulo de abertura em que o vídeo está.
+  const skipIntro = useCallback(() => {
+    const base = seekTarget.current ?? position
+    const opening = openingAt(probe.chapters, base)
+    if (opening) stepSeek(opening.endSeconds - base)
+  }, [position, probe.chapters, stepSeek])
+
+  // Oferta do momento, pelos capítulos: "Pular abertura" dentro da abertura,
+  // "Próximo episódio" nos créditos finais. Sem esses capítulos, nenhuma.
+  const shownPosition = pendingSeek ?? position
+  const offerKey = openingAt(probe.chapters, shownPosition)
+    ? 'PLAYER_SKIP_INTRO'
+    : onNext && credits !== undefined && shownPosition >= credits
+      ? 'PLAYER_NEXT_OFFER'
+      : undefined
+
+  // Quando uma oferta aparece, ela flutua na tela por `OFFER_PROMPT_MS` e o
+  // OK do player aciona ela; depois disso o OK volta a pausar e a oferta fica
+  // só nos controles. Sair e voltar ao capítulo oferece de novo.
+  const [prompt, setPrompt] = useState<{ key?: string; open: boolean }>({
+    open: false,
+  })
+  if (offerKey !== prompt.key) {
+    setPrompt({ key: offerKey, open: offerKey !== undefined })
+  }
+  useEffect(() => {
+    if (!prompt.open) return
+    const timer = setTimeout(
+      () => setPrompt((current) => ({ ...current, open: false })),
+      OFFER_PROMPT_MS,
+    )
+    return () => clearTimeout(timer)
+  }, [prompt])
+  const prompting = prompt.open && offerKey === prompt.key
+
+  const offer = useMemo((): PlayerOffer | undefined => {
+    if (offerKey === 'PLAYER_SKIP_INTRO')
+      return {
+        focusKey: offerKey,
+        label: 'Pular abertura',
+        icon: FastForward,
+        onPress: skipIntro,
+      }
+    if (offerKey === 'PLAYER_NEXT_OFFER' && onNext)
+      return {
+        focusKey: offerKey,
+        label: 'Próximo episódio',
+        icon: SkipForward,
+        onPress: onNext,
+      }
+    return undefined
+  }, [offerKey, onNext, skipIntro])
 
   const activateControls = useCallback(() => {
     showOsd()
@@ -306,7 +403,12 @@ export function Player({
     focusKey: PLAYER_FOCUS_KEY,
     isFocusBoundary: true,
     preferredChildFocusKey: CONTROLS_FOCUS_KEY,
+    // Na tela limpa, OK aciona a oferta enquanto ela flutua na tela.
     onEnterPress: () => {
+      if (offer && prompting) {
+        offer.onPress()
+        return
+      }
       togglePlay()
       activateControls()
     },
@@ -386,15 +488,17 @@ export function Player({
           onStep={step}
           // Antes da sessão responder ainda não se sabe as faixas ativas.
           onOpenTracks={() => tracks && setPanelOpen(true)}
-          onSkipIntro={skipIntro}
+          offer={offer}
+          prompting={prompting}
           onPrevious={onPrevious}
           onNext={onNext}
         />
         {error && (
           <div className="bg-bg/80 absolute inset-0 flex flex-col items-center justify-center gap-6">
             <p className="text-[2rem] font-medium">{error}</p>
-            <PlayButton
+            <HudPill
               label="Tentar de novo"
+              icon={RotateCcw}
               autoFocus
               onPress={handleRetry}
             />

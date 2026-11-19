@@ -22,6 +22,8 @@ export interface PlaybackEngine {
   /** O que desenhar na camada do player: o `<video>` no navegador; nada no nativo. */
   view: ReactNode
   togglePlay: () => void
+  play: () => void
+  pause: () => void
   /** Posiciona dentro da fonte atual, sem trocar de transcode. */
   seek: (local: number) => void
 }

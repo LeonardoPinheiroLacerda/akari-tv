@@ -230,6 +230,7 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
 
   const anime = animeQuery.data
   const backdrop = anime?.banner ?? undefined
+  const logo = anime?.logo ?? undefined
   const episodeItem = useCallback(
     (episode: VideoFileResponse): PlaybackItem => ({
       fileId: episode.id,
@@ -239,10 +240,14 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
           .filter(Boolean)
           .join(' · '),
         backdrop,
+        logo,
+        logoCaption: [episodeNumberLabel(episode), episodeTitle(episode)]
+          .filter(Boolean)
+          .join(' · '),
       },
       startSeconds: resumePosition(episode),
     }),
-    [anime, backdrop],
+    [anime, backdrop, logo],
   )
   // Os que vêm antes e depois na lista já carregada, na ordem do backend. Se
   // o episódio escolhido é o último carregado, não há próximo mesmo havendo
@@ -271,10 +276,12 @@ function EpisodesScreen({ anilistId }: EpisodesScreenProps) {
         title: anime?.titles?.main ?? episodes[index]?.name ?? '',
         subtitle: episodes.length === 1 ? undefined : `Parte ${index + 1}`,
         backdrop,
+        logo,
+        logoCaption: episodes.length === 1 ? undefined : `Parte ${index + 1}`,
       },
       startSeconds: episodes[index] && resumePosition(episodes[index]),
     }),
-    [anime, backdrop, episodes],
+    [anime, backdrop, episodes, logo],
   )
   const playPart = useCallback(
     (index: number) => {

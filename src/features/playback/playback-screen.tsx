@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FocusContext } from '@noriginmedia/norigin-spatial-navigation'
+import { RotateCcw } from 'lucide-react'
 import { useGetMediaProbe } from '@/api/generated/media-probe/media-probe'
 import { useGetVideoFile } from '@/api/generated/video-file/video-file'
 import { useScreenFocusable } from '@/app/screen'
@@ -12,10 +13,10 @@ import {
   siblingPlaybackRoute,
 } from '@/lib/navigation'
 import { Backdrop } from '@/ui/anime-hero'
-import { PlayButton } from '@/ui/play-button'
 import { Skeleton, SkeletonGroup } from '@/ui/skeleton'
 import { Spinner } from '@/ui/spinner'
 import { EndScreen } from './end-screen'
+import { HudLogo, HudPill, HudScrim } from './hud'
 import { Player } from './player'
 import { usePrefetchNext } from './use-prefetch-next'
 import { useCacheDownload, type CacheDownloadState } from './use-cache-download'
@@ -232,71 +233,90 @@ function PlaybackScreen({ fileId }: PlaybackScreenProps) {
       <section
         ref={ref}
         aria-label={display?.title ?? 'Reprodução'}
-        className="bg-bg fixed inset-0 z-30 flex flex-col justify-end gap-6 px-[6rem] py-[3.375rem]"
+        className="bg-bg fixed inset-0 z-30"
       >
         <Backdrop src={display?.backdrop} />
-        <div className="relative flex max-w-[56rem] flex-col gap-2">
-          {display?.subtitle && (
-            <p className="text-muted-foreground text-[1.75rem]">
-              {display.subtitle}
-            </p>
-          )}
-          {display?.title && (
-            <h1 className="text-[3rem] leading-tight font-medium">
-              {display.title}
-            </h1>
-          )}
-        </div>
+        <HudScrim top={Boolean(display?.logo)} />
+        <HudLogo display={display} />
 
-        <div className="relative flex w-[48rem] max-w-full flex-col gap-3">
-          <p role="status" className="text-[2rem] font-medium">
-            {statusText(state)}
-          </p>
-          {showBar && (
-            // Barra pelo scaleX de uma camada de largura fixa: só transform
-            // anima (seção 7), nunca a largura.
-            <div className="bg-surface-elevated h-3 w-full overflow-hidden rounded-full">
-              <div
-                className="bg-brand h-full w-full origin-left rounded-full"
-                style={{
-                  transform: `scaleX(${percentage / 100})`,
-                  transition: 'transform 600ms linear',
-                }}
+        {/* Embaixo, como os controles do player: título (sem logo), o estado
+            e a barra no lugar da barra de progresso, com os números sob ela. */}
+        <div className="absolute inset-x-[6rem] bottom-[4.5rem] flex flex-col gap-6">
+          {!display?.logo && (
+            <div className="flex max-w-[56rem] flex-col gap-1">
+              {display?.subtitle && (
+                <p className="text-muted-foreground text-[1.75rem]">
+                  {display.subtitle}
+                </p>
+              )}
+              {display?.title && (
+                <h1 className="text-[2.5rem] leading-tight font-medium">
+                  {display.title}
+                </h1>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-4">
+            {/* O estado à esquerda e o arquivo à direita, logo acima da barra.
+                O nome corta com reticências; tamanho e formato ficam sempre
+                visíveis. */}
+            <div className="flex items-baseline justify-between gap-8">
+              <p role="status" className="shrink-0 text-[2rem] font-medium">
+                {statusText(state)}
+              </p>
+              {file && (
+                <p className="text-muted-foreground flex min-w-0 gap-3 font-mono text-[1.5rem]">
+                  <span className="truncate">{file.name}</span>
+                  {fileMeta.length > 0 && (
+                    <span className="shrink-0">· {fileMeta.join(' · ')}</span>
+                  )}
+                </p>
+              )}
+              {fileQuery.isPending && (
+                <SkeletonGroup label="Carregando o arquivo">
+                  <Skeleton className="h-[1.5rem] w-[36rem] rounded-md" />
+                </SkeletonGroup>
+              )}
+            </div>
+            {showBar && (
+              // Barra pelo scaleX de uma camada de largura fixa: só transform
+              // anima (seção 7), nunca a largura. Trilha e preenchimento da
+              // barra de progresso do player.
+              <div className="bg-text/25 h-2 w-full overflow-hidden rounded-full">
+                <div
+                  className="bg-brand h-full w-full origin-left rounded-full"
+                  style={{
+                    transform: `scaleX(${percentage / 100})`,
+                    transition: 'transform 600ms linear',
+                  }}
+                />
+              </div>
+            )}
+            {(amount || rate) && (
+              <div className="text-muted-foreground flex justify-between gap-6 text-[1.75rem] tabular-nums">
+                <span>{amount}</span>
+                <span>{rate}</span>
+              </div>
+            )}
+            {detail && (
+              <p className="text-muted-foreground truncate text-[1.75rem]">
+                {detail}
+              </p>
+            )}
+          </div>
+
+          {(state.kind === 'failed' || state.kind === 'error') && (
+            <div className="flex">
+              <HudPill
+                label="Tentar de novo"
+                icon={RotateCcw}
+                autoFocus
+                onPress={retry}
               />
             </div>
           )}
-          {(amount || rate) && (
-            <div className="text-muted-foreground flex justify-between gap-6 text-[1.75rem] tabular-nums">
-              <span>{amount}</span>
-              <span>{rate}</span>
-            </div>
-          )}
-          {detail && (
-            <p className="text-muted-foreground truncate text-[1.75rem]">
-              {detail}
-            </p>
-          )}
-          {file && (
-            // O nome corta com reticências; tamanho e formato ficam sempre visíveis.
-            <p className="text-muted-foreground mt-3 flex gap-3 font-mono text-[1.5rem]">
-              <span className="truncate">{file.name}</span>
-              {fileMeta.length > 0 && (
-                <span className="shrink-0">· {fileMeta.join(' · ')}</span>
-              )}
-            </p>
-          )}
-          {fileQuery.isPending && (
-            <SkeletonGroup label="Carregando o arquivo" className="mt-3">
-              <Skeleton className="h-[1.5rem] w-[36rem] rounded-md" />
-            </SkeletonGroup>
-          )}
         </div>
-
-        {(state.kind === 'failed' || state.kind === 'error') && (
-          <div className="relative">
-            <PlayButton label="Tentar de novo" autoFocus onPress={retry} />
-          </div>
-        )}
       </section>
     </FocusContext.Provider>
   )

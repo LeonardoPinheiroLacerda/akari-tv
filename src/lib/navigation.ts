@@ -12,6 +12,10 @@ export interface PlaybackDisplay {
   title: string
   subtitle?: string
   backdrop?: string
+  /** Logo do anime: no player, vai no canto superior esquerdo no lugar do título escrito. */
+  logo?: string
+  /** O que vai sob o logo — o episódio, sem o nome do anime que o logo já mostra. */
+  logoCaption?: string
 }
 
 /** Um arquivo a reproduzir, com o que a tela mostra dele. */

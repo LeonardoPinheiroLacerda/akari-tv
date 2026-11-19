@@ -141,12 +141,16 @@ export function useWebEngine(
     }
   }, [video])
 
+  const play = useCallback(() => {
+    void videoRef.current?.play().catch(() => undefined)
+  }, [])
+  const pause = useCallback(() => videoRef.current?.pause(), [])
   const togglePlay = useCallback(() => {
     const current = videoRef.current
     if (!current) return
-    if (current.paused) void current.play().catch(() => undefined)
-    else current.pause()
-  }, [])
+    if (current.paused) play()
+    else pause()
+  }, [play, pause])
 
   const seek = useCallback((local: number) => {
     if (videoRef.current) videoRef.current.currentTime = local
@@ -162,6 +166,8 @@ export function useWebEngine(
       />
     ),
     togglePlay,
+    play,
+    pause,
     seek,
   }
 }

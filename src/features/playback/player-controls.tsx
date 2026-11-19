@@ -1,22 +1,23 @@
-import { memo, type ReactNode } from 'react'
+import { memo, useEffect, useState, type ReactNode } from 'react'
 import {
   FocusContext,
   useFocusable,
 } from '@noriginmedia/norigin-spatial-navigation'
 import {
   Captions,
-  ChevronsRight,
   Pause,
   Play,
   RotateCcw,
   RotateCw,
   SkipBack,
   SkipForward,
+  type LucideIcon,
 } from 'lucide-react'
 import type { Chapter } from '@/api/generated/akariAPI.schemas'
 import { timeLabel } from '@/lib/format'
 import type { PlaybackDisplay } from '@/lib/navigation'
 import { Focusable } from '@/ui/focusable'
+import { HudLogo, HudPill, HudPillView, HudScrim } from './hud'
 
 export const CONTROLS_FOCUS_KEY = 'PLAYER_CONTROLS'
 export const PLAY_FOCUS_KEY = 'PLAYER_PLAY'
@@ -77,41 +78,29 @@ function ControlButton({
   )
 }
 
-/**
- * Botão "Pular abertura": pílula com texto (a ação não tem ícone universal),
- * no mesmo estilo de foco dos botões redondos — fundo branco translúcido que
- * clareia por opacidade, sem scale (seção 7).
- */
-function SkipIntroButton({ onPress }: { onPress: () => void }) {
-  return (
-    <Focusable focusKey="PLAYER_SKIP_INTRO" onEnterPress={onPress}>
-      {(focused) => (
-        <div
-          role="button"
-          className="relative flex h-[4.5rem] items-center gap-2 rounded-full pr-7 pl-6"
-        >
-          <div
-            aria-hidden
-            className="bg-text/10 absolute inset-0 rounded-full"
-          />
-          <div
-            aria-hidden
-            className="bg-text/55 absolute inset-0 rounded-full"
-            style={{ opacity: focused ? 1 : 0, transition: 'opacity 120ms' }}
-          />
-          <span className="relative text-[1.75rem] font-medium">
-            Pular abertura
-          </span>
-          <ChevronsRight
-            aria-hidden
-            className="relative size-8"
-            color="var(--color-text)"
-            strokeWidth={2.5}
-          />
-        </div>
-      )}
-    </Focusable>
-  )
+/** Ação do momento, decidida pelos capítulos do arquivo. */
+export interface PlayerOffer {
+  focusKey: string
+  label: string
+  icon: LucideIcon
+  onPress: () => void
+}
+
+// Horário em que o episódio termina, no relógio da TV.
+const CLOCK = new Intl.DateTimeFormat('pt-BR', {
+  hour: '2-digit',
+  minute: '2-digit',
+})
+// O "termina às" acompanha o relógio mesmo com o vídeo pausado.
+const CLOCK_TICK_MS = 15000
+
+function useNow(intervalMs: number): number {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), intervalMs)
+    return () => clearInterval(timer)
+  }, [intervalMs])
+  return now
 }
 
 /** Seta circular com o passo do seek no meio (estilo "voltar 10s"). */
@@ -170,6 +159,7 @@ interface SeekBarProps {
    * barra é desenhada como em foco — senão ela "tem o foco" sem parecer.
    */
   scrubbing: boolean
+  onTogglePlay: () => void
   onStep: (direction: 1 | -1) => void
 }
 
@@ -222,12 +212,15 @@ function SeekBar({
   duration,
   chapters,
   scrubbing,
+  onTogglePlay,
   onStep,
 }: SeekBarProps) {
   const segments = segmentsFor(chapters, duration)
   const progress = duration ? Math.min(1, Math.max(0, position / duration)) : 0
   const { ref, focused } = useFocusable({
     focusKey: SEEKBAR_FOCUS_KEY,
+    // OK na barra faz o mesmo que o botão de play/pause.
+    onEnterPress: onTogglePlay,
     onArrowPress: (direction) => {
       if (direction === 'left') onStep(-1)
       else if (direction === 'right') onStep(1)
@@ -309,7 +302,13 @@ interface PlayerControlsProps {
   onTogglePlay: () => void
   onStep: (direction: 1 | -1) => void
   onOpenTracks: () => void
-  onSkipIntro: () => void
+  /** Ação do momento pelos capítulos. */
+  offer?: PlayerOffer
+  /**
+   * A oferta acabou de aparecer: flutua sozinha com os controles ocultos e o
+   * OK do player aciona ela. Depois, fica só na fileira de botões.
+   */
+  prompting: boolean
   /** Episódio anterior/próximo; sem eles, o botão não aparece. */
   onPrevious?: () => void
   onNext?: () => void
@@ -333,11 +332,16 @@ export const PlayerControls = memo(function PlayerControls({
   onTogglePlay,
   onStep,
   onOpenTracks,
-  onSkipIntro,
+  offer,
+  prompting,
   onPrevious,
   onNext,
 }: PlayerControlsProps) {
   const chapter = currentChapter(chapters, position)
+  const now = useNow(CLOCK_TICK_MS)
+  const remaining = duration ? Math.max(0, duration - position) : undefined
+  const endsAt =
+    remaining === undefined ? undefined : CLOCK.format(now + remaining * 1000)
   const { ref, focusKey } = useFocusable({
     focusKey: CONTROLS_FOCUS_KEY,
     focusable: active,
@@ -352,21 +356,33 @@ export const PlayerControls = memo(function PlayerControls({
         className="pointer-events-none absolute inset-0"
         style={{ opacity: visible ? 1 : 0, transition: 'opacity 200ms' }}
       >
-        <div className="from-bg via-bg/70 absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t to-transparent" />
+        <HudScrim top={Boolean(display?.logo || endsAt)} />
+        {endsAt && (
+          <p className="text-muted-foreground absolute top-[4.5rem] right-[6rem] text-[1.75rem] tabular-nums">
+            Termina às {endsAt}
+          </p>
+        )}
+        {/* Com logo, o anime aparece pelo logo no canto superior esquerdo, e
+            o episódio embaixo dele; sem logo, o título escrito acima da barra. */}
+        <HudLogo display={display} />
         <div className="absolute inset-x-[6rem] bottom-[4.5rem] flex flex-col gap-6">
           <div className="flex items-end justify-between gap-8">
-            <div className="flex flex-col gap-1">
-              {display?.subtitle && (
-                <p className="text-muted-foreground text-[1.75rem]">
-                  {display.subtitle}
-                </p>
-              )}
-              {display?.title && (
-                <p className="text-[2.5rem] leading-tight font-medium">
-                  {display.title}
-                </p>
-              )}
-            </div>
+            {display?.logo ? (
+              <div />
+            ) : (
+              <div className="flex flex-col gap-1">
+                {display?.subtitle && (
+                  <p className="text-muted-foreground text-[1.75rem]">
+                    {display.subtitle}
+                  </p>
+                )}
+                {display?.title && (
+                  <p className="text-[2.5rem] leading-tight font-medium">
+                    {display.title}
+                  </p>
+                )}
+              </div>
+            )}
             {chapter?.title && (
               <p className="text-muted-foreground shrink-0 text-[1.75rem]">
                 {chapter.title}
@@ -381,16 +397,27 @@ export const PlayerControls = memo(function PlayerControls({
               duration={duration}
               chapters={chapters}
               scrubbing={visible && !active}
+              onTogglePlay={onTogglePlay}
               onStep={onStep}
             />
             <span className="text-muted-foreground w-[6rem] text-right">
-              {duration ? timeLabel(duration) : ''}
+              {remaining === undefined ? '' : `-${timeLabel(remaining)}`}
             </span>
           </div>
 
           <ButtonRow>
             <div className="flex justify-start">
-              <SkipIntroButton onPress={onSkipIntro} />
+              {offer && (
+                <HudPill
+                  key={offer.focusKey}
+                  focusKey={offer.focusKey}
+                  label={offer.label}
+                  icon={offer.icon}
+                  filled
+                  highlighted={prompting && !active}
+                  onPress={offer.onPress}
+                />
+              )}
             </div>
             <div className="flex items-center gap-8">
               {onPrevious && (
@@ -497,6 +524,30 @@ export const PlayerControls = memo(function PlayerControls({
           </ButtonRow>
         </div>
       </div>
+      {/* Oferta recém-aparecida com os controles ocultos: flutua sozinha no
+          mesmo lugar da fileira (centralizada na altura do botão de play), em
+          foco — o OK do player aciona ela. Sem o degradê do HUD, o canto
+          escurece só em volta dela, do mesmo tom (fundo → 70% → nada). */}
+      {offer && prompting && !visible && (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute bottom-0 left-0 h-[20rem] w-[48rem]"
+            style={{
+              background:
+                'radial-gradient(ellipse at 0% 100%, var(--color-bg) 0%, color-mix(in srgb, var(--color-bg) 70%, transparent) 40%, transparent 70%)',
+            }}
+          />
+          <div className="pointer-events-none absolute bottom-[5rem] left-[6rem]">
+            <HudPillView
+              label={offer.label}
+              icon={offer.icon}
+              filled
+              highlighted
+            />
+          </div>
+        </>
+      )}
     </FocusContext.Provider>
   )
 })

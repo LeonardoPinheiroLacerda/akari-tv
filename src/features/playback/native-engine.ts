@@ -71,14 +71,16 @@ export function useNativeEngine(
     })
   }, [source])
 
+  const play = useCallback(() => void NativePlayer.play(), [])
+  const pause = useCallback(() => void NativePlayer.pause(), [])
   const togglePlay = useCallback(() => {
-    if (paused.current) void NativePlayer.play()
-    else void NativePlayer.pause()
-  }, [])
+    if (paused.current) play()
+    else pause()
+  }, [play, pause])
 
   const seek = useCallback((local: number) => {
     void NativePlayer.seek({ position: local })
   }, [])
 
-  return { view: null, togglePlay, seek }
+  return { view: null, togglePlay, play, pause, seek }
 }
